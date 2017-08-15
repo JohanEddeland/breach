@@ -168,6 +168,18 @@ switch(numel(varargin))
         st = varargin{1};
         st = regexprep(st, '^\s*', '');
         
+        % JOHAN ADDED
+        johanst = st;
+        if length(strfind(johanst,'('))==1 && length(strfind(johanst,')'))==1
+            par1 = strfind(johanst,'(');
+            par2 = strfind(johanst,')');
+            johanst = johanst(par1+1:par2-1);
+        end
+        
+        
+        assignin('base','var_to_replace',johanst);
+        % END JOHAN ADDED
+        
         %% test or
         [success, st1, st2] = parenthesisly_balanced_split(st, '\<or\>');
         if success
