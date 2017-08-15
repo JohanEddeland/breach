@@ -27,6 +27,7 @@ end
     
 global BreachGlobOpt;
 eval(BreachGlobOpt.GlobVarsDeclare);
+%disp('Finished GlobVarsDeclare');
 
 dt__ = traj.time(1,2)-traj.time(1,1);
 Sys = params.Sys;
@@ -164,6 +165,13 @@ for ii_var = 1:numel(SigList)
     end
 end
 
+%JOHAN CHANGE
+% if ~isempty(strfind(fn_, ' or '))
+%     fn_ = strrep(fn_,' or ', ' || ');
+%     error('This should not happen!');
+%     %disp('Replacing '' or '' with '' || '' somewhere in phi!');
+% end
+% END JOHAN CHANGE
 val = eval(fn_);
 
 if isscalar(val)
