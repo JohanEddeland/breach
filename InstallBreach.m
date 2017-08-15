@@ -19,6 +19,9 @@ else
     BreachGlobOpt.disable_robust_linear_interpolation=0;
 end
 
+% Johan fix
+silent = 0;
+
 MEX = 'mex ';
 FLAGS = ' '; 
 if silent
