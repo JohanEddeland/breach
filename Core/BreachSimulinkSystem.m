@@ -824,7 +824,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     status = -2;  % error in inputs
                 else
                     simout= sim(mdl, this.SimCmdArgs{:});
-                    %tic;
                     %time_to_sim = toc;
                     %disp(['Finished simulation in ' num2str(time_to_sim) 's']);
                     [tout, X] = GetXFrom_simout(this, simout);
@@ -1038,7 +1037,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 end
             end
         end
-
 %         function sig_log = FindLoggedSignals(this)
 %             %
 %             % converts a simulink output to a data structure Breach can handle
@@ -1126,7 +1124,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
 %                 end
 %             end
 %         end
-
         function U = InitU(this,pts,tspan)
             % Computes input values
             U = InitU@BreachOpenSystem(this,pts,tspan);
