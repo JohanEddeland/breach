@@ -369,6 +369,14 @@ classdef BreachSystem < BreachSet
             Sim(this);
             this.CheckinDomainTraj();
             
+            % JOHAN ADDED
+            filesInTrajFolder = length(dir('trajectories')) - 2;
+            tmpP = this.P;
+            paramValues = values;
+            load('nextReqToBeFalsified'); % Loads currentReq
+            save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
+            % END JOHAN ADDED
+            
             % FIXME: this is going to break with multiple trajectories with
             % some of them containing NaN -
               
