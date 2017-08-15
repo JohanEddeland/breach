@@ -140,7 +140,6 @@ function [valarray, time_values] = GetValues(Sys, phi, P, traj, interval)
 global BreachGlobOpt;
 global objToUse;
 eval(BreachGlobOpt.GlobVarsDeclare);
-
 if strcmp(objToUse, '&+')
     % Do nothing
 else
