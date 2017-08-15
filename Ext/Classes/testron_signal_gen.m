@@ -381,7 +381,6 @@ classdef testron_signal_gen < signal_gen
                             x = interp1(t_cp, cp_values, time', 'pchip', 'extrap');
                         end
                         x = floor(x);
-                        
                         x = min(x,max_value);
                         x = max(x, min_value);
                         X(i_ni,:) = x';
