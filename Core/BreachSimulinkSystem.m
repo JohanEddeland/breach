@@ -416,7 +416,29 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             
             params = Sys.ParamList;
             for i = 1:numel(params)-num_signals
-                assignin('base',params{i+num_signals},pts(i+num_signals));
+                % JOHAN CHANGE
+                tmp_johan = params{i+num_signals};
+                type_here = class(pts(i+num_signals));
+                try
+                    type_base = evalin('base',['class(' tmp_johan ')']);
+                    param_value = eval([type_base '(pts(i+num_signals))']);
+                    type_here_new = class(param_value);
+                    if ~strcmp(type_here_new,type_base)
+                        disp(params{i+num_signals})
+                        disp(['Warning!! Type here: ' type_here ', type in base: ' type_base]);
+                    elseif ~strcmp(type_here,type_base)
+                        %disp(['Successfully casted from ' type_here ' to ' type_here_new]);
+                    end
+                catch
+                    % The parameter doesn't exist yet (is a _u0 param)
+                    % We don't need to cast it
+                    param_value = pts(i+num_signals);
+                end
+                
+                
+                %assignin('base',params{i+num_signals}.Value,pts(i+num_signals));
+                assignin('base',params{i+num_signals},param_value);
+                % END JOHAN CHANGE
             end
             
             % For now, ParamSrc only contains parameters for signal
@@ -447,7 +469,10 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     Xin = this.InputGenerator.GetSignalValues(this.Sys.InputList);
                     X(idx,:) = Xin;
                 else
+                    %tic;
                     simout= sim(mdl, this.sim_args{:});
+                    %time_to_sim = toc;
+                    %disp(['Finished simulation in ' num2str(time_to_sim) 's']);
                     [tout, X] = GetXFrom_simout(this, simout);
                 end
             catch
@@ -520,6 +545,19 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     
                     signame = logs_names{ilg};
                     sig = logs.getElement(signame);
+                    % JOHAN CHANGE
+                    if isempty(signame)
+                        break
+                    end
+                     
+                    try
+                        if sig.numElements > 1
+                            sig = get(sig,1);
+                        end
+                    catch
+                        % Do nothing
+                    end
+                    % END JOHAN CHANGE
                     nbdim = size(sig.Values.Data,2);
                     
                     if (nbdim==1)
@@ -603,6 +641,15 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                         if ~ismember(signame,signals)
                             
                             sig = logs.getElement(signame);
+                            % JOHAN CHANGE
+                            try
+                                if sig.numElements > 1
+                                    sig = get(sig,1);
+                                end
+                            catch
+                                % Do nothing
+                            end
+                            % END JOHAN CHANGE
                             nbdim = size(sig.Values.Data,2);
                             
                             % naming multidimensional signal= name_signal_i_
@@ -685,7 +732,22 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                         if ~ismember(signame,sig_log)
                             
                             sig = logs.getElement(signame);
-                            nbdim = size(sig.Values.Data,2);
+                            % JOHAN CHANGE
+                            try
+                                if sig.numElements > 1
+                                    sig = get(sig,1);
+                                end
+                            catch
+                                % Do nothing
+                            end
+                            
+                            try
+                                nbdim = size(sig.Values.Data,2);
+                            catch 
+                                % Sometimes, this doesn't work
+                                nbdim = length(fieldnames(sig.Values));
+                            end
+                            % END JOHAN CHANGE
                             
                             % naming multidimensional signal= name_signal_i_
                             if nbdim==1
@@ -728,7 +790,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     Sim@BreachOpenSystem(this, tspan, U);
             end
             if this.use_parallel == 0 % don't autosave in parallel mode
-                save_system(this.Sys.mdl);
+                %save_system(this.Sys.mdl);
             end
         end
         
