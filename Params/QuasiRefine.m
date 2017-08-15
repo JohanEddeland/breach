@@ -88,6 +88,15 @@ else % all optional parameters
     end
 end
 
+% JOHAN CHANGE
+%if numel(P.dim) > 10
+%if evalin('base', 'exist(''testron_useFile'')')
+    disp('Changing algorithm to TestronRefine');
+    algo = 'testron';
+%end
+%end
+% END JOHAN CHANGE
+
 if(strcmpi(algo,'sobol') && numel(P.dim)>40)
     warning('QuasiRefine:InappropriateAlgo',...
         'The sobol algorithm is usable up to dimension 40, switched to halton algorithm.');
@@ -101,6 +110,10 @@ if strcmpi(algo,'sobol')
     else
         P = SobolRefine(P, nb, step);
     end
+% JOHAN CHANGE
+elseif strcmpi(algo,'testron')
+    P = TestronRefine(P, nb, step);
+% END JOHAN CHANGE
 else % default = halton
     if(strictlyInside)
         P = HaltonRefine(P, nb, step, 'strictlyInside');
