@@ -6,6 +6,9 @@ if (~exist('silent','var'))
    silent =1;  
 end
 
+% Johan fix
+silent = 0;
+
 MEX = 'mex ';
 FLAGS = ' '; 
 if silent
