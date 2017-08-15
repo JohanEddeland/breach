@@ -27,6 +27,7 @@ end
     
 global BreachGlobOpt;
 eval(BreachGlobOpt.GlobVarsDeclare);
+%disp('Finished GlobVarsDeclare');
 
 if numel(traj.time)==1
     dt__ = 1;    %  not sure this makes sense, will see
@@ -168,6 +169,13 @@ for ii_var = 1:numel(SigList)
     end
 end
 
+%JOHAN CHANGE
+% if ~isempty(strfind(fn_, ' or '))
+%     fn_ = strrep(fn_,' or ', ' || ');
+%     error('This should not happen!');
+%     %disp('Replacing '' or '' with '' || '' somewhere in phi!');
+% end
+% END JOHAN CHANGE
 val = eval(fn_);
 
 if isscalar(val)
