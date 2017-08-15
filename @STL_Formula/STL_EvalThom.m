@@ -130,7 +130,7 @@ end
 function [valarray, time_values] = GetValues(Sys, phi, P, traj, interval)
 global BreachGlobOpt;
 eval(BreachGlobOpt.GlobVarsDeclare);
-
+%disp(phi.type);
 switch(phi.type)
     
     case 'predicate'
@@ -145,6 +145,9 @@ switch(phi.type)
         catch %#ok<CTCH>
             valarray = arrayfun(evalfn, time_values);
         end
+        % JOHAN CHANGE
+        % valarray = valarray + 0.000001; % Margin issues
+        % END JOHAN CHANGE
         
     case 'not'
         [valarray, time_values] = GetValues(Sys, phi.phi, P, traj, interval);
@@ -158,7 +161,36 @@ switch(phi.type)
     case 'and'
         [valarray1, time_values1] = GetValues(Sys, phi.phi1, P, traj, interval);
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, interval);
-        [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
+        
+        % JOHAN CHANGE
+        if strcmp(evalin('base','objToUse'), '&+')
+            % Koen's &+
+            [time_values, valarray] = testron_robustAndPlus(time_values1, valarray1, time_values2, valarray2);
+        else
+            % Standard and
+            [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
+            
+            % The following can be uncommented to STOP when the robustness
+            % values are not the same for the whole interval. 
+%             nUnique1 = length(unique(valarray1));
+%             nUnique2 = length(unique(valarray2));
+%             if (nUnique1 > 1) || (nUnique2 > 1) 
+%                 disp('Unexpected behaviour!');
+%                 figure();
+%                 subplot(3,1,1);
+%                 plot(time_values1, valarray1, 'r-x');
+%                 title('valarray1');
+%                 
+%                 subplot(3,1,2);
+%                 plot(time_values2, valarray2, 'r-x');
+%                 title('valarray2');
+%                 
+%                 subplot(3,1,3);
+%                 plot(time_values, valarray, 'r-x');
+%                 title('valarray');
+%                 dbstop;
+%             end
+        end
         
     case 'andn'
         n_phi = numel(phi.phin);
@@ -185,8 +217,20 @@ switch(phi.type)
             time_values = [time_values time_values(end)+I___(end)];
             valarray = [valarray valarray(end)];
         end
-        [time_values, valarray] = RobustEv(time_values, -valarray, I___);
-        valarray = -valarray;
+        % JOHAN CHANGE
+        %if diff(I___) > 5
+        %    [time_values, valarray] = RobustAlways(time_values, valarray, I___);
+        %else
+            [time_values, valarray] = RobustEv(time_values, -valarray, I___);
+            valarray = -valarray;
+        %end
+%         if diff(I___) > 5
+%             % If the time difference for an always is larger than 5, we
+%             % assume that it is the outernmost "always" of a safety
+%             % specification
+%             valarray = valarray + 0.000001; % Margin issues
+%         end
+        % END JOHAN CHANGE
         
     case 'av_eventually'
         I___ = eval(phi.interval);
