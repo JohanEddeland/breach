@@ -1583,7 +1583,10 @@ function button_break_prop_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 Br = handles.working_sets.(handles.current_set);
-prop = handles.properties.(handles.current_prop);
+%JOHAN UGLY FIX
+%prop = handles.properties.(handles.current_prop);
+prop = handles.properties.phi;
+% END JOHAN UGLY FIX
 props = STL_Break(prop);
 
 for i = 1:numel(props)
