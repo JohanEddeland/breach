@@ -381,7 +381,7 @@ classdef BreachProblem < BreachStatus
         % function res = FevalInit(this,X0)
         % defined in external file
         
-        function X0 = init_basic_X0(this)
+        function X0 = init_basic_X0(this, n_samples)
             % returns initial vectors
             BrQ = this.BrSet.copy();
             BrQ.ResetParamSet();
@@ -391,7 +391,21 @@ classdef BreachProblem < BreachStatus
             step = this.solver_options.start_at_trial;
             
             BrC.P = CreateParamSet(BrC.Sys,this.params,[this.lb this.ub]);
-            BrC.CornerSample();
+            % JOHAN CHANGE
+            if numel(this.params) < 5
+                % Standard case, use CornerSample
+                fprintf('%d varying parameters, using standard CornerSample\n',numel(this.params));
+                BrC.CornerSample();
+            else
+                % Too many parameter combinations to enumerate
+                % Use QuasiRandomSample instead
+                fprintf('%d varying parameters, using QuasiRandomSample(%d) (TestronRefine) to not run out of memory\n',numel(this.params),n_samples);
+                BrC.QuasiRandomSample(n_samples);
+                
+                % Change nb_samples, which is a "Breach" variable
+                nb_samples = n_samples;
+            end
+            % END JOHAN CHANGE
             XC = BrC.GetParam(this.params);
             nb_corners= size(XC, 2);
             qstep = step-nb_corners;
