@@ -543,11 +543,11 @@ classdef BreachProblem < BreachStatus
                 fprintf('\n Stopped after max_obj_eval was reached (maximum number of objective function evaluation.\n' );
             end
             
-            fprintf('\n ---- Best value %g found with\n', this.obj_best);
+            fprintf('\n ---- Best value %g found with (TESTRON hides param values)\n', this.obj_best);
             param_values = this.x_best;
-            for ip = 1:numel(this.params)
-                fprintf( '        %s = %g\n', this.params{ip},param_values(ip))
-            end
+%             for ip = 1:numel(this.params)
+%                 fprintf( '        %s = %g\n', this.params{ip},param_values(ip))
+%             end
             fprintf('\n');
             
         end
