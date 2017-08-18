@@ -791,18 +791,18 @@ classdef BreachProblem < BreachStatus
             end
 
             this.Display_Best_Results(this.obj_best, this.x_best);
-            
         end
         
         function Display_Best_Results(this, best_fval, param_values)
-            fprintf('\n ---- Best value %g found with\n', min(best_fval));
+            fprintf('\n ---- Best value %g found \n', min(best_fval));
             
-            for ip = 1:numel(this.params)
-                % check the enum_idx variable and restore the params
-                value = param_values(ip);
-                fprintf( '        %s = %g\n', this.params{ip},value)
-            end
-            fprintf('\n');
+            % TESTRON: Hide param values (in general too many)
+%             for ip = 1:numel(this.params)
+%                 % check the enum_idx variable and restore the params
+%                 value = param_values(ip);
+%                 fprintf( '        %s = %g\n', this.params{ip},value)
+%             end
+%             fprintf('\n');
         end
              
         function [BrOut, Berr, BbadU] = GetBrSet_Logged(this)

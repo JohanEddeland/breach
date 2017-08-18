@@ -67,7 +67,6 @@ if this.use_parallel
             testronInitRes(k) = inf(size(testronInitRes(k)));
             testronAndPlusRes(k) = inf(size(testronAndPlusRes(k)));
             testronX0(:,k) = paramValues;
-            numFailed = numFailed + 1; % Set the flag
         end
     end
 else
@@ -109,58 +108,6 @@ disp(['TESTRON: ' num2str(nTrajectoriesPreCalculated) ' robustness calculations 
     num2str(numFailed) '/' num2str(nTrajectoriesPreCalculated) ...
     ' evaluations)']);
 
-% Time to calculate for how long we should falsify
-if nTrajectoriesPreCalculated > 0
-    % We can calculate how long time this specific STL formula takes to
-    % evaluate for each trajectory
-    timePerTraj = timeToEvaluateTrajs/nTrajectoriesPreCalculated;
-    
-    % Assume simulation takes 60s, and we want 30min in total for this
-    % requirement
-    % We also want to give half of the time to global optimization, half to
-    % local optimization
-    
-    % Time for global: (60s + timePerTraj)*n, where n is number of sampled
-    % initial parameters X0
-    % Setting equal to 1800s (=30m) gives n = 1800/(60 + timePerTraj)
-    n_samples = floor(1800/(60 + timePerTraj));
-else
-    % We don't know how long this specific STL formula takes to calculate
-    % robustness for one trajectory.
-    % This only happens for the first falsification of a Simulink version
-    % Solution: Guess n_samples
-    n_samples = 60;
-end
-
-% Calculate when falsification will end
-d = rem(now,1);
-disp(['Starting falsification at ' datestr(d,13) ' with maximum time 1800 seconds.']);
-disp(['Falsification will end by ' datestr(d + (1800/(24*3600)),13)]);
-
-% We must add timeToEvaluateTrajs to the maximum time, since according to
-% Breach the falsification has already started (but we see
-% timeToEvaluateTrajs as a pre-process to falsification).
-this.max_time = 1800 + timeToEvaluateTrajs;
-
-% Initialize the parameter vectors
-X0 = init_basic_X0(this, n_samples);
-
-if this.solver_options.use_param_set_as_init
-    X0 = this.BrSet.GetParam(this.params);
-    this.BrSys.ResetParamSet;    % needs double-checking...
-else
-    X0 = init_basic_X0(this);
-end
-
-% <<<<<<< HEAD
-% % display header
-% if ~strcmp(this.display,'off')   
-%     fprintf('Eval objective function on %d initial parameters.\n', size(X0,2));
-%     this.display_status_header();
-% end
-% res_init = FevalInit(this, X0);
-% res{1} = struct('x',res_init.x,'fval',res_init.f);
-% =======
 % Store the number of parameters used
 numParams = size(X0,1);
 save('numParams.mat', 'numParams');
@@ -169,7 +116,10 @@ evalin('base','objToUse = ''standard'';');
 res = FevalInit(this, X0);
 
 evalin('base','objToUse = ''&+'';');
-resAndPlus = FevalInit(this, X0);
+andPlusProblem = this.copy();
+andPlusProblem.verbose = 0;
+resAndPlus = FevalInit(andPlusProblem, X0);
+evalin('base', 'objToUse = ''standard'';');
 
 res.fval = [testronInitRes, res.fval];
 storedFval = res.fval;
