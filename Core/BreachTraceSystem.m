@@ -100,7 +100,13 @@ classdef BreachTraceSystem < BreachSystem
                 end
             elseif isstruct(trace)
                 traj = trace;
-                traj.param=traj.param(1:end-1);
+                % JOHAN CHANGE
+                try
+                    traj.param=traj.param(1:end-1);
+                catch
+                    traj.param = this.P.pts(1:end-1);
+                end
+                % END JOHAN CHANGE
             end
             
             Pnew = CreateParamSet(this.Sys);
@@ -121,7 +127,9 @@ classdef BreachTraceSystem < BreachSystem
             this.P.traj_ref = 1:nb_traces+1;
             this.P.traj_to_compute =  [];
             this.P.pts(this.P.DimX+1,:) = 1:nb_traces+1; % index traces
-            this.Sys.tspan = traj.time;
+            % JOHAN CHANGE
+            this.Sys.tspan = traj.t;
+            % END JOHAN CHANGE
         end
         
         function AddRandomTraces(this,n_traces, n_samples, amp, end_time)
