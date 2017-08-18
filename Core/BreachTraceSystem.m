@@ -160,6 +160,13 @@ classdef BreachTraceSystem < BreachSystem
                 end
             elseif isa(trace, 'matlab.io.MatFile')
                 traj = trace;
+                % JOHAN CHANGE
+                try
+                    traj.param=traj.param(1:end-1);
+                catch
+                    traj.param = this.P.pts(1:end-1);
+                end
+                % END JOHAN CHANGE
             end
             
             
@@ -207,6 +214,12 @@ classdef BreachTraceSystem < BreachSystem
             else
                 this.P.Xf= Xf;
             end
+            this.P.traj_ref = 1:nb_traces+1;
+            this.P.traj_to_compute =  [];
+            this.P.pts(this.P.DimX+1,:) = 1:nb_traces+1; % index traces
+            % JOHAN CHANGE
+            this.Sys.tspan = traj.t;
+            % END JOHAN CHANGE
         end
         
         function AddRandomTraces(this,n_traces, n_samples, amp, end_time)

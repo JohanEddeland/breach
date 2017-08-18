@@ -223,7 +223,7 @@ classdef BreachSet < BreachStatus
                 for itraj = 1:numel(this.P.traj)
                     for  i=1:this.P.DimX
                         if ~isempty(this.Domains(i).domain)
-                            this.P.traj{itraj}.X(i,:) = this.Domains(i).checkin(this.P.traj{itraj}.X(i,:));
+                        this.P.traj{itraj}.X(i,:) = this.Domains(i).checkin(this.P.traj{itraj}.X(i,:));
                         end
                     end
                 end
@@ -1045,13 +1045,27 @@ classdef BreachSet < BreachStatus
         end
                 
         %% Concatenation, ExtractSubset - needs some additional compatibility checks...
-        function Concat(this, other)
-            this.P = SConcat(this.P, other.P);
-        end
-        
         function other  = ExtractSubset(this, idx)
             other = this.copy();
             other.P = Sselect(this.P, idx);
+        end
+        
+        function SavedTrajectorySample(this, paramValues)
+            % TESTRON
+            % Fixes the "sampling" for a stored trajectory
+            
+            this.ResetParamSet();
+            
+            newP = SavedTrajectoryRefine(this.P, paramValues);
+            
+            this.P = newP;
+            this.CheckinDomainParam();
+        end
+       
+        
+        %% Concatenation - needs some additional compatibility checks...
+        function Concat(this, other)
+            this.P = SConcat(this.P, other.P);
         end
         
         %% Plot parameters
