@@ -103,15 +103,56 @@ else
     end
 end
 fprintf('\n');
+
+
+% Store the number of parameters used
+numParams = size(X0,1);
+save('numParams.mat', 'numParams');
+
+% Initialize the parameter vectors
+X0 = init_basic_X0(this, n_samples);
+
 timeToEvaluateTrajs = toc;
 disp(['TESTRON: ' num2str(nTrajectoriesPreCalculated) ' robustness calculations completed in ' ...
     num2str(timeToEvaluateTrajs) ' seconds (failed ' ...
     num2str(numFailed) '/' num2str(nTrajectoriesPreCalculated) ...
     ' evaluations)']);
 
-% Store the number of parameters used
-numParams = size(X0,1);
-save('numParams.mat', 'numParams');
+% Time to calculate for how long we should falsify
+if nTrajectoriesPreCalculated > 0
+    % We can calculate how long time this specific STL formula takes to
+    % evaluate for each trajectory
+    timePerTraj = timeToEvaluateTrajs/nTrajectoriesPreCalculated;
+    
+    % Assume simulation takes 60s, and we want 30min in total for this
+    % requirement
+    % We also want to give half of the time to global optimization, half to
+    % local optimization
+    
+    % Time for global: (60s + timePerTraj)*n, where n is number of sampled
+    % initial parameters X0
+    % Setting equal to 1800s (=30m) gives n = 1800/(60 + timePerTraj)
+    n_samples = floor(1800/(60 + timePerTraj));
+else
+    % We don't know how long this specific STL formula takes to calculate
+    % robustness for one trajectory.
+    % This only happens for the first falsification of a Simulink version
+    % Solution: Guess n_samples
+    n_samples = 60;
+end
+
+% Calculate when falsification will end
+d = rem(now,1);
+disp(['Starting falsification at ' datestr(d,13) ' with maximum time 1800 seconds.']);
+disp(['Falsification will end by ' datestr(d + (1800/(24*3600)),13)]);
+
+% We must add timeToEvaluateTrajs to the maximum time, since according to
+% Breach the falsification has already started (but we see
+% timeToEvaluateTrajs as a pre-process to falsification).
+this.max_time = 1800 + timeToEvaluateTrajs;
+
+% display header
+fprintf('Eval objective function on %d initial parameters.\n', size(X0,2));
 
 evalin('base','objToUse = ''standard'';');
 res = FevalInit(this, X0);
