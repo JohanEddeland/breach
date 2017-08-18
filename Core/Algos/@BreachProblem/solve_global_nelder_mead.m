@@ -103,6 +103,15 @@ else
     end
 end
 fprintf('\n');
+
+
+% Store the number of parameters used
+numParams = size(X0,1);
+save('numParams.mat', 'numParams');
+
+% Initialize the parameter vectors
+X0 = init_basic_X0(this, n_samples);
+
 timeToEvaluateTrajs = toc;
 disp(['TESTRON: ' num2str(nTrajectoriesPreCalculated) ' robustness calculations completed in ' ...
     num2str(timeToEvaluateTrajs) ' seconds (failed ' ...
@@ -142,16 +151,8 @@ disp(['Falsification will end by ' datestr(d + (1800/(24*3600)),13)]);
 % timeToEvaluateTrajs as a pre-process to falsification).
 this.max_time = 1800 + timeToEvaluateTrajs;
 
-% Initialize the parameter vectors
-X0 = init_basic_X0(this, n_samples);
-
-
 % display header
 fprintf('Eval objective function on %d initial parameters.\n', size(X0,2));
-
-% Store the number of parameters used
-numParams = size(X0,1);
-save('numParams.mat', 'numParams');
 
 evalin('base','objToUse = ''standard'';');
 res = FevalInit(this, X0);
