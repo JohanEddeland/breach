@@ -23,42 +23,91 @@ else
 end
 
 numFailed = 0; % Flag
-for k = size(storedFval,2) + 1:nTrajectoriesPreCalculated
-    if mod(k,50)==0
-        fprintf(['(' num2str(k) ' finished)\n']);
+
+if this.use_parallel
+    % Parallel computations
+    evalin('base','objToUse = ''standard'';');
+    parfor k = size(storedFval,2) + 1:nTrajectoriesPreCalculated
+        % This loop performs standard robustness calculations
+        loadedVars = load(['trajectories/' num2str(k) '.mat']); % Loads tmpP, paramValues
+        tmpP = loadedVars.tmpP;
+        paramValues = loadedVars.paramValues;
+        try
+            [rob, ~] = STL_Eval(this.BrSys.Sys, this.Spec, tmpP, tmpP.traj,t_phi);
+
+            testronInitRes(k) = rob;
+            testronAndPlusRes(k) = robAndPlus;
+            testronX0(:,k) = paramValues;
+        catch ME
+            % Sometimes, we haven't logged all signals needed for the specific
+            % requirement
+            testronInitRes(k) = inf(size(testronInitRes(k)));
+            testronAndPlusRes(k) = inf(size(testronAndPlusRes(k)));
+            testronX0(:,k) = paramValues;
+            numFailed = numFailed + 1; % Set the flag
+        end
     end
-    load(['trajectories/' num2str(k) '.mat']); % Loads tmpP, paramValues
-%     try
-        % First, perform standard robustness calculation
-        evalin('base','objToUse = ''standard'';');
-        [rob, ~] = STL_Eval(this.BrSys.Sys, this.Spec, tmpP, tmpP.traj,t_phi);
-        
-        % Then, perform robustness calculation with &+
-        evalin('base','objToUse = ''&+'';');
-        [robAndPlus, ~] = STL_Eval(this.BrSys.Sys, this.Spec, tmpP, tmpP.traj,t_phi);
-        
-        testronInitRes(k) = rob;
-        testronAndPlusRes(k) = robAndPlus;
-        testronX0(:,k) = paramValues;
-        fprintf('.');
-%     catch ME
-%         % Sometimes, we haven't logged all signals needed for the specific
-%         % requirement
-%         dbstop;
-%         testronInitRes(k) = inf(size(testronInitRes(k)));
-%         testronKoenRes(k) = inf(size(testronKoenRes(k)));
-%         testronX0(:,k) = paramValues;
-%         numFailed = numFailed + 1; % Set the flag
-%         fprintf('x');
-%         %break;
-%     end
+    
+    % Then, perform robustness calculation with &+
+    evalin('base','objToUse = ''&+'';');
+    parfor k = size(storedFval,2) + 1:nTrajectoriesPreCalculated
+        % This loop performs standard robustness calculations
+        loadedVars = load(['trajectories/' num2str(k) '.mat']); % Loads tmpP, paramValues
+        tmpP = loadedVars.tmpP;
+        paramValues = loadedVars.paramValues;
+        try
+            [rob, ~] = STL_Eval(this.BrSys.Sys, this.Spec, tmpP, tmpP.traj,t_phi);
+
+            testronInitRes(k) = rob;
+            testronAndPlusRes(k) = robAndPlus;
+            testronX0(:,k) = paramValues;
+        catch ME
+            % Sometimes, we haven't logged all signals needed for the specific
+            % requirement
+            testronInitRes(k) = inf(size(testronInitRes(k)));
+            testronAndPlusRes(k) = inf(size(testronAndPlusRes(k)));
+            testronX0(:,k) = paramValues;
+            numFailed = numFailed + 1; % Set the flag
+        end
+    end
+else
+    % Serial computations
+    for k = size(storedFval,2) + 1:nTrajectoriesPreCalculated
+        if mod(k,50)==0
+            fprintf(['(' num2str(k) ' finished)\n']);
+        end
+        load(['trajectories/' num2str(k) '.mat']); % Loads tmpP, paramValues
+        try
+            % First, perform standard robustness calculation
+            evalin('base','objToUse = ''standard'';');
+            [rob, ~] = STL_Eval(this.BrSys.Sys, this.Spec, tmpP, tmpP.traj,t_phi);
+            
+            % Then, perform robustness calculation with &+
+            evalin('base','objToUse = ''&+'';');
+            [robAndPlus, ~] = STL_Eval(this.BrSys.Sys, this.Spec, tmpP, tmpP.traj,t_phi);
+            
+            testronInitRes(k) = rob;
+            testronAndPlusRes(k) = robAndPlus;
+            testronX0(:,k) = paramValues;
+            fprintf('.');
+        catch ME
+            % Sometimes, we haven't logged all signals needed for the specific
+            % requirement
+            testronInitRes(k) = inf(size(testronInitRes(k)));
+            testronAndPlusRes(k) = inf(size(testronAndPlusRes(k)));
+            testronX0(:,k) = paramValues;
+            numFailed = numFailed + 1; % Set the flag
+            fprintf('x');
+            %break;
+        end
+    end
 end
 fprintf('\n');
 timeToEvaluateTrajs = toc;
 disp(['TESTRON: ' num2str(nTrajectoriesPreCalculated) ' robustness calculations completed in ' ...
-        num2str(timeToEvaluateTrajs) ' seconds (failed ' ...
-        num2str(numFailed) '/' num2str(nTrajectoriesPreCalculated) ...
-        ' evaluations)']);
+    num2str(timeToEvaluateTrajs) ' seconds (failed ' ...
+    num2str(numFailed) '/' num2str(nTrajectoriesPreCalculated) ...
+    ' evaluations)']);
 
 % Time to calculate for how long we should falsify
 if nTrajectoriesPreCalculated > 0
@@ -77,7 +126,7 @@ if nTrajectoriesPreCalculated > 0
     n_samples = floor(1800/(60 + timePerTraj));
 else
     % We don't know how long this specific STL formula takes to calculate
-    % robustness for one trajectory. 
+    % robustness for one trajectory.
     % This only happens for the first falsification of a Simulink version
     % Solution: Guess n_samples
     n_samples = 60;
@@ -90,9 +139,9 @@ disp(['Falsification will end by ' datestr(d + (1800/(24*3600)),13)]);
 
 % We must add timeToEvaluateTrajs to the maximum time, since according to
 % Breach the falsification has already started (but we see
-% timeToEvaluateTrajs as a pre-process to falsification). 
+% timeToEvaluateTrajs as a pre-process to falsification).
 this.max_time = 1800 + timeToEvaluateTrajs;
-    
+
 % Initialize the parameter vectors
 X0 = init_basic_X0(this, n_samples);
 
