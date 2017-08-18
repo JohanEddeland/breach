@@ -68,7 +68,6 @@ if this.use_parallel
             testronInitRes(k) = inf(size(testronInitRes(k)));
             testronAndPlusRes(k) = inf(size(testronAndPlusRes(k)));
             testronX0(:,k) = paramValues;
-            numFailed = numFailed + 1; % Set the flag
         end
     end
 else
@@ -158,7 +157,10 @@ evalin('base','objToUse = ''standard'';');
 res = FevalInit(this, X0);
 
 evalin('base','objToUse = ''&+'';');
-resAndPlus = FevalInit(this, X0);
+andPlusProblem = this.copy();
+andPlusProblem.verbose = 0;
+resAndPlus = FevalInit(andPlusProblem, X0);
+evalin('base', 'objToUse = ''standard'';');
 
 res.fval = [testronInitRes, res.fval];
 storedFval = res.fval;
