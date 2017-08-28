@@ -104,12 +104,9 @@ end
 fprintf('\n');
 
 
-% Store the number of parameters used
-numParams = size(X0,1);
-save('numParams.mat', 'numParams');
 
-% Initialize the parameter vectors
-X0 = init_basic_X0(this, n_samples);
+
+
 
 timeToEvaluateTrajs = toc;
 disp(['TESTRON: ' num2str(nTrajectoriesPreCalculated) ' robustness calculations completed in ' ...
@@ -139,6 +136,14 @@ else
     % Solution: Guess n_samples
     n_samples = 60;
 end
+
+
+% Initialize the parameter vectors
+X0 = init_basic_X0(this, n_samples);
+
+% Store the number of parameters used
+numParams = size(X0,1);
+save('numParams.mat', 'numParams');
 
 % Calculate when falsification will end
 d = rem(now,1);
