@@ -26,48 +26,49 @@ end
 numFailed = 0; % Flag
 
 if this.use_parallel
-    % Parallel computations
-    evalin('base','objToUse = ''standard'';');
+
     parfor k = size(storedFval,2) + 1:nTrajectoriesPreCalculated
         % This loop performs standard robustness calculations
         loadedVars = load(['trajectories/' num2str(k) '.mat']); % Loads tmpP, paramValues
         tmpP = loadedVars.tmpP;
         paramValues = loadedVars.paramValues;
         try
-            [rob, ~] = STL_Eval(this.BrSys.Sys, this.Spec, tmpP, tmpP.traj,t_phi);
+            [rob, ~] = STL_Eval_TESTRON(this.BrSys.Sys, ... % Breach system
+                this.Spec, ... % Specification
+                tmpP, ... % Parameter set
+                tmpP.traj, ... % Trajectory
+                'standard', ... % Objective function to use
+                t_phi); % Time to evaluate objective function
 
             testronInitRes(k) = rob;
-            testronAndPlusRes(k) = robAndPlus;
             testronX0(:,k) = paramValues;
         catch ME
             % Sometimes, we haven't logged all signals needed for the specific
             % requirement
             testronInitRes(k) = inf(size(testronInitRes(k)));
-            testronAndPlusRes(k) = inf(size(testronAndPlusRes(k)));
             testronX0(:,k) = paramValues;
             numFailed = numFailed + 1; % Set the flag
         end
     end
     
-    % Then, perform robustness calculation with &+
-    evalin('base','objToUse = ''&+'';');
     parfor k = size(storedFval,2) + 1:nTrajectoriesPreCalculated
         % This loop performs standard robustness calculations
         loadedVars = load(['trajectories/' num2str(k) '.mat']); % Loads tmpP, paramValues
         tmpP = loadedVars.tmpP;
         paramValues = loadedVars.paramValues;
         try
-            [rob, ~] = STL_Eval(this.BrSys.Sys, this.Spec, tmpP, tmpP.traj,t_phi);
+            [robAndPlus, ~] = STL_Eval_TESTRON(this.BrSys.Sys, ... % Breach system
+                this.Spec, ... % Specification
+                tmpP, ... % Parameter set
+                tmpP.traj, ... % Trajectory
+                '&+', ... % Objective function to use
+                t_phi); % Time to evaluate objective function
 
-            testronInitRes(k) = rob;
             testronAndPlusRes(k) = robAndPlus;
-            testronX0(:,k) = paramValues;
         catch ME
             % Sometimes, we haven't logged all signals needed for the specific
             % requirement
-            testronInitRes(k) = inf(size(testronInitRes(k)));
             testronAndPlusRes(k) = inf(size(testronAndPlusRes(k)));
-            testronX0(:,k) = paramValues;
         end
     end
 else
@@ -79,12 +80,20 @@ else
         load(['trajectories/' num2str(k) '.mat']); % Loads tmpP, paramValues
         try
             % First, perform standard robustness calculation
-            evalin('base','objToUse = ''standard'';');
-            [rob, ~] = STL_Eval(this.BrSys.Sys, this.Spec, tmpP, tmpP.traj,t_phi);
+            [rob, ~] = STL_Eval_TESTRON(this.BrSys.Sys, ... % Breach system
+                this.Spec, ... % Specification
+                tmpP, ... % Parameter set
+                tmpP.traj, ... % Trajectory
+                'standard', ... % Objective function to use
+                t_phi); % Time to evaluate objective function
             
             % Then, perform robustness calculation with &+
-            evalin('base','objToUse = ''&+'';');
-            [robAndPlus, ~] = STL_Eval(this.BrSys.Sys, this.Spec, tmpP, tmpP.traj,t_phi);
+            [robAndPlus, ~] = STL_Eval_TESTRON(this.BrSys.Sys, ... % Breach system
+                this.Spec, ... % Specification
+                tmpP, ... % Parameter set
+                tmpP.traj, ... % Trajectory
+                '&+', ... % Objective function to use
+                t_phi); % Time to evaluate objective function
             
             testronInitRes(k) = rob;
             testronAndPlusRes(k) = robAndPlus;
@@ -159,14 +168,11 @@ this.max_time = 1800 + timeToEvaluateTrajs;
 % display header
 fprintf('Eval objective function on %d initial parameters.\n', size(X0,2));
 
-evalin('base','objToUse = ''standard'';');
-res = FevalInit(this, X0);
+res = FevalInit_TESTRON(this, X0, 'standard');
 
-evalin('base','objToUse = ''&+'';');
 andPlusProblem = this.copy();
 andPlusProblem.verbose = 0;
-resAndPlus = FevalInit(andPlusProblem, X0);
-evalin('base', 'objToUse = ''standard'';');
+resAndPlus = FevalInit_TESTRON(andPlusProblem, X0, '&+');
 
 res.fval = [testronInitRes, res.fval];
 storedFval = res.fval;
