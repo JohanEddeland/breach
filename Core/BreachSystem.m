@@ -387,10 +387,13 @@ classdef BreachSystem < BreachSet
                 rob = t_phi;
                 rob(:) = NaN;
             else
+<<<<<<< HEAD
 %                 if ischar(phi)
 %                     phi = STL_Formula('phi__tmp__', phi);
 %                 end
 %                 [rob, tau] = STL_Eval(this.Sys, phi, this.P, this.P.traj,t_phi);
+=======
+>>>>>>> Added new functions for calculating STL values
                 [rob, tau] = STL_Eval_TESTRON(this.Sys, phi, this.P, this.P.traj, objToUse, t_phi);
             end
             
