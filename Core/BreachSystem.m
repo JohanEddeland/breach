@@ -225,7 +225,7 @@ classdef BreachSystem < BreachSet
             end
         end
         
-        function [rob, tau] = GetRobustSat(this, phi, params, values, t_phi)
+        function [rob, tau] = GetRobustSat(this, phi, params, values, t_phi, objToUse)
             % Monitor spec on trajectories - run simulations if not done before
             
             if nargin < 5
@@ -271,7 +271,7 @@ classdef BreachSystem < BreachSet
                 rob = t_phi;
                 rob(:) = NaN;
             else
-                [rob, tau] = STL_Eval(this.Sys, phi, this.P, this.P.traj,t_phi);
+                [rob, tau] = STL_Eval_TESTRON(this.Sys, phi, this.P, this.P.traj, objToUse, t_phi);
             end
         end
         
