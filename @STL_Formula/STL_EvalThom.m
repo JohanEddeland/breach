@@ -129,6 +129,7 @@ end
 
 function [valarray, time_values] = GetValues(Sys, phi, P, traj, interval)
 global BreachGlobOpt;
+global objToUse;
 eval(BreachGlobOpt.GlobVarsDeclare);
 %disp(phi.type);
 switch(phi.type)
@@ -163,10 +164,10 @@ switch(phi.type)
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, interval);
         
         % JOHAN CHANGE
-        if strcmp(evalin('base','objToUse'), '&+')
+        if strcmp(objToUse, '&+')
             % Koen's &+
             [time_values, valarray] = testron_robustAndPlus(time_values1, valarray1, time_values2, valarray2);
-        else
+        elseif strcmp(objToUse, 'standard')
             % Standard and
             [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
             
@@ -190,6 +191,8 @@ switch(phi.type)
 %                 title('valarray');
 %                 dbstop;
 %             end
+        else
+            error('Unknown objective function (objToUse)');
         end
         
     case 'andn'
