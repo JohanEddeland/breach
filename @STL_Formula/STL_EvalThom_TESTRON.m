@@ -44,7 +44,6 @@ function [val__, time_values__] = STL_EvalThom_TESTRON(Sys, phi, P, trajs, objTo
 %% defines the parameter as global variables so that they are available for
 % all subsequent computations
 
-
 global objToUse;
 objToUse = objToUseHere;
 global BreachGlobOpt;
