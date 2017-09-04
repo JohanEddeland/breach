@@ -1,4 +1,4 @@
-function [val__, time_values__] = STL_EvalThom_TESTRON(Sys, phi, P, trajs, objToUse, t)
+function [val__, time_values__] = STL_EvalThom_TESTRON(Sys, phi, P, trajs, objToUseHere, t)
 %STL_EVALTHOM_TESTRON computes the satisfaction function of a property for one
 % or many trajectory(ies). This function uses a variable time step robust
 % monitoring algorithm.
@@ -44,6 +44,8 @@ function [val__, time_values__] = STL_EvalThom_TESTRON(Sys, phi, P, trajs, objTo
 %% defines the parameter as global variables so that they are available for
 % all subsequent computations
 
+global objToUse;
+objToUse = objToUseHere;
 global BreachGlobOpt;
 BreachGlobOpt.GlobVarsDeclare = ['global ', sprintf('%s ',P.ParamList{:})]; % contains parameters and IC values (can remove IC if phi is optimized)
 eval(BreachGlobOpt.GlobVarsDeclare); % These values may be used in generic_predicate and GetValues
@@ -129,6 +131,7 @@ end
 %%
 
 function [valarray, time_values] = GetValues(Sys, phi, P, traj, interval)
+global objToUse;
 global BreachGlobOpt;
 eval(BreachGlobOpt.GlobVarsDeclare);
 %disp(phi.type);
