@@ -1,5 +1,7 @@
 function res = solve_global_nelder_mead(this)
 
+% Global variable - objective function to use
+global objToUse;
 
 % JOHAN ADDED
 nTrajectoriesPreCalculated = length(dir('trajectories/*.mat'));
@@ -26,18 +28,17 @@ end
 numFailed = 0; % Flag
 
 if this.use_parallel
-
+    objToUse = 'standard';
     parfor k = size(storedFval,2) + 1:nTrajectoriesPreCalculated
         % This loop performs standard robustness calculations
         loadedVars = load(['trajectories/' num2str(k) '.mat']); % Loads tmpP, paramValues
         tmpP = loadedVars.tmpP;
         paramValues = loadedVars.paramValues;
         try
-            [rob, ~] = STL_Eval_TESTRON(this.BrSys.Sys, ... % Breach system
+            [rob, ~] = STL_Eval(this.BrSys.Sys, ... % Breach system
                 this.Spec, ... % Specification
                 tmpP, ... % Parameter set
                 tmpP.traj, ... % Trajectory
-                'standard', ... % Objective function to use
                 t_phi); % Time to evaluate objective function
 
             testronInitRes(k) = rob;
@@ -51,17 +52,17 @@ if this.use_parallel
         end
     end
     
+    objToUse = '&+';
     parfor k = size(storedFval,2) + 1:nTrajectoriesPreCalculated
-        % This loop performs standard robustness calculations
+        % This loop performs "And plus" robustness calculations
         loadedVars = load(['trajectories/' num2str(k) '.mat']); % Loads tmpP, paramValues
         tmpP = loadedVars.tmpP;
         paramValues = loadedVars.paramValues;
         try
-            [robAndPlus, ~] = STL_Eval_TESTRON(this.BrSys.Sys, ... % Breach system
+            [robAndPlus, ~] = STL_Eval(this.BrSys.Sys, ... % Breach system
                 this.Spec, ... % Specification
                 tmpP, ... % Parameter set
                 tmpP.traj, ... % Trajectory
-                '&+', ... % Objective function to use
                 t_phi); % Time to evaluate objective function
 
             testronAndPlusRes(k) = robAndPlus;
@@ -80,19 +81,19 @@ else
         load(['trajectories/' num2str(k) '.mat']); % Loads tmpP, paramValues
         try
             % First, perform standard robustness calculation
-            [rob, ~] = STL_Eval_TESTRON(this.BrSys.Sys, ... % Breach system
+            objToUse = 'standard';
+            [rob, ~] = STL_Eval(this.BrSys.Sys, ... % Breach system
                 this.Spec, ... % Specification
                 tmpP, ... % Parameter set
                 tmpP.traj, ... % Trajectory
-                'standard', ... % Objective function to use
                 t_phi); % Time to evaluate objective function
             
             % Then, perform robustness calculation with &+
-            [robAndPlus, ~] = STL_Eval_TESTRON(this.BrSys.Sys, ... % Breach system
+            objToUse = '&+';
+            [robAndPlus, ~] = STL_Eval(this.BrSys.Sys, ... % Breach system
                 this.Spec, ... % Specification
                 tmpP, ... % Parameter set
                 tmpP.traj, ... % Trajectory
-                '&+', ... % Objective function to use
                 t_phi); % Time to evaluate objective function
             
             testronInitRes(k) = rob;
@@ -168,11 +169,13 @@ this.max_time = 1800 + timeToEvaluateTrajs;
 % display header
 fprintf('Eval objective function on %d initial parameters.\n', size(X0,2));
 
-res = FevalInit_TESTRON(this, X0, 'standard');
+objToUse = 'standard';
+res = FevalInit(this, X0);
 
 andPlusProblem = this.copy();
 andPlusProblem.verbose = 0;
-resAndPlus = FevalInit_TESTRON(andPlusProblem, X0, '&+');
+objToUse = '&+';
+resAndPlus = FevalInit(andPlusProblem, X0);
 
 res.fval = [testronInitRes, res.fval];
 storedFval = res.fval;
