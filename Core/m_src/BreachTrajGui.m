@@ -736,7 +736,6 @@ handles.current_var{nb_ax,2} = handles.current_var{1,2};
 handles.current_var{nb_ax,3} = handles.current_var{1,3};
 
 handles.current_plot{nb_ax} = [];
-
 figure;
 axes;
 ax = gca;
@@ -769,7 +768,6 @@ nb_ax=  numel(handles.exported_axes)+3+1;
 handles.current_var{nb_ax,1} = handles.current_var{2,1};
 handles.current_var{nb_ax,2} = handles.current_var{2,2};
 handles.current_var{nb_ax,3} = handles.current_var{2,3};
-
 
 %handles.current_sensi{nb_ax,1} = handles.current_sensi{2,1};
 %handles.current_sensi{nb_ax,2} = handles.current_sensi{2,2};
