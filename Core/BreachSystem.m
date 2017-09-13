@@ -271,7 +271,7 @@ classdef BreachSystem < BreachSet
                 rob = t_phi;
                 rob(:) = NaN;
             else
-                [rob, tau] = STL_Eval_TESTRON(this.Sys, phi, this.P, this.P.traj, objToUse, t_phi);
+                [rob, tau] = STL_Eval(this.Sys, phi, this.P, this.P.traj, t_phi);
             end
         end
         
