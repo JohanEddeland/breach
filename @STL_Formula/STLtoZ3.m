@@ -16,7 +16,6 @@ switch (phi.type)
         % To format the predicate for Z3, we need to 
         % - Remove [t], [t - 10*dt] etc
         
-        
         % Remove [t], [t - 10*dt] etc
         leftIndexes = strfind(phiString, '[');
         rightIndexes = strfind(phiString, ']');
@@ -107,4 +106,3 @@ numbersInFormula = str2double(numbersInFormula); % Convert from string cell arra
 numbersInFormula = unique(numbersInFormula);
 
 end
-
