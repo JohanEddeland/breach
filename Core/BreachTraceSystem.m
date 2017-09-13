@@ -128,7 +128,9 @@ classdef BreachTraceSystem < BreachSystem
             this.P.traj_to_compute =  [];
             this.P.pts(this.P.DimX+1,:) = 1:nb_traces+1; % index traces
             % JOHAN CHANGE
-            this.Sys.tspan = traj.t;
+            if isfield(traj, 't')
+                this.Sys.tspan = traj.t;
+            end
             % END JOHAN CHANGE
         end
         
