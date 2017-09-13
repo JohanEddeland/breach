@@ -388,6 +388,7 @@ classdef BreachSystem < BreachSet
                 rob(:) = NaN;
             else
 <<<<<<< HEAD
+<<<<<<< HEAD
 %                 if ischar(phi)
 %                     phi = STL_Formula('phi__tmp__', phi);
 %                 end
@@ -395,6 +396,9 @@ classdef BreachSystem < BreachSet
 =======
 >>>>>>> Added new functions for calculating STL values
                 [rob, tau] = STL_Eval_TESTRON(this.Sys, phi, this.P, this.P.traj, objToUse, t_phi);
+=======
+                [rob, tau] = STL_Eval(this.Sys, phi, this.P, this.P.traj, t_phi);
+>>>>>>> Fixed behaviour when reading predicates not containing operator
             end
             
         end
