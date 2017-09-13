@@ -411,7 +411,31 @@ switch(numel(varargin))
             st = regexprep(st,'[()\s]','');
             phi = struct(BreachGlobOpt.STLDB(st));
         catch
-            error('STL_Parse',['Unknown predicate or malformed formula: ' st]);
+            % JOHAN CHANGE
+            %disp(['TESTRON: Changed predicate ' st ' to ' st '==1']);
+            st = [st '==1'];
+            
+            % Below, basically copied from "==" case some rows above
+            [~, st1, st2] = parenthesisly_balanced_split(st, '==');
+            phi.type = 'predicate';
+            phi.st = st;
+            if ~isfield(phi.params, 'default_params')
+                phi.params.default_params = struct;
+            end
+            if ~isfield(phi.params.default_params,'zero_threshold__')
+                phi.params.default_params.zero_threshold__ = 1e-13;
+            end
+            if ~isfield(phi.params.default_params,'true_value__')
+                phi.params.default_params.true_value__ = 1;
+            end
+            if ~isfield(phi.params.default_params,'alpha__')
+                phi.params.default_params.alpha__ = 1;
+            end
+            phi.params.fn = [ 'fun__zero(abs(' st2 '-(' st1 ')),zero_threshold__,true_value__,alpha__)'];
+            phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+            return
+            %error('STL_Parse',['Unknown predicate or malformed formula: ' st]);
+            % END JOHAN CHANGE
         end
         
     case 2

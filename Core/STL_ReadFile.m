@@ -126,6 +126,9 @@ while ischar(tline)
                     props = [props, {phi}]; %#ok<*AGROW>
                     props_names = [props_names, {current_id}];
                 catch err
+                    % JOHAN ADDED
+                    assignin('base', 'row_to_replace', num_line);
+                    % END JOHAN ADDED
                     fprintf(['ERROR: Problem with formula ' current_id ' at line ' ...
                         int2str(num_line-1) '\n']);
                     rethrow(err);
@@ -162,6 +165,9 @@ try
     props = [props, {phi}];
     props_names = [props_names, {current_id}];
 catch err
+    % JOHAN ADDED
+    assignin('base', 'row_to_replace', num_line);
+    % END JOHAN ADDED
     fprintf(['ERROR: Problem with formula ' current_id ' at line ' ...
         int2str(num_line-1) '\n']);
     rethrow(err);
