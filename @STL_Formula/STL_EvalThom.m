@@ -225,6 +225,17 @@ switch(phi.type)
         I___(1) = min(I___(1), I___(2));
         next_interval = I___+interval;
         [valarray, time_values] = GetValues(Sys, phi.phi, P, traj, next_interval);
+        % JOHAN FIX
+        % valarray is EMPTY if the formula is "true". The valarray is
+        % assigned Inf at all time steps, which is then "removed" to
+        % prevent unwanted behaviour. 
+        % Solution: If valarray is empty, set the valarray to be
+        % true_value. 
+        if isempty(valarray)
+            valarray = phi.params.default_params.true_value__;
+            time_values = I___(1);
+        end
+        % END JOHAN FIX
         if(I___(end)~=inf)
             time_values = [time_values time_values(end)+I___(end)];
             valarray = [valarray valarray(end)];

@@ -170,12 +170,12 @@ for ii_var = 1:numel(SigList)
 end
 
 %JOHAN CHANGE
-% if ~isempty(strfind(fn_, ' or '))
-%     fn_ = strrep(fn_,' or ', ' || ');
-%     error('This should not happen!');
-%     %disp('Replacing '' or '' with '' || '' somewhere in phi!');
-% end
-% END JOHAN CHANGE
+if ~isempty(strfind(fn_, ' or '))
+    fn_ = strrep(fn_,' or ', ' || ');
+    %error('This should not happen!');
+    %disp('Replacing '' or '' with '' || '' somewhere in phi!');
+end
+%END JOHAN CHANGE
 val = eval(fn_);
 
 if isscalar(val)
