@@ -183,6 +183,12 @@ if ~isempty(strfind(fn_, ' or '))
     %error('This should not happen!');
     %disp('Replacing '' or '' with '' || '' somewhere in phi!');
 end
+
+if ~isempty(strfind(fn_, ' and '))
+    fn_ = strrep(fn_,' and ', ' && ');
+    %error('This should not happen!');
+    %disp('Replacing '' or '' with '' || '' somewhere in phi!');
+end
 %END JOHAN CHANGE
 val = eval(fn_);
 
