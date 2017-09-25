@@ -188,8 +188,8 @@ classdef testron_signal_gen < signal_gen
                     
                     case 'discrete_constant'
                         this_arg = this.args{i_ni};
-                        %min_value = this_arg(1);
-                        %max_value = this_arg(2);
+                        min_value = this_arg(1);
+                        max_value = this_arg(2);
                         n_intervals = this_arg(3);
                         interval_values = pts_x(1:n_intervals);
                         pts_x = pts_x(n_intervals+1:end);
@@ -206,12 +206,14 @@ classdef testron_signal_gen < signal_gen
                             x(end) = interval_values(end);
                             x = x';
                         end
+                        x = min(x,max_value);
+                        x = max(x, min_value);
                         X(i_ni,:) = x';
                         
                     case 'discrete_constant_fixed_start'
                         this_arg = this.args{i_ni};
-                        %min_value = this_arg(1);
-                        %max_value = this_arg(2);
+                        min_value = this_arg(1);
+                        max_value = this_arg(2);
                         n_intervals = this_arg(3);
                         start_value = this_arg(4);
                         interval_values = pts_x(1:n_intervals);
@@ -230,6 +232,8 @@ classdef testron_signal_gen < signal_gen
                             x(end) = interval_values(end);
                             x = x';
                         end
+                        x = min(x,max_value);
+                        x = max(x, min_value);
                         X(i_ni,:) = x';
                         
                     case 'continuous_constant'
@@ -314,8 +318,8 @@ classdef testron_signal_gen < signal_gen
                     case 'discrete_cp'
                         
                         this_arg = this.args{i_ni};
-                        %min_value = this_arg(1);
-                        %max_value = this_arg(2);
+                        min_value = this_arg(1);
+                        max_value = this_arg(2);
                         n_intervals = this_arg(3);
                         cp_values = pts_x(1:n_intervals);
                         pts_x = pts_x(n_intervals+1:end);
@@ -334,6 +338,8 @@ classdef testron_signal_gen < signal_gen
                             x = interp1(t_cp, cp_values, time', 'pchip', 'extrap');
                         end
                         x = floor(x);
+                        x = min(x,max_value);
+                        x = max(x, min_value);
                         X(i_ni,:) = x';
                         
                     case 'continuous_cp_fixed_start'
@@ -355,8 +361,8 @@ classdef testron_signal_gen < signal_gen
                     case 'discrete_cp_fixed_start'
                         
                         this_arg = this.args{i_ni};
-                        %min_value = this_arg(1);
-                        %max_value = this_arg(2);
+                        min_value = this_arg(1);
+                        max_value = this_arg(2);
                         n_intervals = this_arg(3);
                         cp_values = pts_x(1:n_intervals);
                         pts_x = pts_x(n_intervals+1:end);
@@ -375,6 +381,9 @@ classdef testron_signal_gen < signal_gen
                             x = interp1(t_cp, cp_values, time', 'pchip', 'extrap');
                         end
                         x = floor(x);
+                        
+                        x = min(x,max_value);
+                        x = max(x, min_value);
                         X(i_ni,:) = x';
                         
                     case 'cp_set_times'
@@ -397,7 +406,12 @@ classdef testron_signal_gen < signal_gen
                         interval_values = pts_x(1:n_intervals);
                         pts_x = pts_x(n_intervals+1:end);
                         interval_values = floor(interval_values);
-                        interval_values = this_arg(interval_values);
+                        try
+                            interval_values = this_arg(interval_values);
+                        catch
+                            % The value of interval_values was EXACTLY 6
+                            interval_values = this_arg(end);
+                        end
                         t_cp = linspace(time(1), time(end), n_intervals+1)';
                         if numel(t_cp)==1
                             x = interval_values(1)*ones(numel(time),1);
