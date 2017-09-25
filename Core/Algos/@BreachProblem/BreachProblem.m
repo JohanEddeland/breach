@@ -346,6 +346,11 @@ classdef BreachProblem < BreachStatus
                         this.x0 = [this.x0' GetParam(Px0,this.params)]';
                     end
                     
+                    % JOHAN CHANGE
+                    Px0 = CreateParamSet(this.BrSet.P, this.params,  [this.lb this.ub]);
+                    Px0 = TestronRefine(Px0, 1); % Generate only 1 sample
+                    this.x0 = GetParam(Px0,this.params);
+                    % END JOHAN CHANGE
                     [x, fval, counteval, stopflag, out, bestever] = cmaes(this.objective, this.x0', [], this.solver_options);
                     res = struct('x',x, 'fval',fval, 'counteval', counteval,  'stopflag', stopflag, 'out', out, 'bestever', bestever);
                     this.res=res;
