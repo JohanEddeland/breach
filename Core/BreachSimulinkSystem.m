@@ -740,6 +740,13 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     cd(this.mdl.mdl_breach_path);
                 end
             end
+            % JOHAN ADDED
+            % We need clear mex since otherwise, we get erroneous start
+            % values for signals that need InitFunctions to be run at start
+            % of simulations
+            clear mex;
+            % END JOHAN ADDED
+            
             mdl = Sys.mdl;
             load_system(mdl);
             num_signals = Sys.DimX;
