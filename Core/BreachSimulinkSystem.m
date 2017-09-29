@@ -410,6 +410,13 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             % data in Breach format (called by ComputeTraj)
             %
             
+            % JOHAN ADDED
+            % We need clear mex since otherwise, we get erroneous start
+            % values for signals that need InitFunctions to be run at start
+            % of simulations
+            clear mex;
+            % END JOHAN ADDED
+            
             mdl = Sys.mdl;
             load_system(mdl);
             num_signals = Sys.DimX;
