@@ -533,6 +533,89 @@ classdef testron_signal_gen < signal_gen
                 X(IsgModIdx,:) ~=2) = 0;
         end
         
+        function isV331IEM = modelIsV331IEM(this)
+            % Check that all signals that should be constrained ACTUALLY
+            % EXIST in the system!
+            HvTestIdx = getSignalIndex(this, 'HvTestSts__HvTestSts');
+            LvTestIdx = getSignalIndex(this, 'LvTestSts__LvTestSts');
+            CloseClutchIdx = getSignalIndex(this, 'B_CloseClutchEven');
+            SpeedControlIdx = this.getSignalIndex('B_EngineSpeedControl');
+            EngineSetPointIdx = this.getSignalIndex('W_Engine_SetPoint');
+            GearEvenIdx = this.getSignalIndex('No_GearEven');
+            
+            if ~isempty(HvTestIdx) && ...
+                    ~isempty(LvTestIdx) && ...
+                    ~isempty(CloseClutchIdx) && ...
+                    ~isempty(SpeedControlIdx) && ...
+                    ~isempty(EngineSetPointIdx) && ...
+                    ~isempty(GearEvenIdx)
+                isV331IEM = 1;
+            else
+                isV331IEM = 0;
+            end
+        end
+        
+        function X = applyV331IEMConstraints(this, X, time)
+            % This is the same as applyCMACIDDConstraints, but without
+            % using IsgModReq (IsgModIdx), since it does not exist in
+            % V331_IEM
+            % Load all the signal indexes we need
+            HvTestIdx = this.getSignalIndex('HvTestSts__HvTestSts');
+            LvTestIdx = this.getSignalIndex('LvTestSts__LvTestSts');
+            SpeedControlIdx = this.getSignalIndex('B_EngineSpeedControl');
+            EngineSetPointIdx = this.getSignalIndex('W_Engine_SetPoint');
+            
+            % IsgSpdReq__IsgSpdReq
+            % Depends on ModStsIsg__ModStsIsg (not an INPUT)
+            % =======
+            % if ModStsIsg != 3
+            %   IsgSpdReq = 0
+            
+            
+            % HvTestSts__HvTestSts AND LvTestSts__LvTestSts
+            % =======
+            % if time > 0.5
+            %   HvTestSts = 2
+            %   LvTestSts = 2
+            X(HvTestIdx, time > 0.5) = 2;
+            X(LvTestIdx, time > 0.5) = 2;
+            
+            % IsgTqReq__IsgTqReq
+            % Depends on ModStsIsg__ModStsIsg (not an INPUT)
+           
+            % W_Engine_SetPoint
+            % =======
+            % if B_EngineSpeedControl == 0
+            %   W_Engine_SetPoint = 0
+            % else
+            %   W_Engine_SetPoint >= 100
+            X(EngineSetPointIdx, X(SpeedControlIdx,:) == 0) = 0;
+            X(EngineSetPointIdx, X(SpeedControlIdx,:) ~= 0) = ...
+                min(X(EngineSetPointIdx, X(SpeedControlIdx,:) ~= 0), 100);
+            
+            % B_CloseClutchEven
+            % =======
+            % if IsgModReq == 2 or IsgModReq == 4
+            %   B_CloseClutchEven = 1
+            % else
+            %   B_CloseClutchEven = 0
+%             X(CloseClutchIdx, X(IsgModIdx,:) == 2 | ...
+%                 X(IsgModIdx,:) == 4) = 1;
+%             X(CloseClutchIdx, X(IsgModIdx,:) ~= 2 & ...
+%                 X(IsgModIdx,:) ~= 4) = 0;
+            
+            % No_GearEven
+            % =======
+            % if B_CloseClutchEven == 1 or IsgModReq != 2
+            %   No_GearEven = 0
+            % elseif IsgModReq == 2
+            %   Do nothing, No_GearEven is chosen correctly
+            % else
+            %   No_GearEven = 0
+%             X(GearEvenIdx, X(CloseClutchIdx,:) == 1 | ...
+%                 X(IsgModIdx,:) ~=2) = 0;
+        end
+        
         function idx = getSignalIndex(this, signal)
             IndexC = strcmp(this.signals, signal);
             idx = find(IndexC > 0);
