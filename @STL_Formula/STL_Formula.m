@@ -202,7 +202,31 @@ switch(numel(varargin))
             phi2 = STL_Formula([phi.id '2__'],st2);
             STLDB_Remove([phi.id '1__']);
             STLDB_Remove([phi.id '2__']);
-            phi = STL_Parse(phi,'or', phi1, phi2);
+            % JOHAN ADDED
+            if strcmp(phi1.st, 'inf>0')
+                % phi1 is true
+                % Set phi equal to phi1
+                phi1.id = phi.id;
+                phi = struct(phi1);
+            elseif strcmp(phi1.st, 'inf<0')
+                % phi1 is false
+                % Set phi equal to phi2
+                phi2.id = phi.id;
+                phi = struct(phi2);
+            elseif strcmp(phi2.st, 'inf>0')
+                % phi2 is true
+                % Set phi equal to phi2
+                phi2.id = phi.id;
+                phi = struct(phi2);
+            elseif strcmp(phi2.st, 'inf<0')
+                % phi2 is false
+                % Set phi equal to phi1
+                phi1.id = phi.id;
+                phi = struct(phi1);
+            else
+                % END JOHAN ADDED
+                phi = STL_Parse(phi,'or', phi1, phi2);
+            end
             return
         end
         
@@ -224,8 +248,31 @@ switch(numel(varargin))
             phi2 = STL_Formula([phi.id '2__'],st2);
             STLDB_Remove([phi.id '1__']);
             STLDB_Remove([phi.id '2__']);
-            
-            phi = STL_Parse(phi,'and', phi1, phi2);
+            % JOHAN ADDED
+            if strcmp(phi1.st, 'inf>0')
+                % phi1 is true
+                % Set phi equal to phi2
+                phi2.id = phi.id;
+                phi = struct(phi2);
+            elseif strcmp(phi1.st, 'inf<0')
+                % phi1 is false
+                % Set phi equal to phi1
+                phi1.id = phi.id;
+                phi = struct(phi1);
+            elseif strcmp(phi2.st, 'inf>0')
+                % phi2 is true
+                % Set phi equal to phi1
+                phi1.id = phi.id;
+                phi = struct(phi1);
+            elseif strcmp(phi2.st, 'inf<0')
+                % phi2 is false
+                % Set phi equal to phi2
+                phi2.id = phi.id;
+                phi = struct(phi2);
+            else
+                % END JOHAN ADDED
+                phi = STL_Parse(phi,'and', phi1, phi2);
+            end
             return
         end
         
@@ -306,7 +353,19 @@ switch(numel(varargin))
         if success && isempty(st1)
             phi1 = STL_Formula([phi.id '1__'],st2);
             STLDB_Remove([phi.id '1__']);
-            phi = STL_Parse(phi, 'not', phi1);
+            if strcmp(st2(2:end-1), 'inf>0')
+                phi.type='predicate';
+                phi.st = 'inf<0';
+                phi.params.fn = [ '(0) - (inf)' ];
+                phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+            elseif strcmp(st2(2:end-1), 'inf<0')
+                phi.type='predicate';
+                phi.st = 'inf>0';
+                phi.params.fn = [ '(inf) - (0)' ];
+                phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+            else
+                phi = STL_Parse(phi, 'not', phi1);
+            end
             return
         end
         
