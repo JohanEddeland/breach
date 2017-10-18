@@ -300,7 +300,21 @@ switch(numel(varargin))
         if success && isempty(st1)
             phi1 = STL_Formula([phi.id '1__'],st2);
             STLDB_Remove([phi.id '1__']);
-            phi = STL_Parse(phi,'ev',interval,phi1);
+            phiWithoutPar = strrep(phi1.st, '(', '');
+            phiWithoutPar = strrep(phiWithoutPar, ')', '');
+            if strcmp(phiWithoutPar, 'inf>0')
+                phi.type='predicate';
+                phi.st = 'inf>0';
+                phi.params.fn = [ '(inf) - (0)' ];
+                phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+            elseif strcmp(phiWithoutPar, 'inf<0')
+                phi.type='predicate';
+                phi.st = 'inf<0';
+                phi.params.fn = [ '(0) - (inf)' ];
+                phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+            else
+                phi = STL_Parse(phi,'ev',interval,phi1);
+            end
             return
         end
         
@@ -328,7 +342,21 @@ switch(numel(varargin))
         if success && isempty(st1)
             phi1 = STL_Formula([phi.id '1__'],st2);
             STLDB_Remove([phi.id '1__']);
-            phi = STL_Parse(phi,'alw',interval,phi1);
+            phiWithoutPar = strrep(phi1.st, '(', '');
+            phiWithoutPar = strrep(phiWithoutPar, ')', '');
+            if strcmp(phiWithoutPar, 'inf>0')
+                phi.type='predicate';
+                phi.st = 'inf>0';
+                phi.params.fn = [ '(inf) - (0)' ];
+                phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+            elseif strcmp(phiWithoutPar, 'inf<0')
+                phi.type='predicate';
+                phi.st = 'inf<0';
+                phi.params.fn = [ '(0) - (inf)' ];
+                phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+            else
+                phi = STL_Parse(phi,'alw',interval,phi1);
+            end
             return
         end
         
@@ -338,12 +366,14 @@ switch(numel(varargin))
         if success && isempty(st1)
             phi1 = STL_Formula([phi.id '1__'],st2);
             STLDB_Remove([phi.id '1__']);
-            if strcmp(st2(2:end-1), 'inf>0')
+            phiWithoutPar = strrep(phi1.st, '(', '');
+            phiWithoutPar = strrep(phiWithoutPar, ')', '');
+            if strcmp(phiWithoutPar, 'inf>0')
                 phi.type='predicate';
                 phi.st = 'inf<0';
                 phi.params.fn = [ '(0) - (inf)' ];
                 phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
-            elseif strcmp(st2(2:end-1), 'inf<0')
+            elseif strcmp(phiWithoutPar, 'inf<0')
                 phi.type='predicate';
                 phi.st = 'inf>0';
                 phi.params.fn = [ '(inf) - (0)' ];
