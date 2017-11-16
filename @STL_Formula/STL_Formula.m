@@ -496,10 +496,10 @@ switch(numel(varargin))
      
         %% Last possibility, the formula already exists - note: in that case
         % we ignore id and use the id of existing formula
-        try
-            st = regexprep(st,'[()\s]','');
-            phi = struct(BreachGlobOpt.STLDB(st));
-        catch
+%         try
+%             st = regexprep(st,'[()\s]','');
+%             phi = struct(BreachGlobOpt.STLDB(st));
+%         catch
             % JOHAN CHANGE
             %disp(['TESTRON: Changed predicate ' st ' to ' st '==1']);
             st = [st '==1'];
@@ -525,7 +525,7 @@ switch(numel(varargin))
             return
             %error('STL_Parse',['Unknown predicate or malformed formula: ' st]);
             % END JOHAN CHANGE
-        end
+%         end
         
     case 2
         switch(varargin{1})
