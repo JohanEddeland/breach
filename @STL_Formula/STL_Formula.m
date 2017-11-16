@@ -555,6 +555,7 @@ switch(numel(varargin))
             end
             return
         end
+
         
         % Below, basically copied from "==" case some rows above
         % This was used when we replaced "st" with "st == 1"
