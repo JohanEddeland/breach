@@ -227,7 +227,14 @@ switch(phi.type)
         % Solution: If valarray is empty, set the valarray to be
         % true_value. 
         if isempty(valarray)
-            valarray = phi.params.default_params.true_value__;
+            if isfield(phi.params.default_params,'true_value__')
+                % true_value__ is defined for phi
+                valarray = phi.params.default_params.true_value__;
+            else
+                % true_value__ is NOT defined for phi!!
+                warning('true_value__ is not defined for phi! Using true_value__ = 100.')
+                valarray = 100;
+            end
             time_values = I___(1);
         end
         % END JOHAN FIX
