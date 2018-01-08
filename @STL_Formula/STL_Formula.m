@@ -419,8 +419,6 @@ switch(numel(varargin))
         end
         
         % parse operator
-       %% test predicate 
-
         [success, st1, st2] = parenthesisly_balanced_split(st, '<=');
         if success
             phi.type = 'predicate';
@@ -529,7 +527,7 @@ switch(numel(varargin))
         catch
             
         end
-        
+       
         %disp(['TESTRON: Changed predicate ' st ' to not(' st '==0)']);
         st = ['not(' st '==0)'];
         
@@ -555,7 +553,6 @@ switch(numel(varargin))
             end
             return
         end
-
         
         % Below, basically copied from "==" case some rows above
         % This was used when we replaced "st" with "st == 1"
