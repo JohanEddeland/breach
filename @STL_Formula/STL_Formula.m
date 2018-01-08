@@ -1,32 +1,32 @@
 function [phi, phistruct] = STL_Formula(varargin)
 %STL_Formula Class representing Signal Temporal Logic Formulas
 %
-%   STL_Formula(id, phi_exp) returns a formula named id from a string 
-%   phi_exp constructed with the (simplified) grammar below. The id is 
-%   used to maintain a global database of defined formulas that can be 
-%   reused as sub-formulas. Note that it can be distinct from the variable  
+%   STL_Formula(id, phi_exp) returns a formula named id from a string
+%   phi_exp constructed with the (simplified) grammar below. The id is
+%   used to maintain a global database of defined formulas that can be
+%   reused as sub-formulas. Note that it can be distinct from the variable
 %   name used by Matlab, though it can be confusing. Hence the
-%   recommended use is, e.g., 
-%   
-%   phi = STL_Formula('phi',  'not ev (x[t] > 0)')  
-%   
-%   Formulas can have parameters, such as     
-%  
+%   recommended use is, e.g.,
+%
+%   phi = STL_Formula('phi',  'not ev (x[t] > 0)')
+%
+%   Formulas can have parameters, such as
+%
 %   phi = STL_Formula('phi',  'not ev (a*x[t] + b > c)')
 %
-%   In that case, default value is assigned to the parameters (0). To change 
+%   In that case, default value is assigned to the parameters (0). To change
 %   these values, use the get_params and set_params methods, e.g.:
 %
 %   phi = set_params(phi, {'a', 'b', 'c'}, [2, 1 0.5]);
 %   get_params(phi, {'a', 'b', 'c'})
-%    
-%   When equality comparator (==) is used, special parameters are defined for the 
-%   formula: alpha__ (default 1), zero_threshold__ (default 1e-13) and true_value__ (default 1). 
-%   They determine the threshold to decide when two quantities are equal and the quantitative 
-%   value to assign when this is the case. When equality doesn't hold, the quantitative satisfaction is 
-%   is alpha__ times the (negative) difference.         
-%    
-%STL_Formula Grammar     
+%
+%   When equality comparator (==) is used, special parameters are defined for the
+%   formula: alpha__ (default 1), zero_threshold__ (default 1e-13) and true_value__ (default 1).
+%   They determine the threshold to decide when two quantities are equal and the quantitative
+%   value to assign when this is the case. When equality doesn't hold, the quantitative satisfaction is
+%   is alpha__ times the (negative) difference.
+%
+%STL_Formula Grammar
 %
 %   phi_exp         := atom_predicate | unary_op phi_exp | phi_exp binary_op phi_exp
 %
@@ -42,17 +42,17 @@ function [phi, phistruct] = STL_Formula(varargin)
 %
 %   signal_exp      := any expression involving parameters and signal values that matlab can interpret to return an array
 %
-%   signal_value    := signal_id '[' time_exp ']' 
+%   signal_value    := signal_id '[' time_exp ']'
 %
-%   time_exp        := any expression involving the keyword 't' and parameters that matlab can interpret to return an array     
-%  
+%   time_exp        := any expression involving the keyword 't' and parameters that matlab can interpret to return an array
+%
 %   scalar_exp      := any expression involving parameters that matlab can interpret to return a scalar
-%   
-    
-    
+%
+
+
 %See also STL_ReadFile
 %
-    
+
 evalin('base','InitBreach');
 
 global BreachGlobOpt
@@ -73,7 +73,7 @@ if (nargin==1)
 end
 
 if(nargin==2)
-    % here we copy a formula 
+    % here we copy a formula
     if isa(varargin{2},'STL_Formula')
         phi = varargin{2};
         phi.id = varargin{1};
@@ -341,7 +341,7 @@ switch(numel(varargin))
             phi = STL_Parse(phi,'av_ev',interval,phi1);
             return
         end
-
+        
         
         %% test always
         [success,st1, st2] = parenthesisly_balanced_split(st, '\<alw\>');
@@ -393,6 +393,11 @@ switch(numel(varargin))
                 phi.st = 'inf>0';
                 phi.params.fn = [ '(inf) - (0)' ];
                 phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+            elseif strcmp(phi1.type, 'not')
+                % not(phi1) <=> not(not(phi1.phi)) <=> phi1.phi
+                % Set phi to phi1.phi
+                phi1.phi.id = phi.id;
+                phi = struct(phi1.phi);
             else
                 phi = STL_Parse(phi, 'not', phi1);
             end
@@ -430,7 +435,7 @@ switch(numel(varargin))
             phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
             return
         end
-
+        
         [success, st1, st2] = parenthesisly_balanced_split(st, '<');
         if success
             phi.type='predicate';
@@ -439,7 +444,7 @@ switch(numel(varargin))
             phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
             return
         end
-
+        
         [success, st1, st2] = parenthesisly_balanced_split(st, '>=');
         if success
             phi.type = 'predicate';
@@ -454,7 +459,7 @@ switch(numel(varargin))
             phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
             return
         end
-
+        
         [success, st1, st2] = parenthesisly_balanced_split(st, '>');
         if success
             phi.type = 'predicate';
@@ -464,7 +469,7 @@ switch(numel(varargin))
             return
         end
         
-
+        
         [success, st1, st2] = parenthesisly_balanced_split(st, '==');
         if success
             phi.type = 'predicate';
@@ -496,36 +501,60 @@ switch(numel(varargin))
      
         %% Last possibility, the formula already exists - note: in that case
         % we ignore id and use the id of existing formula
-%         try
-%             st = regexprep(st,'[()\s]','');
-%             phi = struct(BreachGlobOpt.STLDB(st));
-%         catch
-            % JOHAN CHANGE
-            %disp(['TESTRON: Changed predicate ' st ' to ' st '==1']);
-            st = [st '==1'];
-            
-            % Below, basically copied from "==" case some rows above
-            [~, st1, st2] = parenthesisly_balanced_split(st, '==');
-            phi.type = 'predicate';
-            phi.st = st;
-            if ~isfield(phi.params, 'default_params')
-                phi.params.default_params = struct;
+        %         try
+        %             st = regexprep(st,'[()\s]','');
+        %             phi = struct(BreachGlobOpt.STLDB(st));
+        %         catch
+        % JOHAN CHANGE
+        %disp(['TESTRON: Changed predicate ' st ' to not(' st '==0)']);
+        st = ['not(' st '==0)'];
+        
+        % Below, basically copied from "not" case above
+        [success,st1, st2] = parenthesisly_balanced_split(st, '\<not\>');
+        if success && isempty(st1)
+            phi1 = STL_Formula([phi.id '1__'],st2);
+            STLDB_Remove([phi.id '1__']);
+            phiWithoutPar = strrep(phi1.st, '(', '');
+            phiWithoutPar = strrep(phiWithoutPar, ')', '');
+            if strcmp(phiWithoutPar, 'inf>0')
+                phi.type='predicate';
+                phi.st = 'inf<0';
+                phi.params.fn = [ '(0) - (inf)' ];
+                phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+            elseif strcmp(phiWithoutPar, 'inf<0')
+                phi.type='predicate';
+                phi.st = 'inf>0';
+                phi.params.fn = [ '(inf) - (0)' ];
+                phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+            else
+                phi = STL_Parse(phi, 'not', phi1);
             end
-            if ~isfield(phi.params.default_params,'zero_threshold__')
-                phi.params.default_params.zero_threshold__ = 1e-13;
-            end
-            if ~isfield(phi.params.default_params,'true_value__')
-                phi.params.default_params.true_value__ = 1;
-            end
-            if ~isfield(phi.params.default_params,'alpha__')
-                phi.params.default_params.alpha__ = 1;
-            end
-            phi.params.fn = [ 'fun__zero(abs(' st2 '-(' st1 ')),zero_threshold__,true_value__,alpha__)'];
-            phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
             return
-            %error('STL_Parse',['Unknown predicate or malformed formula: ' st]);
-            % END JOHAN CHANGE
-%         end
+        end
+        
+        % Below, basically copied from "==" case some rows above
+        % This was used when we replaced "st" with "st == 1"
+        %             [~, st1, st2] = parenthesisly_balanced_split(st, '==');
+        %             phi.type = 'predicate';
+        %             phi.st = st;
+        %             if ~isfield(phi.params, 'default_params')
+        %                 phi.params.default_params = struct;
+        %             end
+        %             if ~isfield(phi.params.default_params,'zero_threshold__')
+        %                 phi.params.default_params.zero_threshold__ = 1e-13;
+        %             end
+        %             if ~isfield(phi.params.default_params,'true_value__')
+        %                 phi.params.default_params.true_value__ = 1;
+        %             end
+        %             if ~isfield(phi.params.default_params,'alpha__')
+        %                 phi.params.default_params.alpha__ = 1;
+        %             end
+        %             phi.params.fn = [ 'fun__zero(abs(' st2 '-(' st1 ')),zero_threshold__,true_value__,alpha__)'];
+        %             phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+        %             return
+        %error('STL_Parse',['Unknown predicate or malformed formula: ' st]);
+        % END JOHAN CHANGE
+        %         end
         
     case 2
         switch(varargin{1})
@@ -584,12 +613,12 @@ switch(numel(varargin))
                 phi.type = 'eventually' ;
                 phi.interval = varargin{2};
                 phi.phi = varargin{3};
-
+                
             case 'av_ev'
                 phi.type = 'av_eventually' ;
                 phi.interval = varargin{2};
                 phi.phi = varargin{3};
-
+                
             case 'alw'
                 phi.type = 'always' ;
                 phi.interval = varargin{2};
