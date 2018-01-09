@@ -141,7 +141,9 @@ global BreachGlobOpt;
 global objToUse;
 eval(BreachGlobOpt.GlobVarsDeclare);
 
-if isempty('objToUse')
+if strcmp(objToUse, '&+')
+    % Do nothing
+else
     objToUse = 'standard';
 end
 %disp(phi.type);
