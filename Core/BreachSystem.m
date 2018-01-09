@@ -260,8 +260,10 @@ classdef BreachSystem < BreachSet
             filesInTrajFolder = length(dir('trajectories')) - 2;
             tmpP = this.P;
             paramValues = values;
-            load('nextReqToBeFalsified'); % Loads currentReq
-            save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
+            try
+                load('nextReqToBeFalsified'); % Loads currentReq
+                save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
+            end
             % END JOHAN ADDED
             
             % FIXME: this is going to break with multiple trajectories with
