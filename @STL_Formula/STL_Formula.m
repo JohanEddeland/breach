@@ -482,6 +482,30 @@ switch(numel(varargin))
         %             phi = struct(BreachGlobOpt.STLDB(st));
         %         catch
         % JOHAN CHANGE
+        
+        % If we reached here, we first want to check if the predicate can
+        % be evaluated to either 0 or 1 (i.e. it is "true" or "false")
+        try
+            stValue = eval(st);
+            if stValue == 1
+                % The predicate is TRUE
+                phi.type='predicate';
+                phi.st = 'inf>0';
+                phi.params.fn = [ '(inf) - (0)' ];
+                phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+                return
+            elseif stValue == 0
+                % The predicate is FALSE
+                phi.type='predicate';
+                phi.st = 'inf<0';
+                phi.params.fn = [ '(0) - (inf)' ];
+                phi.evalfn = @(mode,traj,t,params) feval('generic_predicate',mode,traj,t,params);
+                return
+            end
+        catch
+            
+        end
+        
         %disp(['TESTRON: Changed predicate ' st ' to not(' st '==0)']);
         st = ['not(' st '==0)'];
         
