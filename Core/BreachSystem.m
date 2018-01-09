@@ -370,13 +370,13 @@ classdef BreachSystem < BreachSet
             this.CheckinDomainTraj();
             
             % JOHAN ADDED
-            filesInTrajFolder = length(dir('trajectories')) - 2;
-            tmpP = this.P;
-            paramValues = values;
-            try
-                load('nextReqToBeFalsified'); % Loads currentReq
-                save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
-            end
+            % This was used previously to save trajectory info to the
+            % folder 'trajectories'
+%             filesInTrajFolder = length(dir('trajectories')) - 2;
+%             tmpP = this.P;
+%             paramValues = values;
+%             load('nextReqToBeFalsified'); % Loads currentReq
+%             save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
             % END JOHAN ADDED
             
             % FIXME: this is going to break with multiple trajectories with
@@ -387,18 +387,11 @@ classdef BreachSystem < BreachSet
                 rob = t_phi;
                 rob(:) = NaN;
             else
-<<<<<<< HEAD
-<<<<<<< HEAD
 %                 if ischar(phi)
 %                     phi = STL_Formula('phi__tmp__', phi);
 %                 end
 %                 [rob, tau] = STL_Eval(this.Sys, phi, this.P, this.P.traj,t_phi);
-=======
->>>>>>> Added new functions for calculating STL values
                 [rob, tau] = STL_Eval_TESTRON(this.Sys, phi, this.P, this.P.traj, objToUse, t_phi);
-=======
-                [rob, tau] = STL_Eval(this.Sys, phi, this.P, this.P.traj, t_phi);
->>>>>>> Fixed behaviour when reading predicates not containing operator
             end
             
         end
