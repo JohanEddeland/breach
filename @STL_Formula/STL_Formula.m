@@ -527,7 +527,6 @@ switch(numel(varargin))
         catch
             
         end
-       
         %disp(['TESTRON: Changed predicate ' st ' to not(' st '==0)']);
         st = ['not(' st '==0)'];
         
