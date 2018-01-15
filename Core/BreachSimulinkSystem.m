@@ -482,14 +482,13 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     %disp(['Finished simulation in ' num2str(time_to_sim) 's']);
                     [tout, X] = GetXFrom_simout(this, simout);
                 end
-            catch
-                s= lasterror;
+            catch s
                 if numel(tspan)>1
                     tout = tspan;
                 else
                     tout = [0 tspan];
                 end
-                warning(['An error was returned from Simulink:' s.message '\n Returning a null trajectory']);
+                error(['An error was returned from Simulink:' s.message '\n Returning a null trajectory']);
                 X = zeros(Sys.DimX, numel(tout));
             end
             
