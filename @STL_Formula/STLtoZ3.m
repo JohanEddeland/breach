@@ -84,7 +84,7 @@ if nargin == 1
     % Replace parameters by their actual values
     allParams = get_params(phi);
     fieldNames = fieldnames(allParams);
-    for k = 1:length(allParams)
+    for k = 1:length(fieldNames)
         paramValue = getfield(allParams, fieldNames{k});
         z3Info.z3String = strrep(z3Info.z3String, fieldNames{k}, num2str(paramValue));
     end
