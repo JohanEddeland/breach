@@ -405,7 +405,7 @@ classdef BreachProblem < BreachStatus
                 % Too many parameter combinations to enumerate
                 % Use QuasiRandomSample instead
                 if ~exist('n_samples', 'var')
-                    n_samples = floor(2*this.max_time);
+                    n_samples = floor(0.1*this.max_time);
                 end
                 fprintf('%d varying parameters, using QuasiRandomSample(%d) (TestronRefine) to not run out of memory\n',numel(this.params),n_samples);
                 BrC.QuasiRandomSample(n_samples);
