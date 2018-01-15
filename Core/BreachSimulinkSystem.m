@@ -828,7 +828,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     %disp(['Finished simulation in ' num2str(time_to_sim) 's']);
                     [tout, X] = GetXFrom_simout(this, simout);
                 end
-                
             catch s
                 if numel(tspan)>1
                     tout = tspan;
