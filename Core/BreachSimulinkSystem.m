@@ -829,15 +829,14 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     %disp(['Finished simulation in ' num2str(time_to_sim) 's']);
                     [tout, X] = GetXFrom_simout(this, simout);
                 end
-            catch MException % TODO keep that in status message
-                if this.SimInModelsDataFolder
-                    cd(cwd);
-                end
+                
+            catch s
                 if numel(tspan)>1
                     tout = tspan;
                 else
                     tout = [0 tspan];
                 end
+                error(['An error was returned from Simulink:' s.message '\n Returning a null trajectory']);
                 X = zeros(Sys.DimX, numel(tout));
                 status =-1;
                 this.addStatus(-1, MException.identifier, MException.message);
