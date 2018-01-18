@@ -1,9 +1,22 @@
-function InstallBreach(silent)
+function InstallBreach(varargin)
 %INSTALLBREACH compiles C/C++ mex functions used by Breach. Needs only to
 % be called once after an update of Breach
 
-if (~exist('silent','var'))
-   silent =1;  
+InitBreach
+
+global BreachGlobOpt;
+options.verbose = 0;
+options.linear_interp = 0; 
+options = varargin2struct(options, varargin{:});
+
+if options.verbose ==0
+    silent = 1;
+end
+
+if options.linear_interp ==0
+    BreachGlobOpt.disable_robust_linear_interpolation=1;
+else
+    BreachGlobOpt.disable_robust_linear_interpolation=0;
 end
 
 % Johan fix
@@ -15,12 +28,10 @@ if silent
    FLAGS = [FLAGS ' -silent '];
 end
 
-InitBreach
 cdr = pwd;
 dr = which('InstallBreach');
 
 % setup directories of interest
-
 breach_dir = dr(1:end-16);
 breach_src_dir = [breach_dir filesep 'Core' filesep 'src']; 
 stl_src_dir  = [breach_dir filesep '@STL_Formula' filesep 'private' filesep 'src'];

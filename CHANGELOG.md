@@ -1,3 +1,102 @@
+# Release 1.2.13
+
+## Users
+- Improves parallel support: display simulations during computation
+  and optimization and number of workers now tunable with B.SetupParallel(NumWorkers)
+- Experimental struct parameter detection now disabled by default
+  (would not work with nested struct), made available with FindStruct
+  option in BreachSimulinkSystem constructor 
+- New signal generators (sinusoid, exponential, spike)
+
+## Bugfixes
+- freq_update now only affects display, independant from number of
+  cores during parallel simulation
+
+# Release 1.2.12 
+
+## Users	
+- InitBreach now better removes path from older/other versions
+- InitBreach takes a second Boolean argument, if true, forces re-initialization
+- Added BreachVersion, returns current version
+- SaveResults, ExportToStruct, ExportToExcel now available for BreachSet and all derivated classes
+
+## Bugfixes
+- InitBreach creates ModelsData folder when absent, e.g., with fresh
+  clone 
+
+# Release 1.2.11
+
+## Developpers
+- ResetTimeSpent method for BreachProblem
+
+## Bugfixes
+- Problems when exporting to Excel with imported data (inputs or not, issues 56-57)
+- BreachGui wouldn't start without sets in the workspace (issue 55) 
+- Error message caught when checking with no trace 
+
+# Release 1.2.11beta3
+- Performance improvement for Export to Excel
+
+## Developpers
+- Some cleaning in BreachGui
+
+## Bugfixes
+- plot in GUI would not update axes labels and limits
+- Fixed errors when clicking buttons and stuff on empty GUI
+- Ignore file_idx parameter when writing traces 
+- fixed bug in SampleDomain when combining samples of dimensions more than 1
+- fixed bug in PlotDomain for more than three dimensions
+- fixed load parameter set not working in GUI
+
+# Release 1.2.11beta2
+
+## Bugfixes
+- small bug in displaying number of computed traces
+- fixed bug in until robustness computation causing crash
+
+
+# Release 1.2.11beta
+
+## Users
+- SetInitFn method sets a callback function for initialization before simulation
+- new helper function isSignal returns if a name represents a signal
+  in a BreachSet
+- GUI safeguards around selected parameters for sampling (Issues 32-33-34)
+- GUI 'Domain' button changed to 'Variables' 
+- Support struct parameters and model workspace, still experimental 
+- Enable parallel from GUI
+- SaveSignals/Load
+- BreachSave function saves Breach objects in the workspace into a mat file 
+- GetVariables method returns names of variables in a set, i.e., parameters with non-empty domain/range
+
+## Bugfixes
+- GUI: fixed Env. Param button when no input signal
+- Calling InitBreach in InstallBreach at very beginning to avoid
+  missing varargin2struc (#52)
+- Fixed bug in BreachDomain with 'int' and empty domain leading to change to enum type
+- Fixed bug in SetInputGen which would not update domains appropriately
+
+## Developpers
+- New class BreachOptionGui to create gui from options
+- FalsificationProblem now ignores requirement variables 
+- ParamSynthesisProblem now ignores non-requirement variables
+
+# Release 1.2.10
+
+## Users
+- InstallBreach option linear_interp, now default to 0 
+- PrintAll and PrintParams now displays enum values
+- Simulink Breach menu for creating interface improvements 
+
+## Bugfixes
+- GUI: selecting worst samples, etc, does not change plot parameters any more (#26-1)
+- RobustAnd can't return inconsistent time values (not time advancing)
+- GUI: embarrassing st_info bug when changing sampling option fixed (#26-4)
+
+## Developpers
+- PlotParams not using DiscrimPropValues any more
+- More robust implementation of BreachDomain constructor 
+
 # Release 1.2.9
 
 ## Users

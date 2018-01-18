@@ -103,36 +103,46 @@ classdef BreachProblem < BreachStatus
     
     %% Static Methods
     methods (Static)
-        function solvers = list_solvers()
+        function solvers = list_solvers(verbose)
         % list_solvers display the list of (supposedly) available solvers.      
         % TODO check dependency on locally installed toolboxes 
+        
         solvers = ...
-                {'init', ...
-                'basic',...
-                'global_nelder_mead (default)',...
-                'binsearch',...
-                'fminsearch',...
-                'cmaes'...
-                };
-            
-            solvers_others = ...
-                {'fmincon', ...
-                'simulannealbnd', ...
-                'optimtool',...
-                'ga',...
-                };
-            
+            {'init', ...
+            'basic',...
+            'global_nelder_mead',...
+            'binsearch',...
+            'fminsearch',...
+            'cmaes'...
+            };
+        
+        solvers_others = ...
+            {'fmincon', ...
+            'simulannealbnd', ...
+            'optimtool',...
+            'ga',...
+            };
+        
+        if ~exist('verbose')||(verbose~=0)
             for i_solv = 1:numel(solvers)
-                disp(solvers{i_solv});
-            end
+                if isequal(solvers{i_solv}, 'global_nelder_mead')
+                disp([ solvers{i_solv} ' (default)']);
+                else
+                    disp(solvers{i_solv});
+                end
             
+            end
+        end
+        
+        if ~exist('verbose')||(verbose~=0)
             for i_solv = 1:numel(solvers_others)
                 if exist(solvers_others{i_solv})
                     disp(solvers_others{i_solv});
                     solvers= [solvers solvers_others{i_solv}];
                 end
             end
-            
+        end
+        
         end
     end
     
@@ -163,21 +173,12 @@ classdef BreachProblem < BreachStatus
                 ranges = BrSet.GetParamRanges(params);
                 lb__ = ranges(:,1);
                 ub__ = ranges(:,2);
-
-                % if range is singular, assumes unconstrained - probably a
-                % bad idea. Yep. Let's stop this nonsense. Shouldn't be
-                % needed anymore with domains. 
-
-                %issame  = find(ub__-lb__==0);
-                %lb__(issame) = -inf;
-                %ub__(issame) = inf;
             else
                 lb__ = ranges(:,1);
                 ub__ = ranges(:,2);
                 this.BrSet.SetParam(params, 0.5*(ranges(:,2)-ranges(:,1)), true); % adds parameters if they don't exist 
                 this.BrSet.ResetDomains();
                 this.BrSet.SetDomain(params, 'double', ranges);
-            
             end
            
             this.lb = lb__;
@@ -249,13 +250,29 @@ classdef BreachProblem < BreachStatus
             this.nb_obj_eval = 0;
         end
         
+        
+        function ResetTimeSpent(this)
+            this.time_spent= 0; 
+            this.time_start = tic; 
+        end
+        
+        
         %% Options for various solvers
-        function solver_opt = setup_solver(this, solver_name)
+        function [solver_opt, is_gui] = setup_solver(this, solver_name, is_gui)
             if ~exist('solver_name','var')
                 solver_name = this.solver;
             end
-            
-            solver_opt = eval(['this.setup_' solver_name ]);
+            if exist('is_gui', 'var')&&is_gui==true
+                try
+                    solver_opt = eval(['this.setup_' solver_name '(true);' ]);
+                catch
+                    is_gui = false;
+                    solver_opt = eval(['this.setup_' solver_name '();' ]);
+                end
+            else
+                solver_opt = eval(['this.setup_' solver_name '();' ]);
+                is_gui = false;
+            end
         end
         
         function solver_opt = setup_init(this)
@@ -321,8 +338,7 @@ classdef BreachProblem < BreachStatus
             rfprintf_reset();
             
             % reset time
-            this.time_start = tic;
-            this.time_spent = 0;
+            this.ResetTimeSpent();
             
             % create problem structure
             problem = this.get_problem();
@@ -463,8 +479,8 @@ classdef BreachProblem < BreachStatus
         end
         
         %% Parallel 
-        function SetupParallel(this)
-            this.BrSys.SetupParallel();
+        function SetupParallel(this, varargin)
+            this.BrSys.SetupParallel(varargin{:});
             this.BrSys.Sys.Parallel=0;  % not intuitive, uh?
             this.use_parallel =1;
             this.log_traces = 0;
@@ -490,7 +506,7 @@ classdef BreachProblem < BreachStatus
                 this.LogX(x, fval);
  
                 % update status
-                if rem(this.nb_obj_eval,this.freq_update)==1
+                if rem(this.nb_obj_eval,this.freq_update)==0
                     this.display_status();
                 end
                 
@@ -572,7 +588,9 @@ classdef BreachProblem < BreachStatus
                 BrOut.SetParam(this.params, this.X_log);
             end
             BrOut.Sys.Verbose=1;
-            BrOut.AddSpec(this.Spec);
+            if isempty(BrOut.InputGenerator.Specs)&&BrOut.hasTraj() % TODO: change this when dealing with Input requirements/constraints
+                BrOut.CheckSpec(this.Spec);
+            end
         end
         
         function BrBest = GetBrSet_Best(this)
@@ -585,6 +603,9 @@ classdef BreachProblem < BreachStatus
                 end
             end
             BrBest.Sys.Verbose=1;
+            if BrBest.hasTraj() 
+                BrBest.CheckSpec(this.Spec);
+            end
         end
         
         function SetupLogFolder(this, fname)
