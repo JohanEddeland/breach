@@ -673,7 +673,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     msg = sprintf('Found %s, %d %d table - ', vname,size(v,1), size(v,2) );  % TODO verbose option
                     if this.FindTables == false
                         msg = [msg ' Set ''FindTables'' option to true to generate table parameters.'];
-                        this.disp_msg(msg, 1);
+                        %this.disp_msg(msg, 1);
                         return
                     end
                     num = 0;
