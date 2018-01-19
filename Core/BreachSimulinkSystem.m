@@ -640,7 +640,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     case 'base workspace'
                         v = evalin('base',vname);
                         msg= sprintf('Found var %s in %s used by %s.',  var.Name, var.SourceType, var.Users{1});
-                        this.disp_msg(msg,1);
+                        %this.disp_msg(msg,1);
                         
                     case 'model workspace'
                         v = getVariable(mdl_ws,var.Name);
