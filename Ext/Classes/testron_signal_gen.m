@@ -344,8 +344,8 @@ classdef testron_signal_gen < signal_gen
                         
                     case 'continuous_cp_fixed_start'
                         this_arg = this.args{i_ni};
-                        %min_value = this_arg(1);
-                        %max_value = this_arg(2);
+                        min_value = this_arg(1);
+                        max_value = this_arg(2);
                         n_intervals = this_arg(3);
                         cp_values = pts_x(1:n_intervals);
                         pts_x = pts_x(n_intervals+1:end);
@@ -353,8 +353,10 @@ classdef testron_signal_gen < signal_gen
                         if numel(t_cp)==1
                             x = cp_values(1)*ones(numel(time),1);
                         else
-                            x = interp1(t_cp, cp_values, time', 'linear', 'extrap');
+                            x = interp1(t_cp, cp_values, time', 'pchip', 'extrap');
                         end
+                        x = min(x,max_value);
+                        x = max(x, min_value);
                         X(i_ni,:) = x';
                         
                         
