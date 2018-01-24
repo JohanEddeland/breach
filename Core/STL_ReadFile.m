@@ -1,4 +1,4 @@
-function [props_names, props, signal_names, param_names] = STL_ReadFile(fname)
+function [props_names, props, signal_names, param_names] = STL_ReadFile(fname, onlyLoadLastFormula)
 %STL_READFILE reads formulas from a text file and loads them in the base
 %workspace 
 %
@@ -42,6 +42,12 @@ fid = fopen(fname,'r');
 if(fid==-1)
     error('STL_ReadFile:OpeningError',['Couldn''t open file ' fname]);
 end
+
+% JOHAN ADDED
+if nargin < 1
+    onlyLoadLastFormula = 0;
+end
+% END JOHAN ADDED
 
 tline = fgetl(fid);
 
@@ -120,7 +126,7 @@ while ischar(tline)
         tokens = regexp(tline, '(\w+)\s*:=(.*)','tokens');
         if ~isempty(tokens)
             % ok try wrapping up what we have so far before starting a new formula
-            if (~isempty(current_id)&& got_it == 0)
+            if (~isempty(current_id)&& got_it == 0) && ~onlyLoadLastFormula
                 try
                     phi = wrap_up(current_id, current_formula, new_params);
                     props = [props, {phi}]; %#ok<*AGROW>
