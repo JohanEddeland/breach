@@ -44,7 +44,7 @@ if(fid==-1)
 end
 
 % JOHAN ADDED
-if nargin < 1
+if nargin < 2
     onlyLoadLastFormula = 0;
 end
 % END JOHAN ADDED
