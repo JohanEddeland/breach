@@ -132,7 +132,7 @@ global BreachGlobOpt;
 global objToUse;
 eval(BreachGlobOpt.GlobVarsDeclare);
 
-if strcmp(objToUse, '&+')
+if strcmp(objToUse, 'vbool')
     % Do nothing
 else
     objToUse = 'standard';
@@ -163,42 +163,48 @@ switch(phi.type)
     case 'or'
         [valarray1, time_values1] = GetValues(Sys, phi.phi1, P, traj, interval);
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, interval);
-        [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
+        
+        if strcmp(objToUse, 'vbool')
+            [time_values, valarray] = robustOrPlus(time_values1, valarray1, time_values2, valarray2);
+        elseif strcmp(objToUse, 'standard')
+            [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
+        end
         
     case 'and'
         [valarray1, time_values1] = GetValues(Sys, phi.phi1, P, traj, interval);
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, interval);
         
         % JOHAN CHANGE
-        if strcmp(objToUse, '&+')
-            % Koen's &+
-            [time_values, valarray] = testron_robustAndPlus(time_values1, valarray1, time_values2, valarray2);
-        elseif strcmp(objToUse, 'standard')
-            % Standard and
-            [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
-            
-            % The following can be uncommented to STOP when the robustness
-            % values are not the same for the whole interval. 
-%             nUnique1 = length(unique(valarray1));
-%             nUnique2 = length(unique(valarray2));
-%             if (nUnique1 > 1) || (nUnique2 > 1) 
-%                 disp('Unexpected behaviour!');
-%                 figure();
-%                 subplot(3,1,1);
-%                 plot(time_values1, valarray1, 'r-x');
-%                 title('valarray1');
-%                 
-%                 subplot(3,1,2);
-%                 plot(time_values2, valarray2, 'r-x');
-%                 title('valarray2');
-%                 
-%                 subplot(3,1,3);
-%                 plot(time_values, valarray, 'r-x');
-%                 title('valarray');
-%                 dbstop;
-%             end
-        else
-            error('Unknown objective function (objToUse)');
+        switch objToUse
+            case 'vbool'
+                % Koen's &+
+                [time_values, valarray] = robustAndPlus(time_values1, valarray1, time_values2, valarray2);
+            case 'standard'
+                % Standard and
+                [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
+                
+                % The following can be uncommented to STOP when the robustness
+                % values are not the same for the whole interval.
+                %             nUnique1 = length(unique(valarray1));
+                %             nUnique2 = length(unique(valarray2));
+                %             if (nUnique1 > 1) || (nUnique2 > 1)
+                %                 disp('Unexpected behaviour!');
+                %                 figure();
+                %                 subplot(3,1,1);
+                %                 plot(time_values1, valarray1, 'r-x');
+                %                 title('valarray1');
+                %
+                %                 subplot(3,1,2);
+                %                 plot(time_values2, valarray2, 'r-x');
+                %                 title('valarray2');
+                %
+                %                 subplot(3,1,3);
+                %                 plot(time_values, valarray, 'r-x');
+                %                 title('valarray');
+                %                 dbstop;
+                %             end
+            otherwise
+                error('Unknown objective function (objToUse)');
         end
         
     case 'andn'
@@ -225,9 +231,9 @@ switch(phi.type)
         % JOHAN FIX
         % valarray is EMPTY if the formula is "true". The valarray is
         % assigned Inf at all time steps, which is then "removed" to
-        % prevent unwanted behaviour. 
+        % prevent unwanted behaviour.
         % Solution: If valarray is empty, set the valarray to be
-        % true_value. 
+        % true_value.
         if isempty(valarray)
             if isfield(phi.params.default_params,'true_value__')
                 % true_value__ is defined for phi
@@ -244,20 +250,17 @@ switch(phi.type)
             time_values = [time_values time_values(end)+I___(end)];
             valarray = [valarray valarray(end)];
         end
-        % JOHAN CHANGE
-        %if diff(I___) > 5
-        %    [time_values, valarray] = RobustAlways(time_values, valarray, I___);
-        %else
-            [time_values, valarray] = RobustEv(time_values, -valarray, I___);
-            valarray = -valarray;
-        %end
-%         if diff(I___) > 5
-%             % If the time difference for an always is larger than 5, we
-%             % assume that it is the outernmost "always" of a safety
-%             % specification
-%             valarray = valarray + 0.000001; % Margin issues
-%         end
-        % END JOHAN CHANGE
+        
+        switch objToUse
+            case 'vbool'
+                [time_values, valarray] = RobustAvEvRight(time_values, -valarray, I___);
+                valarray = -valarray;
+            case 'standard'
+                [time_values, valarray] = RobustEv(time_values, -valarray, I___);
+                valarray = -valarray;
+            otherwise
+                error('Unknown objective function!');
+        end
         
     case 'av_eventually'
         I___ = eval(phi.interval);
@@ -281,7 +284,15 @@ switch(phi.type)
             time_values1 = [time_values1 time_values1(end)+I___(end)];
             valarray1 = [valarray1 valarray1(end)];
         end
-        [time_values, valarray] = RobustEv(time_values1, valarray1, I___);
+        
+        switch objToUse
+            case 'vbool'
+                [time_values, valarray] = RobustAvEvRight(time_values1, valarray1, I___);
+            case 'standard'
+                [time_values, valarray] = RobustEv(time_values1, valarray1, I___);
+            otherwise
+                error('Unknown objective function!');
+        end
         
     case 'until'
         I___ = eval(phi.interval);
@@ -340,7 +351,7 @@ end
 
 % first time instant
 ind_ti = find(traj.time>=interval(1),1);
-if isempty(ind_ti) 
+if isempty(ind_ti)
     time_values = [traj.time(1,end) traj.time(1,end)+1];
     return
 end
