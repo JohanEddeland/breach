@@ -331,6 +331,28 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt;
         end
         
+        function solver_opt = setup_simulated_annealing(this)
+            % S-TaLiRo Simulated Annealing
+            global temp_ControlPoints
+            global staliro_opt
+            global staliro_dimX
+            global RUNSTATS
+            
+            temp_ControlPoints = size(this.lb, 1);
+            staliro_opt.varying_cp_times = 0;
+            staliro_opt.n_workers = 1;
+            staliro_opt.optimization_solver = 'testron_SA';
+            staliro_opt.stochastic = 0;
+            staliro_dimX = 0;
+            RUNSTATS = RunStats(boolean(staliro_opt.n_workers > 1));
+            RUNSTATS.new_run();
+            
+            this.solver = 'simulated_annealing';
+            solver_opt.lb = this.lb;
+            solver_opt.ub = this.ub;
+            this.display = 'off';
+        end
+        
         %% solve functions for various solvers
         function res = solve(this)
             
@@ -352,6 +374,17 @@ classdef BreachProblem < BreachStatus
                     
                 case 'global_nelder_mead'
                     res = this.solve_global_nelder_mead();
+                    
+                case 'simulated_annealing'
+                    % Simulated Annealing from S-TaLiRo
+                    
+                    
+                    inputRanges = [this.lb this.ub];
+                    opt = staliro_options();
+                    opt.optim_params.n_tests = this.max_obj_eval;
+                    
+                    fun = this.objective;
+                    res = testron_SA(inputRanges, opt, fun, this);
                     
                 case 'cmaes'
                     % adds a few more initial conditions
