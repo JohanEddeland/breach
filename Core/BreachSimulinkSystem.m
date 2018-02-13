@@ -843,7 +843,8 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 else
                     tout = [0 tspan];
                 end
-                error(['An error was returned from Simulink:' s.message '\n Returning a null trajectory']);
+                warning(['An error was returned from Simulink:' s.message '\n Returning a null trajectory']);
+                disp(['WARNING: An error was returned from Simulink: ' s.message]);
                 X = zeros(Sys.DimX, numel(tout));
                 status =-1;
                 this.addStatus(-1, MException.identifier, MException.message);
