@@ -878,13 +878,29 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     catch
                         % Do nothing
                     end
+                    
+                    if length(sig.Values.Time) < 2
+                        % We have only one element - cannot interpolate
+                        % This happens e.g. for FaultModeFID_ver in
+                        % CMA_CIDD, which is just a constant parameter
+                    end
                     % END JOHAN CHANGE
                     nbdim = size(sig.Values.Data,2);
                     
                     if (nbdim==1)
                         [lia, loc]= ismember(signame, signals);
                         if lia
-                            xx = interp1(sig.Values.Time',double(sig.Values.Data(:,1)),tout, 'linear','extrap');
+                            if length(sig.Values.Time) > 1
+                                % Standard case - interpolate to fill data
+                                xx = interp1(sig.Values.Time',double(sig.Values.Data(:,1)),tout, 'linear','extrap');
+                            else
+                                % We have only one element - cannot
+                                % interpolate
+                                % This happens e.g for FaultModeFID_ver in
+                                % CMA_CIDD, which is just a constant
+                                % parameter
+                                xx = repmat(sig.Values.Data(:,1), size(tout));
+                            end
                             X(loc,:) = xx;
                         end
                     else
@@ -892,7 +908,15 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                             signamei = [signame '_' num2str(idim)  '_'];
                             [lia, loc]= ismember(signamei, signals);
                             if lia
-                                xx = interp1(sig.Values.Time', double(sig.Values.Data(:,idim)),tout, 'linear','extrap') ;
+                                if length(sig.Value.Time) > 1
+                                    % Standard case - interpolate to fill
+                                    % data
+                                    xx = interp1(sig.Values.Time', double(sig.Values.Data(:,idim)),tout, 'linear','extrap') ;
+                                else
+                                    % We have only one element - cannot
+                                    % interpolate
+                                    xx = repmat(sig.Values.Data(:,idim), size(tout));
+                                end
                                 X(loc,:) = xx;
                             end
                         end
