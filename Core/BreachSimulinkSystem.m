@@ -1092,17 +1092,29 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                                 % Sometimes, this doesn't work
                                 nbdim = length(fieldnames(sig.Values));
                             end
-                            % END JOHAN CHANGE
+                            
+                            % NOTE!
+                            % Do we want to split multidimensional signals
+                            % or not?
+                            % For logged signals, currently we do NOT!
+                            sig_log = {sig_log{:} signame};
+                            
+                            % Alternatively, if we WANT to split them, use
+                            % the code below INSTEAD:
                             
                             % naming multidimensional signal= name_signal_i_
-                            if nbdim==1
-                                sig_log = {sig_log{:} signame};
-                            else
-                                for idim =1:nbdim
-                                    signamei = [signame '_' num2str(idim)  '_'];
-                                    sig_log = {sig_log{:} signamei};
-                                end
-                            end
+%                             if nbdim==1
+%                                 sig_log = {sig_log{:} signame};
+%                             else
+%                                 for idim =1:nbdim
+%                                     signamei = [signame '_' num2str(idim)  '_'];
+%                                     sig_log = {sig_log{:} signamei};
+%                                 end
+%                             end
+                            % END JOHAN CHANGE
+                            
+                            
+                            
                             
                         end
                     end
