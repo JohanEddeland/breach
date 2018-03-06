@@ -158,6 +158,39 @@ classdef testron_signal_gen < signal_gen
                     this.params= {this.params{:} [signals{ku} '_u0']};
                     this.p0(end+1) = 0;
                     
+                elseif strcmp(signal_type{ku},'continuous_cp_fixed_start_period')
+                    this_arg = this.args{ku};
+                    n_intervals = this_arg(3);
+                    start_value = this_arg(4);
+                    start_period_time = this_arg(5);
+                    this.params = {this.params{:} [signals{ku} '_u0']};
+                    this.p0(end+1) = start_value;
+                    for k = 2:n_intervals
+                        this.params= {this.params{:} [signals{ku} '_u' num2str(k-1)]};
+                        this.p0(end+1) = 0;
+                    end
+                    
+                elseif strcmp(signal_type{ku},'discrete_cp_fixed_start_period')
+                    this_arg = this.args{ku};
+                    n_intervals = this_arg(3);
+                    start_value = this_arg(4);
+                    start_period_time = this_arg(5);
+                    this.params = {this.params{:} [signals{ku} '_u0']};
+                    this.p0(end+1) = start_value;
+                    for k = 2:n_intervals
+                        this.params= {this.params{:} [signals{ku} '_u' num2str(k-1)]};
+                        this.p0(end+1) = 0;
+                    end
+                    
+                elseif strcmp(signal_type{ku},'discrete_enumeration')
+                    % Previously No_GearEven
+                    this_arg = this.args{ku};
+                    n_intervals = this_arg(end);
+                    for k = 1:n_intervals
+                        this.params= {this.params{:} [signals{ku} '_u' num2str(k-1)]};
+                        this.p0(end+1) = 0;
+                    end
+                
                 else
                     disp(['Warning! Cannot handle signal type ' signal_type]);
                 end
@@ -347,7 +380,9 @@ classdef testron_signal_gen < signal_gen
                         min_value = this_arg(1);
                         max_value = this_arg(2);
                         n_intervals = this_arg(3);
+                        start_value = this_arg(4);
                         cp_values = pts_x(1:n_intervals);
+                        cp_values(1) = start_value;
                         pts_x = pts_x(n_intervals+1:end);
                         t_cp = linspace(time(1), time(end), n_intervals)';
                         if numel(t_cp)==1
@@ -366,7 +401,9 @@ classdef testron_signal_gen < signal_gen
                         min_value = this_arg(1);
                         max_value = this_arg(2);
                         n_intervals = this_arg(3);
+                        start_value = this_arg(4);
                         cp_values = pts_x(1:n_intervals);
+                        cp_values(1) = start_value;
                         pts_x = pts_x(n_intervals+1:end);
                         t_cp = linspace(time(1), time(end), n_intervals)';
                         if i_ni == interesting_idx
@@ -412,6 +449,84 @@ classdef testron_signal_gen < signal_gen
                         catch
                             % The value of interval_values was EXACTLY 6
                             interval_values = this_arg(end);
+                        end
+                        t_cp = linspace(time(1), time(end), n_intervals+1)';
+                        if numel(t_cp)==1
+                            x = interval_values(1)*ones(numel(time),1);
+                        else
+                            x = zeros(size(time));
+                            for tmp = 1:length(time)-1
+                                interval_index = find(t_cp > time(tmp),1) - 1;
+                                x(tmp) = interval_values(interval_index);
+                            end
+                            x(end) = interval_values(end);
+                            x = x';
+                        end
+                        X(i_ni,:) = x';
+                        
+                    case 'continuous_cp_fixed_start_period'
+                        this_arg = this.args{i_ni};
+                        min_value = this_arg(1);
+                        max_value = this_arg(2);
+                        n_intervals = this_arg(3);
+                        start_value = this_arg(4);
+                        start_period_time = this_arg(5);
+                        cp_values = pts_x(1:n_intervals);
+                        cp_values(1) = start_value;
+                        pts_x = pts_x(n_intervals+1:end);
+                        t_cp = linspace(start_period_time, time(end), n_intervals)';
+                        if numel(t_cp)==1
+                            x = cp_values(1)*ones(numel(time),1);
+                        else
+                            x = interp1(t_cp, cp_values, time', 'pchip', 'extrap');
+                        end
+                        x = min(x,max_value);
+                        x = max(x, min_value);
+                        
+                        start_period_end_index = find(time > start_period_time, 1);
+                        x(1:start_period_end_index) = start_value;
+                        X(i_ni,:) = x';
+                        
+                    case 'discrete_cp_fixed_start_period'
+                        
+                        this_arg = this.args{i_ni};
+                        min_value = this_arg(1);
+                        max_value = this_arg(2);
+                        n_intervals = this_arg(3);
+                        start_value = this_arg(4);
+                        start_period_time = this_arg(5);
+                        cp_values = pts_x(1:n_intervals);
+                        cp_values(1) = start_value;
+                        pts_x = pts_x(n_intervals+1:end);
+                        t_cp = linspace(start_period_time, time(end), n_intervals)';
+                        if numel(t_cp)==1
+                            x = cp_values(1)*ones(numel(time),1);
+                        else
+                            %x = interp1(t_cp, cp_values, time', 'linear', 'extrap');
+                            x = interp1(t_cp, cp_values, time', 'pchip', 'extrap');
+                        end
+                        x = floor(x);
+                        
+                        x = min(x,max_value);
+                        x = max(x, min_value);
+                        
+                        start_period_end_index = find(time > start_period_time, 1);
+                        x(1:start_period_end_index) = start_value;
+                        X(i_ni,:) = x';
+                        
+                    case 'discrete_enumeration'
+                        this_arg = this.args{i_ni};
+                        %min_value = this_arg(1);
+                        %max_value = this_arg(2);
+                        n_intervals = this_arg(end);
+                        interval_values = pts_x(1:n_intervals);
+                        pts_x = pts_x(n_intervals+1:end);
+                        interval_values = floor(interval_values);
+                        for k = 1:n_intervals
+                            if interval_values(k) == length(this_arg)
+                                interval_values(k) = interval_values(k) - 1;
+                            end
+                            interval_values(k) = this_arg(interval_values(k));
                         end
                         t_cp = linspace(time(1), time(end), n_intervals+1)';
                         if numel(t_cp)==1
