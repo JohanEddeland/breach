@@ -172,10 +172,15 @@ switch(phi.type)
         [valarray1, time_values1] = GetValues(Sys, phi.phi1, P, traj, interval);
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, interval);
         
-        if strcmp(objToUse, 'vbool')
-            [time_values, valarray] = robustOrPlus(time_values1, valarray1, time_values2, valarray2);
-        elseif strcmp(objToUse, 'standard')
-            [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
+        switch objToUse
+            case 'vbool'
+                % ||+
+                [time_values, valarray] = robustAndPlus(time_values1, -valarray1, time_values2, -valarray2);
+                valarray = -valarray;
+            case 'standard'
+                [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
+            otherwise
+                error('Unknown objective function (objToUse)');
         end
         
     case 'and'
@@ -190,27 +195,6 @@ switch(phi.type)
             case 'standard'
                 % Standard and
                 [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
-                
-                % The following can be uncommented to STOP when the robustness
-                % values are not the same for the whole interval.
-                %             nUnique1 = length(unique(valarray1));
-                %             nUnique2 = length(unique(valarray2));
-                %             if (nUnique1 > 1) || (nUnique2 > 1)
-                %                 disp('Unexpected behaviour!');
-                %                 figure();
-                %                 subplot(3,1,1);
-                %                 plot(time_values1, valarray1, 'r-x');
-                %                 title('valarray1');
-                %
-                %                 subplot(3,1,2);
-                %                 plot(time_values2, valarray2, 'r-x');
-                %                 title('valarray2');
-                %
-                %                 subplot(3,1,3);
-                %                 plot(time_values, valarray, 'r-x');
-                %                 title('valarray');
-                %                 dbstop;
-                %             end
             otherwise
                 error('Unknown objective function (objToUse)');
         end
