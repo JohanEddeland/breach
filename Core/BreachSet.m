@@ -1093,7 +1093,7 @@ classdef BreachSet < BreachStatus
             
             % Additional options
             options = struct('FolderName', []);
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
                 options.FolderName = ['Import_Results_' datestr(now, 'dd_mm_yyyy_HHMM')];
@@ -1161,7 +1161,7 @@ classdef BreachSet < BreachStatus
         function [success, msg, msg_id] = SaveResults(this, folder_name, varargin)
             % Additional options
             options = struct('FolderName', folder_name, 'SaveBreachSystem', true, 'ExportToExcel', false, 'ExcelFileName', 'Results.xlsx');
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
                 options.FolderName = [this.mdl.name '_Results_' datestr(now, 'dd_mm_yyyy_HHMM')];

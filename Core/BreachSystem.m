@@ -335,7 +335,7 @@ classdef BreachSystem < BreachSet
             
             % default options
             opt.DispTitle = true;  
-            opt = varargin2struct(opt, varargin{:});
+            opt = varargin2struct_breach(opt, varargin{:});
          
            if ischar(params)
                params = {params};
