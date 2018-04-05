@@ -105,7 +105,7 @@ classdef BreachImportData < BreachSignalGen
             
             % Additional options
             options = struct('FolderName', []);
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
                 options.FolderName = ['Import_Results_' datestr(now, 'dd_mm_yyyy_HHMM')];
@@ -184,7 +184,7 @@ classdef BreachImportData < BreachSignalGen
             
             % Additional options
             options = struct('FileName', 'Results.xlsx');
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
             
             global BreachGlobOpt
             

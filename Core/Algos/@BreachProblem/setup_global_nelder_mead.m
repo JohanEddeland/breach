@@ -25,8 +25,8 @@ if isstruct(this.solver_options)
     end
 end
 
-if nargin > 2
-    opt = varargin2struct(opt, varargin{:});
+if nargin>2    
+    opt = varargin2struct_breach(opt, varargin{:});
 end
 
 if (nargin >= 2)&&gui

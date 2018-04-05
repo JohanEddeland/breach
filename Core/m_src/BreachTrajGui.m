@@ -1175,11 +1175,13 @@ if (nprop)  % plot values for a property
     ylabel(get_id(prop),'Interpreter','none');
     xlabel(['time']);
     
-    new_plot = plot(phi_tspan*time_mult, phi_val);
+    %new_plot = plot(phi_tspan*time_mult, phi_val);
     hold on;
+    
+    % JOHAN CHANGE
+    new_plot = stairs(phi_tspan*time_mult, phi_val);
     plot([phi_tspan(1) phi_tspan(end)]*time_mult, [0 0],'-k');
     stairs(phi_tspan*time_mult, (phi_val>0)*max(abs(phi_val))/2,'-r');
-    % JOHAN CHANGE
     % lgh = legend(short_disp(prop,100));
     prop_type = get_type(prop);
     prop_id = get_id(prop);

@@ -441,12 +441,12 @@ classdef BreachSystem < BreachSet
             % BreachSet.PlotSatParams(req, params)
             
             % default options
-            opt.DispTitle = true;
-            opt = varargin2struct(opt, varargin{:});
-            
-            if ischar(params)
-                params = {params};
-            end
+            opt.DispTitle = true;  
+            opt = varargin2struct_breach(opt, varargin{:});
+         
+           if ischar(params)
+               params = {params};
+           end
             
             [valu, pvalu, val, pval] = this.GetSatValues(phi, params);
             if isa(phi, 'BreachRequirement')
