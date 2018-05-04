@@ -381,7 +381,7 @@ classdef BreachProblem < BreachStatus
         end
         
         %% solve functions for various solvers
-        function res = solve(this)
+        function [res, startSample] = solve(this, startSample)
             
             % reset display
             rfprintf_reset();
@@ -410,7 +410,13 @@ classdef BreachProblem < BreachStatus
                     inputRanges = [this.lb this.ub];
                     
                     fun = this.objective;
-                    res = testron_SA(inputRanges, fun, this);
+                    
+                    if nargin < 2
+                        % No startSample given
+                        [res, ~, startSample] = testron_SA(inputRanges, fun, this);
+                    else
+                        [res, ~, startSample] = testron_SA(inputRanges, fun, this, startSample);
+                    end
                     
                 case 'cmaes'
                     % adds a few more initial conditions

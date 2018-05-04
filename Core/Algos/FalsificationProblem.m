@@ -92,8 +92,13 @@ classdef FalsificationProblem < BreachProblem
         
         % Nothing fancy - calls parent solve then returns falsifying params
         % if found.
-        function [Xfalse, res] = solve(this)
-            res = solve@BreachProblem(this);
+        function [Xfalse, res, startSample] = solve(this, startSample)
+            if nargin < 2
+                % No startSample given
+                [res, startSample] = solve@BreachProblem(this);
+            else
+                [res, startSample] = solve@BreachProblem(this, startSample);
+            end
             Xfalse = this.X_false;
         end
         
