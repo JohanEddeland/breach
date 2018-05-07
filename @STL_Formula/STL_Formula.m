@@ -392,16 +392,24 @@ switch(numel(varargin))
         % test expr op expr | params
         
         % parse additional params
-        tokens = regexp(st, '(.+)\s*\|\s*(.+)','tokens');
-        if ~isempty(tokens)
-            st = tokens{1}{1};
-            param_st = tokens{1}{2};
-            param_tokens = regexp(param_st,'\s*,\s*','split');
-            for i=1:numel(param_tokens)
-                tk2 = regexp(param_tokens{i},'\s*(.+?)\s*=(.+)','tokens');
-                phi.params.default_params.(tk2{1}{1}) = eval(tk2{1}{2});
-            end
-        end
+        
+        % JOHAN EDIT: We comment out this parsing, which means we do not
+        % allow the use of "|" to define where parameters start
+        % This is to allow the use of " || " inside signal expressions
+        % (so that MATLAB can evaluate " or " in specific cases. 
+        % As of 2018-04-05, ' || ' is ONLY introduced into STL formulas
+        % inside sumToSTL.m, by the use of the function sumWithPhiExp()
+        
+%         tokens = regexp(st, '(.+)\s*\|\s*(.+)','tokens');
+%         if ~isempty(tokens)
+%             st = tokens{1}{1};
+%             param_st = tokens{1}{2};
+%             param_tokens = regexp(param_st,'\s*,\s*','split');
+%             for i=1:numel(param_tokens)
+%                 tk2 = regexp(param_tokens{i},'\s*(.+?)\s*=(.+)','tokens');
+%                 phi.params.default_params.(tk2{1}{1}) = eval(tk2{1}{2});
+%             end
+%         end
         
         % parse operator
         
