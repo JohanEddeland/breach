@@ -280,7 +280,8 @@ switch(phi.type)
         
         switch objToUse
             case 'vbool'
-                [time_values, valarray] = RobustAvEvRight(time_values1, valarray1, I___);
+                [time_values, valarray] = RobustAlways(time_values1, -valarray1, I___);
+                valarray = -valarray;
             case 'standard'
                 [time_values, valarray] = RobustEv(time_values1, valarray1, I___);
             otherwise
