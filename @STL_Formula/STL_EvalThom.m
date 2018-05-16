@@ -142,6 +142,8 @@ global objToUse;
 eval(BreachGlobOpt.GlobVarsDeclare);
 if strcmp(objToUse, 'vbool')
     % Do nothing
+elseif strcmp(objToUse, 'vbool_v1')
+    % Do nothing
 else
     objToUse = 'standard';
 end
