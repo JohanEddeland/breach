@@ -2,7 +2,7 @@ function [time_values, valarray] = RobustAlways(time_values, valarray, I___)
 
 indicesToRemove = [];
 
-for valIndex = 1:length(valarray)    
+for valIndex = 1:length(valarray)
     thisTime = time_values(valIndex);
     
     % Start time is currentTime + first element of I___
@@ -16,20 +16,27 @@ for valIndex = 1:length(valarray)
     partialTime = time_values(timeIntervalIndex);
     partialValarray = valarray(timeIntervalIndex);
     
-    partialRob = PartialRobustAlways(partialTime, partialValarray);
-    
-    % Check if we can reduce the size of time_values and valarray by
-    % removing this element (if it is the same as the element before
-    if valIndex == 1 || valIndex == length(valarray)
-        % We cannot remove the first or the last element
-        valarray(valIndex) = partialRob;
-    elseif valarray(valIndex - 1) == partialRob
-        % The value is the same as the previous one
-        % We don't need to add a new value - instead, we can remove this
-        % time step from the time_values and valarray vectors later on
-        indicesToRemove(end+1) = valIndex; %#ok<*AGROW>
+    if isempty(partialTime)
+        % There is no signal in the time we are looking at
+        % Just remove this point from valarray and time_values
+        time_values(valIndex) = [];
+        valarray(valIndex) = [];
     else
-        valarray(valIndex) = partialRob;
+        partialRob = PartialRobustAlways(partialTime, partialValarray);
+        
+        % Check if we can reduce the size of time_values and valarray by
+        % removing this element (if it is the same as the element before
+        if valIndex == 1 || valIndex == length(valarray)
+            % We cannot remove the first or the last element
+            valarray(valIndex) = partialRob;
+        elseif valarray(valIndex - 1) == partialRob
+            % The value is the same as the previous one
+            % We don't need to add a new value - instead, we can remove this
+            % time step from the time_values and valarray vectors later on
+            indicesToRemove(end+1) = valIndex; %#ok<*AGROW>
+        else
+            valarray(valIndex) = partialRob;
+        end
     end
     
 end
