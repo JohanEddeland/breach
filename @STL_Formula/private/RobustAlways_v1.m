@@ -70,7 +70,6 @@ if rho < 0
             totalTimeIntegrated = totalTimeIntegrated + (time_values(k+1) - time_values(k));
         end
     end
-    partialRob = partialRob / totalTimeIntegrated;
     
     % Assert that the partialRob is negative - otherwise our additive
     % semantics are not sound with regards to the standard semantics
@@ -88,7 +87,6 @@ else
         for k = 1:numel(valarray)-1
             partialRob = partialRob + valarray(k)*(time_values(k+1) - time_values(k));
         end
-        partialRob = partialRob / (time_values(end) - time_values(1));
     end
 end
 end

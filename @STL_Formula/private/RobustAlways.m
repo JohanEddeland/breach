@@ -70,7 +70,6 @@ if rho < 0
             totalTimeIntegrated = totalTimeIntegrated + (time_values(k+1) - time_values(k));
         end
     end
-    partialRob = partialRob / totalTimeIntegrated;
     
     % Assert that the partialRob is negative - otherwise our additive
     % semantics are not sound with regards to the standard semantics
