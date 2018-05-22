@@ -94,6 +94,10 @@ else
         for k = 1:numel(valarray)-1
             partialRob = partialRob + (1/valarray(k))*(time_values(k+1) - time_values(k));
         end
+        % Add the last time point as well
+        partialRob = partialRob + (1/valarray(end))*(time_values(end) - time_values(end-1));
+        
+        % Calculate the reciprocal
         partialRob = 1/partialRob;
     end
 end
