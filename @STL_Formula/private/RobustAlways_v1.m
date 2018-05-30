@@ -20,25 +20,27 @@ for valIndex = 1:length(valarray)
     
     if isempty(partialTime)
         % There is no signal in the time we are looking at
-        % Just remove this point from valarray and time_values
-        time_values(valIndex) = [];
-        valarray(valIndex) = [];
+        % We have to find the signal value from the point defined before
+        % this one
+        timeIntervalIndex = find(time_values <= endTime, 1, 'last');
+        partialTime = time_values(timeIntervalIndex);
+        partialValarray = valarray(timeIntervalIndex);
+    end
+    
+    partialRob = PartialRobustAlways(partialTime, partialValarray);
+    
+    % Check if we can reduce the size of time_values and valarray by
+    % removing this element (if it is the same as the element before
+    if valIndex == 1 || valIndex == length(valarray)
+        % We cannot remove the first or the last element
+        valarray(valIndex) = partialRob;
+    elseif valarray(valIndex - 1) == partialRob
+        % The value is the same as the previous one
+        % We don't need to add a new value - instead, we can remove this
+        % time step from the time_values and valarray vectors later on
+        indicesToRemove(end+1) = valIndex; %#ok<*AGROW>
     else
-        partialRob = PartialRobustAlways(partialTime, partialValarray);
-        
-        % Check if we can reduce the size of time_values and valarray by
-        % removing this element (if it is the same as the element before
-        if valIndex == 1 || valIndex == length(valarray)
-            % We cannot remove the first or the last element
-            valarray(valIndex) = partialRob;
-        elseif valarray(valIndex - 1) == partialRob
-            % The value is the same as the previous one
-            % We don't need to add a new value - instead, we can remove this
-            % time step from the time_values and valarray vectors later on
-            indicesToRemove(end+1) = valIndex; %#ok<*AGROW>
-        else
-            valarray(valIndex) = partialRob;
-        end
+        valarray(valIndex) = partialRob;
     end
     
 end
@@ -72,11 +74,9 @@ if rho < 0
     %         partialRob = partialRob + valLessThanZero(k)*(timesLessThanZero(k+1) - timesLessThanZero(k));
     %     end
     partialRob = 0;
-    totalTimeIntegrated = 0;
     for k = 1:numel(valarray)-1
         if valarray(k) < 0
             partialRob = partialRob + valarray(k)*(time_values(k+1) - time_values(k));
-            totalTimeIntegrated = totalTimeIntegrated + (time_values(k+1) - time_values(k));
         end
     end
     
@@ -91,18 +91,14 @@ if rho < 0
 else
     % The spec does not fail
     % Take the inverse of the integral of the inverse
-    if rho == 0
-        % Avoid division by zero: Just set the robustness to zero
-        partialRob = 0;
-    else
-        % Do the actual calculations
-        % Note that all values in valarray are strictly positive
-        partialRob = 0;
-        for k = 1:numel(valarray)-1
-            partialRob = partialRob + valarray(k)*(time_values(k+1) - time_values(k));
-        end
-        % Add the last time point as well
-        partialRob = partialRob + (1/valarray(end))*(time_values(end) - time_values(end-1));
+    
+    % Do the actual calculations
+    % Note that all values in valarray are strictly positive
+    partialRob = 0;
+    for k = 1:numel(valarray)-1
+        partialRob = partialRob + valarray(k)*(time_values(k+1) - time_values(k));
     end
+    % Add the last time point as well
+    partialRob = partialRob + valarray(end)*(time_values(end) - time_values(end-1));
 end
 end
