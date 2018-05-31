@@ -220,7 +220,20 @@ switch(phi.type)
         [valarray1, time_values1] = GetValues(Sys, phi.phi1, P, traj, interval);
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, interval);
         valarray1 = -valarray1;
-        [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
+        
+        switch objToUse
+            case 'vbool'
+                [time_values, valarray] = robustAndPlus(time_values1, -valarray1, time_values2, -valarray2);
+                valarray = -valarray;
+            case 'standard'
+                [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
+            case 'vbool_v1'
+                [time_values, valarray] = robustAndPlus_v1(time_values1, -valarray1, time_values2, -valarray2);
+                valarray = -valarray;
+            otherwise
+                error('Unknown objective function!');
+        end
+        
         
     case 'always'
         I___ = eval(phi.interval);
