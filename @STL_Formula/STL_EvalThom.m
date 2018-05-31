@@ -238,10 +238,6 @@ switch(phi.type)
             time_values = I___(1);
         end
         % END JOHAN FIX
-        if(I___(end)~=inf)
-            time_values = [time_values time_values(end)+I___(end)];
-            valarray = [valarray valarray(end)];
-        end
         
         switch objToUse
             case 'vbool'
@@ -249,6 +245,10 @@ switch(phi.type)
                 %valarray = -valarray;
                 [time_values, valarray] = RobustAlways(time_values, valarray, I___);
             case 'standard'
+                if(I___(end)~=inf)
+                    time_values = [time_values time_values(end)+I___(end)];
+                    valarray = [valarray valarray(end)];
+                end
                 [time_values, valarray] = RobustEv(time_values, -valarray, I___);
                 valarray = -valarray;
             case 'vbool_v1'
@@ -277,16 +277,16 @@ switch(phi.type)
         I___(1) = min(I___(1), I___(2));
         next_interval = I___+interval;
         [valarray1, time_values1] = GetValues(Sys, phi.phi, P, traj, next_interval);
-        if(I___(end)~=inf)
-            time_values1 = [time_values1 time_values1(end)+I___(end)];
-            valarray1 = [valarray1 valarray1(end)];
-        end
         
         switch objToUse
             case 'vbool'
                 [time_values, valarray] = RobustAlways(time_values1, -valarray1, I___);
                 valarray = -valarray;
             case 'standard'
+                if(I___(end)~=inf)
+                    time_values1 = [time_values1 time_values1(end)+I___(end)];
+                    valarray1 = [valarray1 valarray1(end)];
+                end
                 [time_values, valarray] = RobustEv(time_values1, valarray1, I___);
             case 'vbool_v1'
                 [time_values, valarray] = RobustAlways_v1(time_values1, -valarray1, I___);
