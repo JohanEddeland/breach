@@ -198,6 +198,22 @@ classdef testron_signal_gen < signal_gen
                         this.p0(end+1) = 0;
                     end
                     
+                elseif strcmp(signal_type{ku},'continuous_cp_fixed_start_interval')
+                    this_arg = this.args{ku};
+                    n_intervals = this_arg(3);
+                    for k = 1:n_intervals
+                        this.params= {this.params{:} [signals{ku} '_u' num2str(k-1)]};
+                        this.p0(end+1) = 0;
+                    end
+                    
+                elseif strcmp(signal_type{ku},'discrete_cp_fixed_start_interval')
+                    this_arg = this.args{ku};
+                    n_intervals = this_arg(3);
+                    for k = 1:n_intervals
+                        this.params= {this.params{:} [signals{ku} '_u' num2str(k-1)]};
+                        this.p0(end+1) = 0;
+                    end
+                    
                 elseif strcmp(signal_type{ku},'discrete_enumeration')
                     % Previously No_GearEven
                     this_arg = this.args{ku};
@@ -575,6 +591,55 @@ classdef testron_signal_gen < signal_gen
                         
                         start_period_end_index = find(time > start_period_time, 1);
                         x(1:start_period_end_index) = start_value;
+                        X(i_ni,:) = x';
+                        
+                    case 'continuous_cp_fixed_start_interval'
+                        % Fixed start, but from an INTERVAL instead of a
+                        % single value!
+                        this_arg = this.args{i_ni};
+                        min_value = this_arg(1);
+                        max_value = this_arg(2);
+                        n_intervals = this_arg(3);
+                        start_value = this_arg(4);
+                        cp_values = pts_x(1:n_intervals);
+                        cp_values(1) = start_value;
+                        pts_x = pts_x(n_intervals+1:end);
+                        t_cp = linspace(time(1), time(end), n_intervals)';
+                        if numel(t_cp)==1
+                            x = cp_values(1)*ones(numel(time),1);
+                        else
+                            x = interp1(t_cp, cp_values, time', 'pchip', 'extrap');
+                        end
+                        x = min(x,max_value);
+                        x = max(x, min_value);
+                        X(i_ni,:) = x';
+                        
+                    case 'discrete_cp_fixed_start_interval'
+                        % Fixed start, but from an INTERVAL instead of a
+                        % single value!
+                        this_arg = this.args{i_ni};
+                        min_value = this_arg(1);
+                        max_value = this_arg(2);
+                        n_intervals = this_arg(3);
+                        cp_values = pts_x(1:n_intervals);
+                        pts_x = pts_x(n_intervals+1:end);
+                        t_cp = linspace(time(1), time(end), n_intervals)';
+%                         if i_ni == interesting_idx
+%                             %disp('Warning! Changing the input generated for IsgModReq__IsgModReq');
+%                             min_value = this_arg(1);
+%                             max_value = this_arg(2) + 1;
+%                             r = (max_value-min_value).*rand(n_intervals,1) + min_value;
+%                             cp_values = floor(r);
+%                         end
+                        if numel(t_cp)==1
+                            x = cp_values(1)*ones(numel(time),1);
+                        else
+                            %x = interp1(t_cp, cp_values, time', 'linear', 'extrap');
+                            x = interp1(t_cp, cp_values, time', 'pchip', 'extrap');
+                        end
+                        x = floor(x);
+                        x = min(x,max_value);
+                        x = max(x, min_value);
                         X(i_ni,:) = x';
                         
                     case 'discrete_enumeration'
