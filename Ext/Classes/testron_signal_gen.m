@@ -40,7 +40,23 @@ classdef testron_signal_gen < signal_gen
                         this.p0(end+1) = 0;
                     end
                     
+                elseif strcmp(signal_type{ku},'discrete_constant_fixed_start_interval')
+                    this_arg = this.args{ku};
+                    n_intervals = this_arg(3);
+                    for k = 1:n_intervals
+                        this.params= {this.params{:} [signals{ku} '_u' num2str(k-1)]};
+                        this.p0(end+1) = 0;
+                    end
+                    
                 elseif strcmp(signal_type{ku},'continuous_constant')
+                    this_arg = this.args{ku};
+                    n_intervals = this_arg(3);
+                    for k = 1:n_intervals
+                        this.params= {this.params{:} [signals{ku} '_u' num2str(k-1)]};
+                        this.p0(end+1) = 0;
+                    end
+                    
+                elseif strcmp(signal_type{ku},'continuous_constant_fixed_start_interval')
                     this_arg = this.args{ku};
                     n_intervals = this_arg(3);
                     for k = 1:n_intervals
@@ -221,9 +237,9 @@ classdef testron_signal_gen < signal_gen
                     
                     case 'discrete_constant'
                         this_arg = this.args{i_ni};
-                        min_value = this_arg(1);
                         max_value = this_arg(2);
-                        n_intervals = this_arg(3);
+                         min_value = this_arg(1);
+                       n_intervals = this_arg(3);
                         interval_values = pts_x(1:n_intervals);
                         pts_x = pts_x(n_intervals+1:end);
                         interval_values = floor(interval_values);
@@ -269,7 +285,52 @@ classdef testron_signal_gen < signal_gen
                         x = max(x, min_value);
                         X(i_ni,:) = x';
                         
+                    case 'discrete_constant_fixed_start_interval'
+                        this_arg = this.args{i_ni};
+                        max_value = this_arg(2);
+                        min_value = this_arg(1);
+                        n_intervals = this_arg(3);
+                        interval_values = pts_x(1:n_intervals);
+                        pts_x = pts_x(n_intervals+1:end);
+                        interval_values = floor(interval_values);
+                        t_cp = linspace(time(1), time(end), n_intervals+1)';
+                        if numel(t_cp)==1
+                            x = interval_values(1)*ones(numel(time),1);
+                        else
+                            x = zeros(size(time));
+                            for tmp = 1:length(time)-1
+                                interval_index = find(t_cp > time(tmp),1) - 1;
+                                x(tmp) = interval_values(interval_index);
+                            end
+                            x(end) = interval_values(end);
+                            x = x';
+                        end
+                        x = min(x,max_value);
+                        x = max(x, min_value);
+                        X(i_ni,:) = x';
+                        
                     case 'continuous_constant'
+                        this_arg = this.args{i_ni};
+                        %min_value = this_arg(1);
+                        %max_value = this_arg(2);
+                        n_intervals = this_arg(3);
+                        interval_values = pts_x(1:n_intervals);
+                        pts_x = pts_x(n_intervals+1:end);
+                        t_cp = linspace(time(1), time(end), n_intervals+1)';
+                        if numel(t_cp)==1
+                            x = interval_values(1)*ones(numel(time),1);
+                        else
+                            x = zeros(size(time));
+                            for tmp = 1:length(time)-1
+                                interval_index = find(t_cp > time(tmp),1) - 1;
+                                x(tmp) = interval_values(interval_index);
+                            end
+                            x(end) = interval_values(end);
+                            x = x';
+                        end
+                        X(i_ni,:) = x';
+                        
+                    case 'continuous_constant_fixed_start_interval'
                         this_arg = this.args{i_ni};
                         %min_value = this_arg(1);
                         %max_value = this_arg(2);
@@ -465,6 +526,7 @@ classdef testron_signal_gen < signal_gen
                         X(i_ni,:) = x';
                         
                     case 'continuous_cp_fixed_start_period'
+                        % Fixed start, but at a DELAYED start time!
                         this_arg = this.args{i_ni};
                         min_value = this_arg(1);
                         max_value = this_arg(2);
@@ -488,7 +550,7 @@ classdef testron_signal_gen < signal_gen
                         X(i_ni,:) = x';
                         
                     case 'discrete_cp_fixed_start_period'
-                        
+                        % Fixed start, but at a DELAYED start time!
                         this_arg = this.args{i_ni};
                         min_value = this_arg(1);
                         max_value = this_arg(2);
