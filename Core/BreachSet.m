@@ -1516,8 +1516,12 @@ classdef BreachSet < BreachStatus
         
         function summary = GetSummary(this)
             
-            num_traces = numel(this.P.traj);
-
+            if this.hasTraj()
+                num_traces = numel(this.P.traj);
+            else
+                num_traces = 0;
+            end
+            
             % parameter names
             param_names = this.GetSysParamList();
             
@@ -1527,7 +1531,6 @@ classdef BreachSet < BreachStatus
             if isfield(this.P,'props_names')
                 spec_names = this.P.props_names;
             end
-            
             
             summary.date = datestr(now);
             summary.num_traces = num_traces;
@@ -1542,7 +1545,6 @@ classdef BreachSet < BreachStatus
                 summary.specs.sat = summary.specs.rob>=0;
                 summary.num_sat = - sum( ~summary.specs.sat, 1  );
             end
-        
         
         end
         

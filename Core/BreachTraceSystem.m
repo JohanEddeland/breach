@@ -192,6 +192,7 @@ classdef BreachTraceSystem < BreachSystem
             
             dimx = this.Sys.DimX;
             dimp = this.Sys.DimP;
+            
             for it = 1:n_traces
                 traj.time = linspace(0,end_time,n_samples);
                 traj.X = amp*rand([dimx n_samples])-amp*rand();
@@ -201,6 +202,12 @@ classdef BreachTraceSystem < BreachSystem
             
         end
             
+        function Sim(varargin)
+        % BreachTraceSystem.Sim(varargin) does nothing - traces are added
+        % using AddTrace method
+         
+        end
+        
         function st = disp(this)
             st = ['BreachTraceSystem with ' num2str(this.CountTraces()) ' traces.'];
             if nargout<1

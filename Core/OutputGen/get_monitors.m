@@ -10,18 +10,25 @@ for itfo = 1:numel(formulas)
     end
     
     if isa(formula, 'STL_Formula')
-        monitor = stl_monitor(formula);
+        % checks whether we have parameter constraint
+        sigs  = STL_ExtractSignals(formula);       
+        if isempty(sigs)
+            monitor = param_constraint_monitor(formula);
+        else
+            monitor = stl_monitor(formula);
+        end
     elseif isa(formula, 'stl_monitor')
         monitor = formula;
     end
-    find_template();
-    signals = [signals setdiff(monitor.signals_in, signals, 'stable')];
+    if ~isa(monitor, 'param_constraint_monitor')
+        find_template();
+        signals = [signals setdiff(monitor.signals_in, signals, 'stable')];
+    end
     monitors = [monitors {monitor}];
 end
 
     function find_template()
         p0 = monitor.p0;
-        
         switch (get_type(monitor.formula))
             case  {'alw', 'always'}
                 monitor = alw_monitor(formula);

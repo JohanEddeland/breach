@@ -7,21 +7,26 @@ classdef BreachRequirement < BreachTraceSystem
         BrSet
         postprocess_signal_gens            % output generators
         req_monitors
+        precond_monitors
         signals_in
+        traces_precond_vals % results for individual traces & precond_monitors
         traces_vals % results for individual traces & req_monitors
         val             % summary evaluation for all traces & req_monitors
     end
     
     methods
         
-        function this = BreachRequirement(req_monitors, postprocess_signal_gens)
+        function this = BreachRequirement(req_monitors, postprocess_signal_gens, precond_monitors)
             
             %% work out arguments
             if ~iscell(req_monitors)
                 req_monitors=  {req_monitors};
             end
             
+            % requirement formulas
             [signals, monitors] = get_monitors(req_monitors);
+           
+           % postprocessing functions 
             if  exist('postprocess_signal_gens', 'var')&&~isempty(postprocess_signal_gens)
                 if ~iscell(postprocess_signal_gens)
                     postprocess_signal_gens = {postprocess_signal_gens};
@@ -30,6 +35,21 @@ classdef BreachRequirement < BreachTraceSystem
                     signals = [signals setdiff(postprocess_signal_gens{ippsg}.signals_in, signals,'stable')];
                 end
             end
+            
+            % precondition requirements
+            if  exist('precond_monitors', 'var')&&~isempty(precond_monitors)
+               if ~iscell(precond_monitors)
+                    precond_monitors = {precond_monitors};
+               end
+               
+               [~,  precond_monitors] = get_monitors(precond_monitors);
+           
+               for pcsg = 1:numel(precond_monitors)
+                    signals = [signals setdiff(precond_monitors{pcsg}.signals_in, signals,'stable')];
+                end
+            
+            end
+           
             this = this@BreachTraceSystem(signals);
             
             % Add output gens
@@ -40,11 +60,19 @@ classdef BreachRequirement < BreachTraceSystem
                 end
             end
             
-            % Add formula monitor
+            % Add precond and formula monitor            
             this.req_monitors = monitors;
             for ifo = 1:numel(monitors)
                 this.AddOutput(monitors{ifo});
             end
+            
+            if  exist('precond_monitors', 'var')&&~isempty(precond_monitors)
+                this.precond_monitors = precond_monitors;
+                for ifo = 1:numel(precond_monitors)
+                    this.AddOutput(precond_monitors{ifo});
+                end
+            end
+
             % Figure out what signals are required input signals
             this.ResetSigMap();
             
@@ -106,11 +134,20 @@ classdef BreachRequirement < BreachTraceSystem
         end
         
         function  [val, traj] = evalTrace(this,traj)
-            % evalTrace evaluation function for one trace.
-            traj = this.applyOutputGens(traj);
+            % evalTrace eval satisfaction of requirements for one trace.
             
+            % apply postprocessing functions first
+            for ipp = 1:numel(this.postprocess_signal_gens)
+                postproc_sg = this.postprocess_signal_gens{ipp};
+                traj = this.postprocessSignals(this, postproc_sg, traj);  
+            end
             
-            [val, traj] = this.getRobustSignal(traj); %  computes robustness, return at time per usual STL semantics
+            % eval requirements on trace
+            val = nan(1, numel(this.req_monitors));
+            for i_req = 1:numel(this.req_monitors)
+                req = this.req_monitors{i_req};
+                [val(i_req), traj] = this.evalRequirement(req, traj); 
+            end
             
         end
         
@@ -287,7 +324,7 @@ classdef BreachRequirement < BreachTraceSystem
         
         function PrintFormula(this)
             
-            fprintf(['--- FORMULAS ---\n']);
+            fprintf(['--- REQUIREMENT FORMULAS ---\n']);
             for ifo = 1:numel(this.req_monitors)
                 this.req_monitors{ifo}.disp();
             end
@@ -369,6 +406,11 @@ classdef BreachRequirement < BreachTraceSystem
             end
         end
         
+        function SetupDiskCaching(this)
+        % TODO same options as  SaveResults    
+            
+        end
+        
         function params = GetParamList(this)
             if ~isempty(this.BrSet)
                 params = union(this.BrSet.GetParamList(), this.P.ParamList(this.P.DimX+1:end), 'stable');
@@ -377,7 +419,7 @@ classdef BreachRequirement < BreachTraceSystem
             end
         end
         
-         function [summary, success, msg, msg_id] = SaveResults(this, folder_name, varargin)
+        function [summary, success, msg, msg_id] = SaveResults(this, folder_name, varargin)
             % Additional options
             if ~exist('folder_name', 'var')
                 folder_name = '';
@@ -437,8 +479,6 @@ classdef BreachRequirement < BreachTraceSystem
         end
         
     end
-    
-    
     
     
     %% Protected methods
@@ -502,6 +542,7 @@ classdef BreachRequirement < BreachTraceSystem
                     % Distribute parameters to  system and requirements
                     [params_sys, i_sys] = intersect(params, B.GetParamList());
                     [params_req, i_req] = intersect(params, this.P.ParamList(this.P.DimX+1:this.P.DimP));
+                 
                     if (numel(i_sys)+numel(i_req)) ~= numel(params) % parameter not found
                         params_not_found = setdiff(params, union(params_sys,params_req));
                         error('Parameter %s not found either as system or requirement parameter.', params_not_found{1});
@@ -510,7 +551,6 @@ classdef BreachRequirement < BreachTraceSystem
                     if ~isempty(params_sys)
                         B.SetParam(params_sys,values(i_sys,:));
                     end
-                    B.Sim(); % FIXME - need be smarter: in particular when dealing with input constraints
                     
                     if ~isempty(params_req)
                         this.SetParam(params_req, values(i_req,:));
@@ -518,13 +558,13 @@ classdef BreachRequirement < BreachTraceSystem
                     
             end
             
-            
             if exist('B', 'var')
                 if isa(B,'struct')   % reading one struct obtained from a SaveResult command
                     B = BreachTraceSystem(B);
                 end  % here we need to handle pre-conditions, input requirements, etc
                 
                 this.BrSet = B;
+                B.Sim();
                 Xs = B.GetSignalValues(this.signals_in);
                 if ~iscell(Xs)
                     Xs= {Xs};
@@ -562,24 +602,21 @@ classdef BreachRequirement < BreachTraceSystem
             this.val = V;
         end
         
-        function traj = applyOutputGens(this, traj)
-            % applyOutputGen applies intermediate signals computations
-            for iog = 1:numel(this.postprocess_signal_gens)
-                Xin = this.get_signal_from_traj(traj, this.postprocess_signal_gens{iog}.signals_in);
-                pin = traj.param(FindParam(this.P, this.postprocess_signal_gens{iog}.params));
-                [~ , Xout] = this.postprocess_signal_gens{iog}.computeSignals(traj.time, Xin, pin);
-                traj = this.set_signal_in_traj(traj, this.postprocess_signal_gens{iog}.signals,  Xout);
-            end
-            
+        function traj = postprocessSignals(this, pp, traj)
+            % postprocessSignals applies intermediate signals computations
+            Xin = this.get_signal_from_traj(traj, pp.signals_in);
+            pin = traj.param(FindParam(this.P, pp.params));
+            [~ , Xout] = this.postprocess_signal_gens{iog}.computeSignals(traj.time, Xin, pin);
+            traj = this.set_signal_in_traj(traj, this.postprocess_signal_gens{iog}.signals,  Xout);
         end
         
-        function [val, traj] = getRobustSignal(this,traj)
-            for ifo = 1:numel(this.req_monitors)
-                Xin = this.get_signal_from_traj(traj, this.req_monitors{ifo}.signals_in);
-                pin = traj.param(FindParam(this.P, this.req_monitors{ifo}.params));
-                [val(ifo),  Xout] = this.req_monitors{ifo}.eval(traj.time, Xin, pin);
-                traj  = this.set_signal_in_traj(traj, this.req_monitors{ifo}.signals, Xout);
-            end
+        function [val, traj] = evalRequirement(this, req, traj)
+            % evalRequirement eval one requirement (usually one STL formula
+            % monitor) on one trace, i.e., writes related signals and returns evaluations 
+            Xin = this.get_signal_from_traj(traj, req.signals_in);
+            pin = traj.param(FindParam(this.P, req.params));
+            [val,  Xout] = req.eval(traj.time, Xin, pin);
+            traj  = this.set_signal_in_traj(traj, req.signals, Xout);
         end
         
         function setTraces(this, trajs)
@@ -593,7 +630,6 @@ classdef BreachRequirement < BreachTraceSystem
         end
         
         %% Misc
-       
         function checkSignalMap(this)
             % checkSignalMap warning if a signal maps to a signal that is
             % not required by requirement
@@ -620,6 +656,9 @@ classdef BreachRequirement < BreachTraceSystem
             end
             for ifo = 1:numel(this.req_monitors)
                 sigs_in = setdiff(sigs_in, this.req_monitors{ifo}.signals, 'stable');             % remove outputs of formula
+            end
+            for ifo = 1:numel(this.precond_monitors)
+                sigs_in = setdiff(sigs_in, this.precond_monitors{ifo}.signals, 'stable');             % remove outputs of formula
             end
         end
         
