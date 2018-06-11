@@ -22,7 +22,7 @@ for itfo = 1:numel(formulas)
     end
     if ~isa(monitor, 'param_constraint_monitor')
         find_template();
-        signals = [signals setdiff(monitor.signals_in, signals, 'stable')];
+        signals = union(signals, monitor.signals, 'stable');
     end
     monitors = [monitors {monitor}];
 end

@@ -19,9 +19,19 @@ classdef BreachTraceSystem < BreachSystem
             elseif isstruct(signals)&&all(isfield(signals, {'time', 'outputs', 'inputs'}))
                 trace1 = signals;
                 signal_names = [trace1.outputs.names, trace1.inputs.names];
-            elseif isstruct(signals)&&all(isfield(signals, {'signals', 'time'}))
-                trace1 = signals;
-                signal_names = trace1.signals.names;
+            elseif isstruct(signals)
+                if all(isfield(signals, {'signals', 'time'})) % traj with signal names
+                    trace1 = signals;
+                    signal_names = trace1.signals.names;
+                elseif all(isfield(signals,  {'time', 'X'})) % traj, but no signal names
+                   trace1 = signals;
+                   ndim = size(trace1.X,1);
+                   signal_names = cell(1,ndim);
+                   for is = 1:ndim
+                       signal_names{is} = ['x' num2str(is)];
+                   end
+                end
+                
             elseif ischar(signals)
                 if exist(signals, 'file')
                     [~, ~, ext] = fileparts(signals);
@@ -149,7 +159,7 @@ classdef BreachTraceSystem < BreachSystem
             
             nb_traces =this.CountTraces();
             
-            if ~isfield(traj, 'param')&&~isa(trace, 'matlab.io.MatFile')
+            if ~isfield(traj, 'param')&&~isa(traj, 'matlab.io.MatFile')
                 traj.param = [this.Sys.p'];
             end
             
