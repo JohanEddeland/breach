@@ -87,6 +87,18 @@ classdef BreachSignalsPlot < handle
                 signature  = this.BrSet.GetSignature();
             end
             
+            % Aliases
+
+            if ~isempty(this.BrSet.sigMap)
+                att = 'aliases';
+                keys = this.BrSet.sigMap.keys();
+                m = uimenu(m_top_sigs, 'Label',  att);
+                for is = 1:numel(keys)
+                    sig= keys{is};
+                    uimenu(m, 'Label', sig, 'Callback', @(o,e)ctxtfn_add_signal(ax,sig,o,e));
+                end
+            end
+            
             for iatt = 1:numel(signature.signal_attributes) % build uimenu for attributes
                 att =signature.signal_attributes{iatt};
                 f = [att 's_idx'];

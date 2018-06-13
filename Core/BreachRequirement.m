@@ -456,7 +456,19 @@ classdef BreachRequirement < BreachTraceSystem
                     atts =union(atts, {'predicate'});
                 end
                 
-                if this.is_a_postprocess_output(sig)
+                if this.is_a_precond_in(sig)
+                    atts =union(atts, {'precond_in'});
+                end
+                
+                if this.is_a_req_in(sig)
+                    atts =union(atts, {'req_in'});
+                end
+                
+                if this.is_a_postprocess_in(sig)
+                    atts =union(atts, {'postprocess_in'});
+                end
+            
+                if this.is_a_postprocess_out(sig)
                     atts =union(atts, {'postprocess_out'});
                 end
             else
@@ -836,7 +848,7 @@ classdef BreachRequirement < BreachTraceSystem
             b = (STL_CheckID(sig) ==1);
         end
         
-        function b = is_a_postprocess_output(this, sig)
+        function b = is_a_postprocess_out(this, sig)
             b = false;
             [idx, found] = this.FindSignalsIdx(sig);
             if found
@@ -848,14 +860,55 @@ classdef BreachRequirement < BreachTraceSystem
                         end
                 end
             end
-            
+        end
+        
+        function b = is_a_postprocess_in(this, sig)
+            b = false;
+            [idx, found] = this.FindSignalsIdx(sig);
+            if found
+                sig = this.P.ParamList(idx);    
+                for ipp = 1:numel(this.postprocess_signal_gens)
+                        psg  = this.postprocess_signal_gens{ipp};
+                        if ismember(sig, psg.signals_in)
+                            b=true;
+                        end
+                end
+            end
+        end
+        
+        function b = is_a_req_in(this, sig)
+            b = false;
+            [idx, found] = this.FindSignalsIdx(sig);
+            if found
+                sig = this.P.ParamList(idx);    
+                for ipp = 1:numel(this.req_monitors)
+                        req  = this.req_monitors{ipp};
+                        if ismember(sig, req.signals_in)
+                            b=true;
+                        end
+                end
+            end
+        end
+        
+        function b = is_a_precond_in(this, sig)
+            b = false;
+            [idx, found] = this.FindSignalsIdx(sig);
+            if found
+                sig = this.P.ParamList(idx);    
+                for ipp = 1:numel(this.precond_monitors)
+                        req  = this.precond_monitors{ipp};
+                        if ismember(sig, req.signals_in)
+                            b=true;
+                        end
+                end
+            end
         end
         
         function b = is_a_model_input(this, sig)
             b = false;
             if ~isempty(this.BrSet)
                 atts = this.BrSet.get_signal_attributes(sig);
-                if ismember('input', atts)
+                if ismember('model_input', atts)
                     b= true;
                 end
             end
@@ -865,7 +918,7 @@ classdef BreachRequirement < BreachTraceSystem
             b = false;
             if ~isempty(this.BrSet)
                 atts = this.BrSet.get_signal_attributes(sig);
-                if ismember('output', atts)
+                if ismember('model_output', atts)
                     b= true;
                 end
             end

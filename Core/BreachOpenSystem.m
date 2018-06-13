@@ -38,9 +38,12 @@ classdef BreachOpenSystem < BreachSystem
             end
             
             if ~exist('tspan','var')
-                tspan = this.Sys.tspan;
+                if this.hasTraj()
+                    tspan = this.P.traj{1}.time;
+                else
+                    tspan = this.Sys.tspan;
+                end
             end
-            
             Sys = this.Sys;
             if exist('U','var') % in this case, the InputGenerator becomes a trace object
                 % TODO: handles multiple input signals - or use an
@@ -341,6 +344,9 @@ classdef BreachOpenSystem < BreachSystem
                 end
             end
             disp(' ');
+            if ~isempty(this.sigMap)
+                this.PrintAliases();
+            end
         end
         
         function atts = get_signal_attributes(this, sig)

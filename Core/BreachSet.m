@@ -1612,6 +1612,7 @@ classdef BreachSet < BreachStatus
                     end
                 end
             end
+            sig_names = unique(sig_names, 'stable');
         end
         
         function [param_names, unknown] =  expand_param_name(this, params)
