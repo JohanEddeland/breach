@@ -1353,17 +1353,17 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             end
             
         end
-        
+    
         function  st = disp(this)
             if isfield(this.P, 'traj')
                 nb_traj = numel(this.P.traj);
             else
                 nb_traj = 0;
             end
-            name = this.whoamI; 
+            [name, name_found] = this.whoamI; 
             
             [~,~, ~, st_status]  = GetTraceStatus(this); 
-            if isequal(name, 'Nobody__')
+            if ~name_found
                 st = ['BreachSimulinkSystem interfacing model ' this.mdl.name '. It contains ' num2str(this.GetNbParamVectors()) ' samples and ' num2str(nb_traj) ' unique traces.'];
             else
                 st = ['BreachSimulinkSystem ' name ' interfacing model ' this.mdl.name '. It contains ' num2str(this.GetNbParamVectors()) ' samples and ' num2str(nb_traj) ' unique traces.'];

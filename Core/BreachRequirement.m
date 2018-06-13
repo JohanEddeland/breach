@@ -19,7 +19,6 @@ classdef BreachRequirement < BreachTraceSystem
         sigMapInv = containers.Map()
     end
     
-    
     methods
         
         function this = BreachRequirement(req_monitors, postprocess_signal_gens, precond_monitors)
@@ -304,6 +303,8 @@ classdef BreachRequirement < BreachTraceSystem
         
         function [X, idxR] = GetSignalValues(this,varargin)
             % GetSignalValues if not found, look into BrSet
+            nb_traj = 0; 
+            X = {}; 
             signals = varargin{1};
             if ischar(signals)
                 signals = {signals};
@@ -348,7 +349,6 @@ classdef BreachRequirement < BreachTraceSystem
                     if any(ifoundB)
                         X(ifoundB==1,:) = values_data;
                     end
-                    
                 end
                 
             end
@@ -452,6 +452,11 @@ classdef BreachRequirement < BreachTraceSystem
                 if this.is_a_requirement(sig)
                     atts =union(atts, {'requirement'});
                 end
+          
+                if this.is_a_violation_signal(sig)
+                    atts =union(atts, {'violation_signal'});
+                end
+                
                 if this.is_a_predicate(sig)
                     atts =union(atts, {'predicate'});
                 end
@@ -657,6 +662,9 @@ classdef BreachRequirement < BreachTraceSystem
                B.SimInputsOnly = true;
            end
            % compute traces 
+           if this.use_parallel
+               B.SetupParallel();
+           end
            B.Sim();
            this.BrSet = B;
            
@@ -693,11 +701,11 @@ classdef BreachRequirement < BreachTraceSystem
             % eval pre conditions
             if ~isempty(this.precond_monitors)
                 for it = 1:num_traj
-                    time = this.P.traj{it}.time;
-                    for ipre = 1:numel(this.precond_monitors)
-                        req = this.precond_monitors{ipre};
-                        traces_vals_precond(it, ipre)  = eval_req();
-                    end
+                        time = this.P.traj{it}.time;
+                        for ipre = 1:numel(this.precond_monitors)
+                            req = this.precond_monitors{ipre};
+                            traces_vals_precond(it, ipre)  = eval_req();
+                        end
                 end
             end
             
@@ -826,7 +834,17 @@ classdef BreachRequirement < BreachTraceSystem
         function b = is_a_requirement(this, sig)
             b = false;
             for ifo = 1:numel(this.req_monitors)
-                if strcmp(sig, get_id(this.req_monitors{ifo}.formula))
+                if strcmp(sig, [get_id(this.req_monitors{ifo}.formula) '_satisfaction' ])||...
+                        strcmp(sig, [get_id(this.req_monitors{ifo}.formula) ])
+                    b = true;
+                end
+            end
+        end
+        
+        function b = is_a_violation_signal(this, sig)
+            b = false;
+            for ifo = 1:numel(this.req_monitors)
+                if strcmp(sig, [get_id(this.req_monitors{ifo}.formula) '_violation' ])
                     b = true;
                 end
             end
