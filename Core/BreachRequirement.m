@@ -304,7 +304,7 @@ classdef BreachRequirement < BreachTraceSystem
         function [X, idxR] = GetSignalValues(this,varargin)
             % GetSignalValues if not found, look into BrSet
             nb_traj = 0; 
-            X = {}; 
+            X = []; 
             signals = varargin{1};
             if ischar(signals)
                 signals = {signals};
@@ -694,7 +694,10 @@ classdef BreachRequirement < BreachTraceSystem
             for it =1:num_traj
                 trajR = struct();
                 trajR.param = this.P.pts(:,1)';
-                trajR.param(idx_param_sys_R) = B.P.traj{it}.param(1, idx_param_sys_B);
+                if ~isempty(idx_param_sys_R)
+                    trajR.param(1,idx_param_sys_R) = B.P.traj{it}.param(1, idx_param_sys_B);
+                end
+                
                 trajR.time = B.P.traj{it}.time;
                 trajR.X = NaN(this.Sys.DimX, numel(trajR.time));
                 this.AddTrace(trajR);

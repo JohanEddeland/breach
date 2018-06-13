@@ -877,28 +877,7 @@ classdef BreachSet < BreachStatus
             else
                 this.SampleDomain(bnd_params,2, 'corners', 'replace', max_num_samples);
             end
-            %
-            %
-            %
-            %
-            %             if this.AppendWhenSample
-            %                 Pold = this.P;
-            %             end
-            %
-            %             this.ResetParamSet();
-            %             newP = this.P;
-            %             newP.epsi = 2*newP.epsi;
-            %             newP = Refine(newP,2);
-            %             newP.epsi = newP.epsi/2;
-            %
-            %             if this.AppendWhenSample
-            %                 this.P = SConcat(Pold, newP);
-            %             else
-            %                 this.P = newP;
-            %             end
-            %             this.CheckinDomainParam();
-            %
-        end
+          end
         
         function QuasiRandomSample(this, nb_sample, step)
             % Quasi-Random Sampling

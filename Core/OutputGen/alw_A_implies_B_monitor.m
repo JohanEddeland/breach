@@ -19,6 +19,7 @@ classdef alw_A_implies_B_monitor < alw_monitor
         
         function plot_diagnosis(this, F)
             % Assumes F has data about this formula 
+            
             F.AddSignals(this.signals_in);
             sig= this.signals{end};
             F.HighlightFalse(sig);

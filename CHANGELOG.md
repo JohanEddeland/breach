@@ -1,3 +1,9 @@
+# Release 1.3.beta3
+- DiskCaching for BreachProblem now save runs in the cache folders
+- skip computation of previously computed objective values in a BreachProblem in serial mode 
+- fixed bug in BreachProblem.ResetObjective 
+
+
 # Release 1.3.beta2
 
 - Renamed ogs into postprocess_signal_gen and formulas into

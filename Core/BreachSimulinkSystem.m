@@ -40,9 +40,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
         StopAtSimulinkError=false
         mdl
         DiskCachingRoot 
-    end
-    
-    properties (Access=protected)
         UseDiskCaching=false   %  set by SetupDiskCaching
     end
     

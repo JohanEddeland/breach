@@ -302,26 +302,27 @@ classdef BreachOpenSystem < BreachSystem
         end
         
         % not sure why I need a special Concat operator here.
-        function this = Concat(this,other)
-            
-            if isa(this.InputGenerator, 'BreachTraceSystem')
-                % TODO Concat other with more than one trace...
-                trace = [other.InputGenerator.P.traj{1}.time' other.InputGenerator.P.traj{1}.X'];
-                this.InputGenerator.AddTrace(trace);
-                % Using SetParam here erases the trajectory...
-                i_trace_id = FindParam(other.P, 'trace_id');
-                other.P.pts(i_trace_id,1) = numel(this.P.traj)+1;
-                other.P.traj{1}.param(i_trace_id) = numel(this.P.traj)+1;
-                this.P = SConcat(this.P, other.P);
-            elseif isa(this.InputGenerator, 'BreachSystem')
-                this.InputGenerator.P= SConcat(this.InputGenerator.P, other.InputGenerator.P);
-                this.P = SConcat(this.P,other.P);
-            else % ignore InputGenerator .. 
-                this.P = SConcat(this.P,other.P);
-            end
-            
-        end
-        
+        % my guess is I don't 
+%         function this = Concat(this,other)
+%             
+%             if isa(this.InputGenerator, 'BreachTraceSystem')
+%                 % TODO Concat other with more than one trace...
+%                 trace = [other.InputGenerator.P.traj{1}.time' other.InputGenerator.P.traj{1}.X'];
+%                 this.InputGenerator.AddTrace(trace);
+%                 % Using SetParam here erases the trajectory...
+%                 i_trace_id = FindParam(other.P, 'trace_id');
+%                 other.P.pts(i_trace_id,1) = numel(this.P.traj)+1;
+%                 other.P.traj{1}.param(i_trace_id) = numel(this.P.traj)+1;
+%                 this.P = SConcat(this.P, other.P);
+%             elseif isa(this.InputGenerator, 'BreachSystem')
+%                 this.InputGenerator.P= SConcat(this.InputGenerator.P, other.InputGenerator.P);
+%                 this.P = SConcat(this.P,other.P);
+%             else % ignore InputGenerator .. 
+%                 this.P = SConcat(this.P,other.P);
+%             end
+%             
+%         end
+%         
         function hsi = SetInputGenGUI(this)
             hsi=  signal_gen_gui(this);
         end
