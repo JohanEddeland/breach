@@ -599,9 +599,7 @@ classdef testron_signal_gen < signal_gen
                         min_value = this_arg(1);
                         max_value = this_arg(2);
                         n_intervals = this_arg(3);
-                        start_value = this_arg(4);
                         cp_values = pts_x(1:n_intervals);
-                        cp_values(1) = start_value;
                         pts_x = pts_x(n_intervals+1:end);
                         t_cp = linspace(time(1), time(end), n_intervals)';
                         if numel(t_cp)==1
