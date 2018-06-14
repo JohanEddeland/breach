@@ -313,6 +313,7 @@ switch(numel(varargin))
         end
         
         % parse operator
+       %% test predicate 
 
         [success, st1, st2] = parenthesisly_balanced_split(st, '<=');
         if success
@@ -384,7 +385,15 @@ switch(numel(varargin))
             return
         end
         
-        % Last possibility, the formula already exists - note: in that case
+        
+        %% Maybe expression defined without >0
+        if isempty(regexp(st,'[>< ]','once'))
+            st = [st '>0'];
+            phi = STL_Parse(phi, st);
+            return;
+        end
+     
+        %% Last possibility, the formula already exists - note: in that case
         % we ignore id and use the id of existing formula
         try
             st = regexprep(st,'[()\s]','');
@@ -565,7 +574,7 @@ if (diff1 ~=0)
         
         % checks if there is nothing but blanks before enclosing par.
         pre_st1 = st1(1:idx_left_par1(diff1));
-        if ~isempty(regexp(pre_st1, '[^\(\s]'))
+        if ~isempty(regexp(pre_st1, '[^\(\s]','once'))
             success= 0;
             return;
         end

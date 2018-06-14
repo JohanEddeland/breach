@@ -7,10 +7,11 @@ classdef alw_A_implies_B_monitor < alw_monitor
         function this = alw_A_implies_B_monitor(formula)
             this = this@alw_monitor(formula);
           
-            subphis = get_children(formula);
-            if ~isequal(get_type(subphis{1}), '=>')
+            subphi = get_children(formula);
+            if ~isequal(get_type(subphi{1}), '=>')
                 error('formula is not of type alw A => B');
             end
+            subphis = get_children(subphi{1});
             
             this.pre  = subphis{1};
             this.post = subphis{2}; 

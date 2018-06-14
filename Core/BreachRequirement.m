@@ -131,7 +131,6 @@ classdef BreachRequirement < BreachTraceSystem
             this.signals_in = this.get_signals_in();
         end
         
-        
         function  [val_precond, traj_req] = evalTracePrecond(this,traj_req)
             % evalTracePrecond eval satisfaction of requirements for one trace.
             
@@ -209,11 +208,18 @@ classdef BreachRequirement < BreachTraceSystem
                 summary.statement = sprintf('%d traces evaluated', this.CountTraces());
             end
             
+            summary.signature = this.GetSignature();
             summary.num_traces_evaluated =size(this.traces_vals,1);
+            
+            summary.requirements.names = cell(1,numel(this.req_monitors));
+            for ir = 1:numel(this.req_monitors)
+                summary.requirements.names{ir} = this.req_monitors{ir}.formula_id;
+            end
             
             if summary.num_traces_evaluated>0
                 summary.val = this.val;
-                summary.traces_vals = this.traces_vals;
+                summary.requirements.rob = this.traces_vals;
+                summary.requirements.sat = this.traces_vals >=0;
                 summary.num_requirements = size(this.traces_vals,2);
                 if summary.num_requirements == 1
                     summary.statement = sprintf([summary.statement ' on %d requirement'], summary.num_requirements);

@@ -917,6 +917,7 @@ classdef BreachSet < BreachStatus
             gca;
             %P = DiscrimPropValues(this.P);
             params = SplotPts(this.P, varargin{:});
+            
             %% Datacursor mode customization
             h = datacursormode(gcf);
             h.UpdateFcn = @myupdatefcn;
