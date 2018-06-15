@@ -20,6 +20,16 @@ classdef FalsificationProblem < BreachProblem
         StopAtFalse=true
     end
     
+    methods (Static)
+        function load_runs(folder, run)
+            if nargin==1
+                evalin('base', ['load(''' folder filesep 'FalsificationProblem_Runs'');']);
+            elseif nargin==2
+                evalin('base', ['load(''' folder filesep 'FalsificationProblem_Runs'','''  run   ''');']);
+            end
+        end
+    end
+    
     methods
         
         % Constructor calls parent constructor
