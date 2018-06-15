@@ -44,10 +44,14 @@ end
                hor = get_horizon(formula);
                if hor==0
                    alw_formula = STL_Formula(['alw_' get_id(monitor.formula)], ['alw ' get_id(monitor.formula)]);
-                   monitor = alw_monitor(alw_formula);
-                   monitor.p0 = p0;
+                   if strcmp(get_type(formula), '=>')
+                       monitor = alw_A_implies_B_monitor(alw_formula); 
+                   else
+                       monitor = alw_monitor(alw_formula);
+                   end
                end
         end
+        monitor.p0 = p0;
     end
 end
 

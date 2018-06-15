@@ -90,14 +90,15 @@ classdef BreachSamplesPlot < handle
                         txt{end+1} = [this.summary.requirements.names{irr} ':' num2str(this.summary.requirements.rob(ipts, irr))];
                     end
                 end
-                txt{end+1} = '--------------'; 
-                
-                for irr = 1:numel(this.summary.signature.variables_idx)
-                    var_name = this.summary.signature.params{this.summary.signature.variables_idx(irr)};
-                    var_value = this.BrSet.GetParam(var_name, ipts);
-                    txt{end+1} = [var_name ': ' num2str(var_value)];
+               
+                if isfield(this.summary.signature, 'variables_idx')
+                    txt{end+1} = '--------------';
+                    for irr = 1:numel(this.summary.signature.variables_idx)
+                        var_name = this.summary.signature.params{this.summary.signature.variables_idx(irr)};
+                        var_value = this.BrSet.GetParam(var_name, ipts);
+                        txt{end+1} = [var_name ': ' num2str(var_value)];
+                    end
                 end
-                
                  end
             
             %% Context menu
