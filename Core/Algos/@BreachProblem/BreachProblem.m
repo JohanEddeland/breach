@@ -99,6 +99,7 @@ classdef BreachProblem < BreachStatus
     
     %% Static Methods
     methods (Static)
+       
         function solvers = list_solvers(verbose)
         % list_solvers display the list of (supposedly) available solvers.      
         % TODO check dependency on locally installed toolboxes 

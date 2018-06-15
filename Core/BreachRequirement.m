@@ -496,9 +496,11 @@ classdef BreachRequirement < BreachTraceSystem
             end
             
             if ismember(param, this.P.ParamList(this.P.DimX+1:end))
-                atts =[atts {'req_param'}];
+                atts =union(atts, {'req_param'});
             end
         end
+        
+        
         
         function signals = GetSignalList(this)
             if ~isempty(this.BrSet)
@@ -830,7 +832,10 @@ classdef BreachRequirement < BreachTraceSystem
             
             % got all sigs_in which are not sigs out 
             [~, found] = this.FindSignalsIdx(sigs_in);
-            sigs_in = sigs_in(found==0)';
+            sigs_in = sigs_in(found==0);
+            if size(sigs_in,1)>1
+                sigs_in = sigs_in';
+            end
             
         end
         

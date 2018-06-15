@@ -53,14 +53,18 @@ classdef BreachSamplesPlot < handle
             vals_neg = sum(vals_neg,2);
             pos_pts = all_pts(vals_pos>0|~vals_neg<0);
             neg_pts = all_pts(vals_neg<0);
-            plot(pos_pts, vals_pos(vals_pos>0|~vals_neg<0),'.g', 'MarkerSize', 30);
+            vals_pos = vals_pos(vals_pos>0|~vals_neg<0);
+            vals_neg =   vals_neg(vals_neg<0);
+            plot(pos_pts, vals_pos ,'.g', 'MarkerSize', 30);
             hold on;
-            plot(neg_pts, vals_neg(vals_neg<0),'.r', 'MarkerSize', 30);
+            plot(neg_pts,vals_neg ,'.r', 'MarkerSize', 30);
             grid on;
             xlabel Samples;
             set(gca, 'Xtick', []); 
             ylabel('Cumulative satisfactions/violations');
        
+            
+            
             %% Datacursor mode customization
             cursor_h = datacursormode(this.Fig);
             cursor_h.UpdateFcn = @myupdatefcn;
@@ -72,13 +76,29 @@ classdef BreachSamplesPlot < handle
                 pos = event_obj.Position;
                 ipts = pos(1);
                 val = pos(2);
-                txt = cell(1, numel(this.summary.requirements.names)+1);
-                txt{1} = ['idx:' num2str(ipts)];
-                for irr = 1:numel(this.summary.requirements.names)
-                    txt{irr+1} = [this.summary.requirements.names{irr} ':' num2str(this.summary.requirements.rob(ipts, irr))];
-                end
                 this.idx_tipped = ipts;
-            end
+           
+                txt{1} = ['idx trace:' num2str(ipts)] ;
+                if (val>=0)
+                    txt{2} = ['sum(rob>=0):' num2str(val)];
+                else
+                    txt{2} = ['sum(rob<0):' num2str(val)];
+                end
+                
+                for irr = 1:numel(this.summary.requirements.names)
+                    if (this.summary.requirements.rob(ipts, irr)*val>0||(this.summary.requirements.rob(ipts, irr) ==0&&val>=0)) 
+                        txt{end+1} = [this.summary.requirements.names{irr} ':' num2str(this.summary.requirements.rob(ipts, irr))];
+                    end
+                end
+                txt{end+1} = '--------------'; 
+                
+                for irr = 1:numel(this.summary.signature.variables_idx)
+                    var_name = this.summary.signature.params{this.summary.signature.variables_idx(irr)};
+                    var_value = this.BrSet.GetParam(var_name, ipts);
+                    txt{end+1} = [var_name ': ' num2str(var_value)];
+                end
+                
+                 end
             
             %% Context menu
             cm = uicontextmenu;
