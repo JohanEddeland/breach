@@ -34,8 +34,9 @@ end
                 child = get_children(monitor.formula);
                 if strcmp(get_type(child{1}), '=>')
                     monitor = alw_A_implies_B_monitor(formula);
+                else
+                    monitor = alw_monitor(formula);
                 end
-                monitor = alw_monitor(formula);
             case {'ev', 'eventually'}
                 monitor  = ev_monitor(formula);
             case {'until'}

@@ -20,10 +20,14 @@ classdef alw_A_implies_B_monitor < alw_monitor
         
         function plot_diagnosis(this, F)
             % Assumes F has data about this formula 
-            
-            F.AddSignals(this.signals_in);
+            signals_pre = STL_ExtractSignals(this.pre);
+            ax1 = F.AddAxes();
+            F.AddSignals(signals_pre, ax1);
+             
+            ax2 = F.AddAxes();
+            F.AddSignals(setdiff(this.signals_in, signals_pre), ax2);
             sig= this.signals{end};
-            F.HighlightFalse(sig);
+            F.HighlightFalse(sig,ax2);
         end
     
         
