@@ -1,3 +1,14 @@
+# Release 1.3.beta4 
+- BreachSamplesPlot provides interactive plots of BreachRequirement
+  results
+- BreachProblem saves runs in cache folders when DiskCaching is
+  enabled
+- runs of falsification problems can be loaded using
+  FalsificationProblem.load_runs static method  
+- bugfix for alw A=>B template and plot_diagnosis now separates A and
+  A=>B on two axes
+
+
 # Release 1.3.beta3
 - DiskCaching for BreachProblem now save runs in the cache folders (Issue #29)
 - skip computation of previously computed objective values in a BreachProblem in serial mode 
