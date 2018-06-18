@@ -37,7 +37,7 @@ classdef BreachSet < BreachStatus
         SignalRanges % ranges of values taken by each signal variable
         AppendWhenSample=false % when true, sampling appends new param vectors, otherwise replace.
         log_folder
-        sigMap = containers.Map()
+        sigMap 
     end
     
     methods (Hidden=true)
@@ -58,6 +58,7 @@ classdef BreachSet < BreachStatus
         function this = BreachSet(Sys, params, ranges)
             % BreachSet constructor from a legacy P or Sys, parameter names and ranges
             
+            this.sigMap = containers.Map();
             switch nargin
                 case 0
                     return;
@@ -1317,7 +1318,7 @@ classdef BreachSet < BreachStatus
             options = varargin2struct(options, varargin{:});
             
             if isempty(options.FolderName)
-                options.FolderName = ['Import_Results_' datestr(now, 'dd_mm_yyyy_HHMM')];
+                options.FolderName = ['Results_' datestr(now, 'dd_mm_yyyy_HHMM')];
             end
             
             %% Common stuff
@@ -1403,7 +1404,7 @@ classdef BreachSet < BreachStatus
             end
         end
         
-        function sigs = GetSignalSignature(this, signals)
+        function [sigs] = GetSignalSignature(this, signals)
            if nargin <=1
                 signals = this.GetSignalList(); 
            end
@@ -1413,9 +1414,23 @@ classdef BreachSet < BreachStatus
             end
             sigs.signals = signals;
             sigs.signal_attributes = {};
+            sigs.signals_map_idx = [];
             for is = 1:numel(signals)
                 sig= signals{is};
-                dom = this.GetDomain(sig);
+                sig_aliases = this.getAliases(sig);
+                idx = inf; 
+                for ia = 1:numel(sig_aliases)
+                    idx_ia =  find(strcmp(sig_aliases(ia), signals),1);
+                    if ~isempty(idx_ia)
+                        idx = min(idx,idx_ia ); % find first position in signals an alias appears
+                    end
+                end
+                if idx==inf
+                    error('BreachSet:GetSignalSignature:not_found', 'Signal or alias %s not found.', sig);
+                end
+                
+                sigs.signals_map_idx(is) = idx; 
+                dom = this.GetDomain(signals{idx});
                 sigs.signal_types{is}  = dom.type;
                 %  Add attributes indexes
                 atts = this.get_signal_attributes(sig);
@@ -1488,6 +1503,12 @@ classdef BreachSet < BreachStatus
             param_values = this.GetParam(params);
             for it = 1:num_traces
                 traj = this.P.traj{it};
+                if ~exist('X','var')
+                    X = zeros(numel(signals), numel(traj.time));
+                end
+                for is = 1:numel(signals)
+                    X(is,:) = this.GetSignalValues(signals{is}, it);
+                end
                 
                 if ~isempty(dir_traces)
                     traces{it} = matfile([dir_traces filesep num2str(it) '.mat'], 'Writable',true);
@@ -1499,14 +1520,11 @@ classdef BreachSet < BreachStatus
                 traces{it}.signature = signature;
                 traces{it}.param = [zeros(1,numel(signals)) param_values(:,it)'];
                 traces{it}.time = traj.time;
-                traces{it}.X = zeros(numel(signals), numel(traj.time));
-                for is = 1:numel(signals)
-                    traces{it}.X(is,:) = this.GetSignalValues(signals{is}, it);
-                end
-                
-               if ~isempty(dir_traces)
+                traces{it}.X = X;
+                  
+                if ~isempty(dir_traces)
                    traces{it}.Properties.Writable= false; 
-               end
+                end
             end
         end
         
@@ -1634,6 +1652,7 @@ classdef BreachSet < BreachStatus
                 for ispec = 1:numel(summary.specs.names)
                     hdr{ispec} = ['Req. ' num2str(ispec)];
                 end
+                
                 for iparam = ispec+1:ispec+numel(summary.test_params.names)
                     hdr{iparam} = ['param. ' num2str(iparam-ispec) ];
                 end
@@ -1659,7 +1678,7 @@ classdef BreachSet < BreachStatus
                 disp( '---- ALIASES ----')
                 keys = this.sigMap.keys();
                 for ik = 1:numel(keys)
-                    fprintf('%s --> %s\n', keys{ik}, this.sigMap(keys{ik}));
+                    fprintf('%s <--> %s\n', keys{ik}, this.sigMap(keys{ik}));
                 end
                 fprintf('\n')
             end
@@ -1772,8 +1791,27 @@ classdef BreachSet < BreachStatus
             this.P.selected = zeros(1,nb_pts);
         end
         
+        function getAliases(this, signals)
+            aliases = {};
+            if ischar(signals)
+                signals = {signals};
+            end
+            for isig = 1:numel(signals)
+                s0 = signals{isig};
+                aliases = union(aliases, {s0}, 'stable');  % compute all aliases for s
+                s = s0;
+                while (this.sigMap.isKey(s))
+                    s = this.sigMap(s);
+                    aliases = union(aliases, {s} ,'stable' );
+                end
+            end
+        end
+        
+        
     end
     methods (Access=protected)    
+        
+        
         
         function Xp = get_signals_from_traj(this, traj, names)
             idx = FindParam(this.P, names); %  not fool proof, but not supposed to be used by fools

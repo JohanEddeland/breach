@@ -12,11 +12,11 @@ classdef BreachRequirement < BreachTraceSystem
         traces_vals_precond % results for individual traces & precond_monitors
         traces_vals % results for individual traces & req_monitors
         val             % summary evaluation for all traces & req_monitors
+        sigMapInv = containers.Map()
     end
     
     properties (Access=protected)
         eval_precond_only= false  % when true, does what it says 
-        sigMapInv = containers.Map()
     end
     
     methods
@@ -128,6 +128,7 @@ classdef BreachRequirement < BreachTraceSystem
         
         function ResetSigMap(this)
             this.sigMap = containers.Map();
+            this.sigMapInv = containers.Map();
             this.signals_in = this.get_signals_in();
         end
         
@@ -269,7 +270,6 @@ classdef BreachRequirement < BreachTraceSystem
         end
         
         function [idx, ifound, idxB, ifoundB] = FindSignalsIdx(this, signals )
-           
             if ischar(signals)
                 signals = {signals};
             end
@@ -279,7 +279,7 @@ classdef BreachRequirement < BreachTraceSystem
             if any(~ifound)   % if not a signal of the requirement, look into BrSet (system) signals
                 idx_not_found = find(~ifound);
                 for isig = 1:numel(idx_not_found)
-                    s0 = signals{isig};
+                    s0 = signals{idx_not_found(isig)};
                     aliases = {s0};  % compute all aliases for s
                     s = s0;
                     while (this.sigMap.isKey(s))
@@ -304,7 +304,6 @@ classdef BreachRequirement < BreachTraceSystem
                      end
                 end
             end
-            
         end
         
         function [X, idxR] = GetSignalValues(this,varargin)
@@ -356,9 +355,7 @@ classdef BreachRequirement < BreachTraceSystem
                         X(ifoundB==1,:) = values_data;
                     end
                 end
-                
             end
-            
         end
         
         function dom  = GetDomain(this, param)
@@ -369,9 +366,15 @@ classdef BreachRequirement < BreachTraceSystem
             for i = 1:numel(idx)
                 if found(i)
                     dom(i) = this.Domains(idx(i));
-                else
+                elseif ~isempty(this.BrSet)
                     [idx_BrSet, found_BrSet] = FindParam(this.BrSet.P, param(i));
-                    dom(i) = this.BrSet.Domains(idx_BrSet);
+                    if found_BrSet
+                        dom(i) = this.BrSet.Domains(idx_BrSet);
+                    else
+                        dom(i) = BreachDomain();
+                    end
+                else
+                    dom(i) = BreachDomain();
                 end
             end
         end
@@ -483,7 +486,7 @@ classdef BreachRequirement < BreachTraceSystem
                     atts =union(atts, {'postprocess_out'});
                 end
             else
-                error('Signal %s unknown.', sig);
+                atts = union(atts, {'unknown'});
             end
         end
         
@@ -500,14 +503,17 @@ classdef BreachRequirement < BreachTraceSystem
             end
         end
         
-        
-        
         function signals = GetSignalList(this)
             if ~isempty(this.BrSet)
-                signals = union(this.BrSet.GetSignalList(), this.P.ParamList(1:this.P.DimX), 'stable');
+                signals = union(this.BrSet.P.ParamList(1:this.BrSet.P.DimX), this.P.ParamList(1:this.P.DimX), 'stable');
             else
                 signals = this.P.ParamList(1:this.P.DimX);
             end
+            % adds in aliases
+            for is = 1:numel(signals)
+                signals = union(signals, this.getAliases(signals(is)) , 'stable'); 
+            end   
+                
         end
         
         function SetupDiskCaching(this)
@@ -581,6 +587,29 @@ classdef BreachRequirement < BreachTraceSystem
             save(summary_filename,'-struct', 'summary');
              
         end
+        
+        function aliases = getAliases(this, signals) 
+            aliases = {};
+            if ischar(signals)
+                signals = {signals};
+            end
+           
+            for isig = 1:numel(signals)
+                    s0 = signals{isig};
+                    aliases = union(aliases, {s0},'stable');  % compute all aliases for s
+                    s = s0;
+                    while (this.sigMap.isKey(s))
+                        s = this.sigMap(s);
+                        aliases = union(aliases, {s},'stable' );
+                    end
+                    s = s0;
+                    while (this.sigMapInv.isKey(s))
+                        s = this.sigMapInv(s);
+                        aliases = union(aliases, {s} ,'stable');
+                    end
+            end
+        end
+        
         
     end
     
@@ -774,23 +803,6 @@ classdef BreachRequirement < BreachTraceSystem
         
         end
         
-        function aliases = getAliases(this, signals) 
-            aliases = {};
-            for isig = 1:numel(signals)
-                    s0 = signals{isig};
-                    aliases = union(aliases, {s0});  % compute all aliases for s
-                    s = s0;
-                    while (this.sigMap.isKey(s))
-                        s = this.sigMap(s);
-                        aliases = union(aliases, {s} );
-                    end
-                    s = s0;
-                    while (this.sigMapInv.isKey(s))
-                        s = this.sigMapInv(s);
-                        aliases = union(aliases, {s} );
-                    end
-            end
-        end
         
         function  [time, Xout] = postprocessSignals(this, pp, time, Xin, pin)
             % postprocessSignals applies intermediate signals computations
@@ -816,26 +828,44 @@ classdef BreachRequirement < BreachTraceSystem
         %% Misc
         
         function sigs_in = get_signals_in(this)
-            
-            sigs_in =  {};
+            sigs_in = {};
+            all_sigs_in =  {};
             for ipostprocess_signal_gens = 1:numel(this.postprocess_signal_gens)
-                sigs_in = setdiff(union(sigs_in,this.postprocess_signal_gens{ipostprocess_signal_gens}.signals_in, 'stable'), this.postprocess_signal_gens{ipostprocess_signal_gens}.signals, 'stable');      % remove outputs of signals generators
+                all_sigs_in = setdiff(union(all_sigs_in,this.postprocess_signal_gens{ipostprocess_signal_gens}.signals_in, 'stable'), this.postprocess_signal_gens{ipostprocess_signal_gens}.signals, 'stable');      % remove outputs of signals generators
             end
             
             for ifo = 1:numel(this.req_monitors)
-                sigs_in = setdiff(union(sigs_in,this.req_monitors{ifo}.signals_in, 'stable' ), this.req_monitors{ifo}.signals, 'stable');             % remove outputs of formula
+                all_sigs_in = setdiff(union(all_sigs_in,this.req_monitors{ifo}.signals_in, 'stable' ), this.req_monitors{ifo}.signals, 'stable');             % remove outputs of formula
             end
             
             for ifo = 1:numel(this.precond_monitors)
-                sigs_in = setdiff(union(sigs_in, this.precond_monitors{ifo}.signals_in, 'stable'), this.precond_monitors{ifo}.signals, 'stable');             % remove outputs of formula
+                all_sigs_in = setdiff(union(all_sigs_in, this.precond_monitors{ifo}.signals_in, 'stable'), this.precond_monitors{ifo}.signals, 'stable');             % remove outputs of formula
             end
             
             % got all sigs_in which are not sigs out 
-            [~, found] = this.FindSignalsIdx(sigs_in);
-            sigs_in = sigs_in(found==0);
-            if size(sigs_in,1)>1
-                sigs_in = sigs_in';
+            [~, found] = this.FindSignalsIdx(all_sigs_in);
+            all_sigs_in = all_sigs_in(found==0);
+          
+            if size(all_sigs_in,1)>1
+                all_sigs_in = all_sigs_in';
             end
+            reps_sigs_in = all_sigs_in(1);
+            aliases = this.getAliases(all_sigs_in{1});
+            for is = 1:numel(all_sigs_in)
+                if ~ismember(all_sigs_in{is}, aliases)
+                    reps_sigs_in= union(reps_sigs_in, all_sigs_in(is));
+                    aliases = union(aliases, this.getAliases(all_sigs_in(is)));
+                end
+            end
+           
+            
+            for is = 1:numel(reps_sigs_in) % remove postprocess_out
+               s  = this.GetSignalSignature(reps_sigs_in{is});
+               if ~ismember('postprocess_out', s.signal_attributes)
+                  sigs_in=union(sigs_in, reps_sigs_in{is});
+               end
+           end
+         
             
         end
         
