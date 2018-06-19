@@ -38,6 +38,7 @@ classdef BreachSet < BreachStatus
         AppendWhenSample=false % when true, sampling appends new param vectors, otherwise replace.
         log_folder
         sigMap 
+        sigMapInv
     end
     
     methods (Hidden=true)
@@ -59,6 +60,8 @@ classdef BreachSet < BreachStatus
             % BreachSet constructor from a legacy P or Sys, parameter names and ranges
             
             this.sigMap = containers.Map();
+            this.sigMapInv = containers.Map();
+            
             switch nargin
                 case 0
                     return;
@@ -424,12 +427,10 @@ classdef BreachSet < BreachStatus
                 
         %% Signals
         
-        function this= SetSignalMap(this, varargin)
+        function  this =  SetSignalMap(this, varargin)
             % SetSignalMap defines aliases for signals - used by GetSignalValues 
             %
             % Input:  a map or a list of pairs or two cells
-            
-            this.ResetSigMap();
             
             arg_err_msg = 'Argument should be a containers.Map object, or a list of pairs of signal names, or two cells of signal names with same size.';
             switch nargin
@@ -446,10 +447,12 @@ classdef BreachSet < BreachStatus
                         end
                         for is = 1:numel(varargin{2})
                             this.sigMap(varargin{1}{is}) = varargin{2}{is};
+                            this.sigMapInv( varargin{2}{is} ) = varargin{1}{is}; 
                         end
                     else
                         if ischar(varargin{1})&&ischar(varargin{2})
                             this.sigMap(varargin{1}) = varargin{2};
+                            this.sigMapInv(varargin{2}) = varargin{1};
                         else
                             error('SetSignalMap:wrong_arg', arg_err_msg);
                         end
@@ -458,12 +461,13 @@ classdef BreachSet < BreachStatus
                     for is = 1:numel(varargin)/2
                         try
                             this.sigMap(varargin{2*is-1}) = varargin{2*is};
+                            this.sigMapInv(varargin{2*is}) = varargin{2*is-1};
                         catch
                             error('SetSignalMap:wrong_arg', arg_err_msg);
                         end
                     end
             end
-            
+     
             if this.verbose >= 2
                 this.PrintSigMap();
             end
@@ -604,13 +608,6 @@ classdef BreachSet < BreachStatus
             end
             
             if iscell(signals)
-                % Replace with sigMap
-                for is = 1:numel(signals)
-                    while this.sigMap.isKey(signals{is}) % recursive, allow alias of alias 
-                        signals{is} = this.sigMap(signals{is});
-                    end
-                end
-                
                 [signals_idx, type] = this.FindSignalsIdx(signals);
                 if any(type==0)
                     not_found= find(type==0);
@@ -651,20 +648,24 @@ classdef BreachSet < BreachStatus
         
         function [idx, ifound] = FindSignalsIdx(this, signals)
             % resolve sigMap
-            if ~isempty(this.sigMap)
-                if ischar(signals)
-                    signals = {signals};
-                end
-                for isig = 1:numel(signals)
-                    while this.sigMap.isKey(signals{isig})
-                        signals{isig} = this.sigMap(signals{isig});
+            if ischar(signals)
+                signals = {signals};
+            end
+            % For all signals, first use sigMap-less search, then check
+            % aliases
+            for isig = 1:numel(signals)
+                sig = signals{isig}; 
+                [idx(isig), ifound(isig)] = FindParam(this.P, sig);
+                aliases_sig = setdiff(this.getAliases(sig), sig);
+                for ais = 1:numel(aliases_sig)
+                    [idx_s, ifound_s] = FindParam(this.P, aliases_sig{ais});
+                    if ifound_s
+                        ifound(isig)=true;
+                        idx(isig)=idx_s;
                     end
                 end
             end
-            [idx, ifound] = FindParam(this.P, signals);
         end
-       
-        
         
         function SaveSignals(this, signals, folder, name,i_trajs)
             % BreachSet SaveSignals Save signals in mat files as simple time series
@@ -1415,6 +1416,7 @@ classdef BreachSet < BreachStatus
             sigs.signals = signals;
             sigs.signal_attributes = {};
             sigs.signals_map_idx = [];
+            sigs.signals_reps={};  
             for is = 1:numel(signals)
                 sig= signals{is};
                 sig_aliases = this.getAliases(sig);
@@ -1425,6 +1427,10 @@ classdef BreachSet < BreachStatus
                         idx = min(idx,idx_ia ); % find first position in signals an alias appears
                     end
                 end
+                if idx==is % first time we see this guy, take it as rep
+                    sigs.signals_reps{end+1} = sig;
+                end
+                
                 if idx==inf
                     error('BreachSet:GetSignalSignature:not_found', 'Signal or alias %s not found.', sig);
                 end
@@ -1443,6 +1449,9 @@ classdef BreachSet < BreachStatus
                         sigs.(f)(end+1) = is;
                     end
                 end
+            end
+            if size(sigs.signal_attributes,1)>1
+                sigs.signal_attributes = sigs.signal_attributes';
             end
         end
         
@@ -1497,18 +1506,13 @@ classdef BreachSet < BreachStatus
                 dir_traces = '';
             end
                 
-            [signature, signals, params] = this.GetSignature(signals, params);
+            [signature,~, params] = this.GetSignature(signals, params);
             num_traces = numel(this.P.traj);
-            
+            signals = signature.signals_reps;
             param_values = this.GetParam(params);
             for it = 1:num_traces
                 traj = this.P.traj{it};
-                if ~exist('X','var')
-                    X = zeros(numel(signals), numel(traj.time));
-                end
-                for is = 1:numel(signals)
-                    X(is,:) = this.GetSignalValues(signals{is}, it);
-                end
+                X = this.GetSignalValues(signals, it);
                 
                 if ~isempty(dir_traces)
                     traces{it} = matfile([dir_traces filesep num2str(it) '.mat'], 'Writable',true);
@@ -1571,8 +1575,6 @@ classdef BreachSet < BreachStatus
             end
         end
         
-        
-        
         function att = get_signal_attributes(this, sig)
             % returns nature to be included in signature
             att = {};
@@ -1611,6 +1613,9 @@ classdef BreachSet < BreachStatus
                 end
             end
             sig_names = unique(sig_names, 'stable');
+            % adds in aliases
+            sig_names = union(sig_names,this.getAliases(sig_names), 'stable');
+            
         end
         
         function [param_names, unknown] =  expand_param_name(this, params)
@@ -1671,15 +1676,38 @@ classdef BreachSet < BreachStatus
                     fprintf('%s %s\n', this.P.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}));
                 end
                 fprintf('\n')
+            this.PrintAliases();
         end
         
         function PrintAliases(this)
             if ~isempty(this.sigMap)
                 disp( '---- ALIASES ----')
-                keys = this.sigMap.keys();
+                keys = union(this.sigMap.keys(), this.sigMapInv.keys());
+                printed = {};
                 for ik = 1:numel(keys)
-                    fprintf('%s <--> %s\n', keys{ik}, this.sigMap(keys{ik}));
-                end
+                    if this.sigMap.isKey(keys{ik})
+                        sig =  this.sigMap(keys{ik});
+                    else
+                        sig =this.sigMapInv(keys{ik});
+                    end
+                    
+                     [idx, found] = this.FindSignalsIdx(sig);
+                     if found
+                         sig = this.P.ParamList{idx};
+                         aliases = setdiff(this.getAliases(sig),sig);
+                         al_st = cell2mat(cellfun(@(c) ([ c ', ']), aliases, 'UniformOutput', false));
+                         al_st = al_st(1:end-2);
+                     else
+                         aliases = setdiff(this.getAliases(sig),sig);
+                         al_st = cell2mat(cellfun(@(c) ([ c ', ']), aliases, 'UniformOutput', false));
+                         al_st = al_st(1:end-2);
+                         al_st = [al_st(1:end-2) ' (not linked to data)' ];
+                     end
+                     if ~ismember(sig, printed)
+                        fprintf('%s <--> %s\n', sig, al_st )
+                        printed = [printed {sig} aliases];
+                    end
+                 end
                 fprintf('\n')
             end
         end
@@ -1791,25 +1819,47 @@ classdef BreachSet < BreachStatus
             this.P.selected = zeros(1,nb_pts);
         end
         
-        function aliases =  getAliases(this, signals)
-            aliases = {};
+        function aliases = getAliases(this, signals)
             if ischar(signals)
                 signals = {signals};
             end
-            for isig = 1:numel(signals)
-                s0 = signals{isig};
-                aliases = union(aliases, {s0}, 'stable');  % compute all aliases for s
-                s = s0;
-                while (this.sigMap.isKey(s))
-                    s = this.sigMap(s);
-                    aliases = union(aliases, {s} ,'stable' );
+            
+            aliases = signals;
+            sig_queue = signals;
+            
+            while ~isempty(sig_queue)
+                sig = sig_queue{1};
+                sig_queue = sig_queue(2:end);
+                if this.sigMap.isKey(sig)
+                    nu_sig = this.sigMap(sig);
+                    check_nusig()
+                end
+                if this.sigMapInv.isKey(sig)
+                    nu_sig = this.sigMapInv(sig);
+                    check_nusig()
+                end
+            end
+            
+            % check sigMapInv for double alias
+            for  invkey = this.sigMapInv.keys()
+                sig = this.sigMapInv(invkey{1});
+                if ismember(sig,aliases)
+                    aliases = union(aliases, invkey{1});
+                end
+            end
+            
+            function check_nusig()
+                if ~ismember(nu_sig, aliases)
+                    aliases = [aliases {nu_sig}];
+                    sig_queue = [sig_queue nu_sig];
                 end
             end
         end
-        
-        
+         
     end
     methods (Access=protected)    
+        
+        
         
         function Xp = get_signals_from_traj(this, traj, names)
             idx = FindParam(this.P, names); %  not fool proof, but not supposed to be used by fools
