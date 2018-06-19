@@ -12,7 +12,6 @@ classdef BreachRequirement < BreachTraceSystem
         traces_vals_precond % results for individual traces & precond_monitors
         traces_vals % results for individual traces & req_monitors
         val             % summary evaluation for all traces & req_monitors
-        sigMapInv = containers.Map()
     end
     
     properties (Access=protected)
@@ -76,54 +75,20 @@ classdef BreachRequirement < BreachTraceSystem
             
         end
         
-        function this= SetSignalMap(this, varargin)
+        function this = SetSignalMap(this, varargin)
             % SetSignalMap maps signal names to signals needed for requirement
             % evaluation
             %
             % Input:  a map or a list of pairs or two cells
             
-            arg_err_msg = 'Argument should be a containers.Map object, or a list of pairs of signal names, or two cells of signal names with same size.';
-            switch nargin
-                case 2
-                    if ~isa(varargin{1}, 'containers.Map')
-                        error('SetSignalMap:wrong_arg', arg_err_msg);
-                    else
-                        this.sigNamesMap = varargin{1};
-                    end
-                case 3
-                    if iscell(varargin{2})
-                        if ~iscell(varargin{2})||(numel(varargin{1}) ~= numel(varargin{2}))
-                            error('SetSignalMap:wrong_arg', arg_err_msg);
-                        end
-                        for is = 1:numel(varargin{2})
-                            this.sigMap(varargin{1}{is}) = varargin{2}{is};
-                            this.sigMapInv( varargin{2}{is} ) = varargin{1}{is}; 
-                        end
-                    else
-                        if ischar(varargin{1})&&ischar(varargin{2})
-                            this.sigMap(varargin{1}) = varargin{2};
-                            this.sigMapInv(varargin{2}) = varargin{1};
-                        else
-                            error('SetSignalMap:wrong_arg', arg_err_msg);
-                        end
-                    end
-                otherwise
-                    for is = 1:numel(varargin)/2
-                        try
-                            this.sigMap(varargin{2*is-1}) = varargin{2*is};
-                            this.sigMapInv(varargin{2*is}) = varargin{2*is-1};
-                        catch
-                            error('SetSignalMap:wrong_arg', arg_err_msg);
-                        end
-                    end
-            end
-            
-            this.signals_in = this.get_signals_in();
+            this = SetSignalMap@BreachSet(this,varargin{:});
             
             if this.verbose >= 2
                 this.PrintSigMap();
             end
-            
+         
+            this.signals_in = this.get_signals_in();
+         
         end
         
         function ResetSigMap(this)
@@ -459,7 +424,7 @@ classdef BreachRequirement < BreachTraceSystem
                 sig = this.P.ParamList{idx};
                 
                 if this.is_a_requirement(sig)
-                    atts =union(atts, {'requirement'});
+                    atts =union(atts, {'quant_sat_signal'});
                 end
           
                 if this.is_a_violation_signal(sig)
@@ -475,7 +440,7 @@ classdef BreachRequirement < BreachTraceSystem
                 end
                 
                 if this.is_a_req_in(sig)
-                    atts =union(atts, {'req_in'});
+                    atts =union(atts, {'requirement_in'});
                 end
                 
                 if this.is_a_postprocess_in(sig)
@@ -610,7 +575,34 @@ classdef BreachRequirement < BreachTraceSystem
             end
         end
         
-        
+        function PrintAliases(this)
+            if ~isempty(this.sigMap)
+                disp( '---- ALIASES ----')
+                keys = this.sigMap.keys();
+                for ik = 1:numel(keys)
+                    [idx, found, idx_B, ifound_B] = this.FindSignalsIdx(this.sigMap(keys{ik}));
+                    aliases = setdiff(this.getAliases(keys{ik}), keys{ik});
+                    if found
+                        sig = this.P.ParamList{idx};
+                        al_st = cell2mat(cellfun(@(c) ([ c ', ']), aliases, 'UniformOutput', false));
+                        al_st = al_st(1:end-2);
+                        fprintf('%s <--> %s\n', sig, al_st )
+                    elseif ifound_B
+                        sig = this.BrSet.P.ParamList{idx_B};
+                        al_st = cell2mat(cellfun(@(c) ([ c ', ']), aliases, 'UniformOutput', false));
+                        al_st = al_st(1:end-2);
+                        fprintf('%s <--> %s  (model or test data)\n', sig, al_st )
+                    else
+                        sig = keys{ik};
+                        al_st = cell2mat(cellfun(@(c) ([ c ', ']), aliases, 'UniformOutput', false));
+                        al_st = al_st(1:end-2);
+                        fprintf('%s <--> %s  (not linked to data)\n', sig, al_st )
+                    end
+                end
+                fprintf('\n')
+            end
+        end
+         
     end
     
     

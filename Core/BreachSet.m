@@ -38,6 +38,7 @@ classdef BreachSet < BreachStatus
         AppendWhenSample=false % when true, sampling appends new param vectors, otherwise replace.
         log_folder
         sigMap 
+        sigMapInv
     end
     
     methods (Hidden=true)
@@ -59,6 +60,8 @@ classdef BreachSet < BreachStatus
             % BreachSet constructor from a legacy P or Sys, parameter names and ranges
             
             this.sigMap = containers.Map();
+            this.sigMapInv = containers.Map();
+            
             switch nargin
                 case 0
                     return;
@@ -424,12 +427,10 @@ classdef BreachSet < BreachStatus
                 
         %% Signals
         
-        function this= SetSignalMap(this, varargin)
+        function  this =  SetSignalMap(this, varargin)
             % SetSignalMap defines aliases for signals - used by GetSignalValues 
             %
             % Input:  a map or a list of pairs or two cells
-            
-            this.ResetSigMap();
             
             arg_err_msg = 'Argument should be a containers.Map object, or a list of pairs of signal names, or two cells of signal names with same size.';
             switch nargin
@@ -446,10 +447,12 @@ classdef BreachSet < BreachStatus
                         end
                         for is = 1:numel(varargin{2})
                             this.sigMap(varargin{1}{is}) = varargin{2}{is};
+                            this.sigMapInv( varargin{2}{is} ) = varargin{1}{is}; 
                         end
                     else
                         if ischar(varargin{1})&&ischar(varargin{2})
                             this.sigMap(varargin{1}) = varargin{2};
+                            this.sigMapInv(varargin{2}) = varargin{1};
                         else
                             error('SetSignalMap:wrong_arg', arg_err_msg);
                         end
@@ -458,12 +461,13 @@ classdef BreachSet < BreachStatus
                     for is = 1:numel(varargin)/2
                         try
                             this.sigMap(varargin{2*is-1}) = varargin{2*is};
+                            this.sigMapInv(varargin{2*is}) = varargin{2*is-1};
                         catch
                             error('SetSignalMap:wrong_arg', arg_err_msg);
                         end
                     end
             end
-            
+     
             if this.verbose >= 2
                 this.PrintSigMap();
             end
@@ -651,20 +655,24 @@ classdef BreachSet < BreachStatus
         
         function [idx, ifound] = FindSignalsIdx(this, signals)
             % resolve sigMap
-            if ~isempty(this.sigMap)
-                if ischar(signals)
-                    signals = {signals};
-                end
-                for isig = 1:numel(signals)
-                    while this.sigMap.isKey(signals{isig})
-                        signals{isig} = this.sigMap(signals{isig});
+            if ischar(signals)
+                signals = {signals};
+            end
+            % For all signals, first use sigMap-less search, then check
+            % aliases
+            for isig = 1:numel(signals)
+                sig = signals{isig}; 
+                [idx(isig), ifound(isig)] = FindParam(this.P, sig);
+                aliases_sig = setdiff(this.getAliases(sig), sig);
+                for ais = 1:numel(aliases_sig)
+                    [idx_s, ifound_s] = FindParam(this.P, aliases_sig{ais});
+                    if ifound_s
+                        ifound(isig)=true;
+                        idx(isig)=idx_s;
                     end
                 end
             end
-            [idx, ifound] = FindParam(this.P, signals);
         end
-       
-        
         
         function SaveSignals(this, signals, folder, name,i_trajs)
             % BreachSet SaveSignals Save signals in mat files as simple time series
@@ -1678,8 +1686,20 @@ classdef BreachSet < BreachStatus
                 disp( '---- ALIASES ----')
                 keys = this.sigMap.keys();
                 for ik = 1:numel(keys)
-                    fprintf('%s <--> %s\n', keys{ik}, this.sigMap(keys{ik}));
-                end
+                     [idx, found] = this.FindSignalsIdx(this.sigMap(keys{ik}));
+                     aliases = setdiff(this.getAliases(keys{ik}), keys{ik});
+                     if found
+                         sig = this.P.ParamList{idx};
+                         al_st = cell2mat(cellfun(@(c) ([ c ', ']), aliases, 'UniformOutput', false));
+                         al_st = al_st(1:end-2);
+                         fprintf('%s <--> %s\n', sig, al_st )
+                     else
+                         sig = keys{ik};
+                         al_st = cell2mat(cellfun(@(c) ([ c ', ']), aliases, 'UniformOutput', false));
+                         al_st = al_st(1:end-2);
+                         fprintf('%s <--> %s  (not linked to data)\n', sig, al_st )
+                     end
+                 end
                 fprintf('\n')
             end
         end
@@ -1791,23 +1811,28 @@ classdef BreachSet < BreachStatus
             this.P.selected = zeros(1,nb_pts);
         end
         
-        function getAliases(this, signals)
+      function aliases = getAliases(this, signals) 
             aliases = {};
             if ischar(signals)
                 signals = {signals};
             end
+           
             for isig = 1:numel(signals)
-                s0 = signals{isig};
-                aliases = union(aliases, {s0}, 'stable');  % compute all aliases for s
-                s = s0;
-                while (this.sigMap.isKey(s))
-                    s = this.sigMap(s);
-                    aliases = union(aliases, {s} ,'stable' );
-                end
+                    s0 = signals{isig};
+                    aliases = union(aliases, {s0},'stable');  % compute all aliases for s
+                    s = s0;
+                    while (this.sigMap.isKey(s))
+                        s = this.sigMap(s);
+                        aliases = union(aliases, {s},'stable' );
+                    end
+                    s = s0;
+                    while (this.sigMapInv.isKey(s))
+                        s = this.sigMapInv(s);
+                        aliases = union(aliases, {s} ,'stable');
+                    end
             end
         end
-        
-        
+         
     end
     methods (Access=protected)    
         
