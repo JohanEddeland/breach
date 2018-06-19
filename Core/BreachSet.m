@@ -1791,7 +1791,7 @@ classdef BreachSet < BreachStatus
             this.P.selected = zeros(1,nb_pts);
         end
         
-        function getAliases(this, signals)
+        function aliases =  getAliases(this, signals)
             aliases = {};
             if ischar(signals)
                 signals = {signals};
@@ -1810,8 +1810,6 @@ classdef BreachSet < BreachStatus
         
     end
     methods (Access=protected)    
-        
-        
         
         function Xp = get_signals_from_traj(this, traj, names)
             idx = FindParam(this.P, names); %  not fool proof, but not supposed to be used by fools
