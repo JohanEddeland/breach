@@ -417,6 +417,11 @@ classdef BreachProblem < BreachStatus
                     this.res = res;
             end
             this.DispResultMsg(); 
+            
+            % For some solvers we do not return the startSample
+            if ~exist('startSample', 'var')
+                startSample = '';
+            end
         end
         
         %% Utility functions for solvers
@@ -523,6 +528,32 @@ classdef BreachProblem < BreachStatus
             else
                 % calling actual objective function
                 fval = this.objective_fn(x);
+                
+                % Add special global variable for journal experiments, in
+                % June 2018
+                global journalPaperExperimentUseRandomObj; %#ok<TLEV>
+                if journalPaperExperimentUseRandomObj == 1
+                    fvalString = num2str(fval);
+
+                    objFunctionSign = sign(fval);
+                    if objFunctionSign == 0
+                        objFunctionSign = 1; % Don't allow sign "0"
+                    end
+                    
+                    if objFunctionSign == 1
+                        % Calculate the SHA256 hash of fval (from
+                        % https://se.mathworks.com/matlabcentral/answers/265421-how-to-compute-the-hash-of-a-string-using-sha-algorithms)
+                        sha256hasher = System.Security.Cryptography.SHA256Managed;
+                        sha256 = uint8(sha256hasher.ComputeHash(uint8(fvalString))); % consider the string as 8-bit characters
+
+                        % sha256 is a 1*32 vector, each element is in range [0
+                        % 255]. We make it into ONE number which is in the
+                        % range [0 1000]
+                        fval = sum(sha256)*1000/(255*32);
+                    else
+                        % fval is already negative - don't change it
+                    end
+                end
                 
                 % logging and updating best
                 this.LogX(x, fval);
