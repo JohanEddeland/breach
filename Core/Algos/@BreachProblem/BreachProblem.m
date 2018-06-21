@@ -504,7 +504,11 @@ classdef BreachProblem < BreachStatus
         
             %% Saving run in cache folder
             this.SaveInCache();
-        
+            
+            % For some solvers we do not return the startSample
+            if ~exist('startSample', 'var')
+                startSample = '';
+            end
         end
         
         function SaveInCache(this)
