@@ -1,3 +1,13 @@
+# Release 1.3.0
+
+- BreachSamplesPlot plots bars and number of satisfied and violated
+  requirement
+- Alias (signal mapping) support fixed and improved
+- Performance improvement for ExportTraces/SaveResults
+- stl_monitor now should provide quant_sat and violation signals
+  implemented for alw_monitor and alw_A_implies_B
+
+
 # Release 1.3.beta4 
 - BreachSamplesPlot provides interactive plots of BreachRequirement
   results
