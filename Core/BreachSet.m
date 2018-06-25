@@ -1429,6 +1429,7 @@ classdef BreachSet < BreachStatus
                 end
                 if idx==is % first time we see this guy, take it as rep
                     sigs.signals_reps{end+1} = sig;
+                    idx = numel(sigs.signals_reps);
                 end
                 
                 if idx==inf
