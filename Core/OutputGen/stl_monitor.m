@@ -1,6 +1,7 @@
-classdef stl_monitor < output_gen
+classdef stl_monitor < req_monitor
     
     properties
+        P0
         P
         Sys
         formula
@@ -45,24 +46,21 @@ classdef stl_monitor < output_gen
             
         end
         
-        function [tau, Xout] = computeSignals(this, t, X, p, tau)
-            if ~exist('tau', 'var')||isempty(tau)
-                tau = t;
-            end
-            this.P.traj{1}.X = X;
-            this.P.traj{1}.time = t;
-            if nargin>=4&&~isempty(p)
-                P0 = SetParam(this.P, this.params,p); % really? P0 gets traj removed,..., gotta get rid of all this non-sense one day
-            else
-                P0 = this.P;
-            end
-            Xout = zeros(numel(this.signals), numel(tau));
-            Xout(end,:) = STL_Eval(this.Sys, this.formula, P0,this.P.traj{1}, tau);
+        function [time, Xout] = computeSignals(this, time, X, p)
+            this.init_tXp(time,X,p); 
+            
+            Xout = zeros(numel(this.signals), numel(time));
+            
+            % compute predicate values
             if ~isempty(this.predicates)
                 for ip = 1:numel(this.predicates)
-                    Xout(ip,:) = STL_Eval(this.Sys, this.predicates{ip}, P0,this.P.traj{1}, tau);
+                    [time, Xout(ip,:)] = this.get_standard_rob(this.predicates{ip}, time);
                 end
             end
+            
+            % compute robustnes of top formula
+            [time, Xout(end,:)] = this.get_standard_rob(this.formula, time);
+            
         end
         
         function plot_diagnosis(this, F)
@@ -73,9 +71,23 @@ classdef stl_monitor < output_gen
             end
         end
         
-        function [v, Xout] = eval(this, t, X,p)
-            [~, Xout] = this.computeSignals(t, X,p);
-            v = Xout(end,1);
+        function [v, t, Xout] = eval(this, t, X,p)
+            [t, Xout] = this.computeSignals(t, X,p);
+            v = Xout(end,1); 
+        end
+        
+        function init_tXp(this, t, X, p) 
+            this.P.traj{1}.X = X;
+            this.P.traj{1}.time = t;
+            if nargin>=4&&~isempty(p)
+                this.P0 = SetParam(this.P, this.params,p); 
+            else
+                this.P0 = this.P;
+            end
+        end
+        
+        function [time, rob] = get_standard_rob(this, phi, time)
+            [rob, time] = STL_Eval(this.Sys, phi, this.P0,this.P.traj{1},time);
         end
         
         function st = disp(this)

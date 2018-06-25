@@ -348,6 +348,12 @@ classdef BreachRequirement < BreachTraceSystem
             end
         end
         
+        function PlotRobustSat(this, varargin)
+            this.BrSet.PlotRobustSat(varargin{:});
+        end
+        
+        
+        
         %% Display
         function st = disp(this)
             signals_in_st = cell2mat(cellfun(@(c) (['''' c ''', ']), this.signals_in, 'UniformOutput', false));
