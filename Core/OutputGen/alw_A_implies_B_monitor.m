@@ -33,14 +33,18 @@ classdef alw_A_implies_B_monitor < alw_monitor
             
             % get intervals
             int_post = get_interval(this.post);
-            if ~isempty(int_post) % the following works for A=>ev[t0, t1]B 
+            if isequal(get_type(this.post), 'eventually')||~isempty(int_post) % the following works for A=>ev[t0, t1]B 
                 itr= F.itraj;
                 p = F.BrSet.GetParam(this.params, itr);
                 this.assign_params(p);
                 int_post =eval(int_post);
-                for ii = 1:size(int_false,1)
-                    int_false_post(ii,: ) = [int_false(ii,1)+int_post(2) int_false(ii,2)+int_post(2)];
-                    highlight_interval(ax2, int_false_post(ii,:), 'r', 0.3 );
+                if int_post(2)<inf
+                    for ii = 1:size(int_false,1)
+                        int_false_post(ii,: ) = [int_false(ii,1)+int_post(2) int_false(ii,2)+int_post(2)];
+                        highlight_interval(ax2, int_false_post(ii,:), 'r', 0.3 );
+                    end
+                else
+                    F.HighlightFalse(sig,ax2);
                 end
             else
                 F.HighlightFalse(sig,ax2);
