@@ -1439,6 +1439,10 @@ classdef BreachSet < BreachStatus
                 sigs.signals_map_idx(is) = idx; 
                 dom = this.GetDomain(signals{idx});
                 sigs.signal_types{is}  = dom.type;
+                if isempty(dom.type)  % ? 
+                    sigs.signal_types{is}  = 'double'; 
+                end
+                
                 %  Add attributes indexes
                 atts = this.get_signal_attributes(sig);
                 sigs.signal_attributes = union(sigs.signal_attributes, atts);
@@ -1467,6 +1471,9 @@ classdef BreachSet < BreachStatus
                 par  =params(ip);
                 dom = this.GetDomain(par);
                 sigp.param_types{ip}  = dom.type ;
+                if isempty(dom.type)  % ? 
+                    sigp.param_types{is}  = 'double'; 
+                end
                 %  Add attributes indexes
                 atts = this.get_param_attributes(par);
                 sigp.param_attributes = union(sigp.param_attributes, atts); 

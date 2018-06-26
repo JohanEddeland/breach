@@ -1,3 +1,13 @@
+# Release 1.3.1
+
+- initial support of preconditions in BreachRequirement 
+- stl_monitor plot_diagnosis method calls SplotSat
+
+## Bugfixes
+
+- bugfix for SaveInCache Falsification_runs for second and subsequent runs
+- bugfix for index when computing signal signature with aliases
+
 # Release 1.3.0
 
 - BreachSamplesPlot plots bars and number of satisfied and violated
