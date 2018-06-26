@@ -2,6 +2,7 @@
 
 - initial support of preconditions in BreachRequirement 
 - stl_monitor plot_diagnosis method calls SplotSat
+- BreachSamplesPlot plots sum when all true, all false or only one req
 
 ## Bugfixes
 
