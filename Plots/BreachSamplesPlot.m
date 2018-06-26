@@ -62,7 +62,7 @@ classdef BreachSamplesPlot < handle
             
             % Attempt to pick the most interesting plot  
             
-            if size(vals_pos,1)==1|| all(idx_pos) || all(idx_neg) % only one requirement or all positive or all negative
+            if size(vals_pos,1)==1|| (all(idx_pos)&&(~any(idx_neg))) ||(all(idx_neg)&&(~any(idx_pos)) )  % only one requirement or all positive or all negative
                 plot_sum();
             else
                 plot_num();
