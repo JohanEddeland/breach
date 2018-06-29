@@ -69,8 +69,10 @@ classdef BreachOpenSystem < BreachSystem
             this.P = ComputeTraj(Sys, this.P, tspan);
 
             this.CheckinDomainTraj();
-            this.dispTraceStatus();
-         end
+            if this.verbose>=1
+                this.dispTraceStatus();
+            end
+        end
         
         % we merge parameters of the input generator with those of the
         % system, but keep both BreachObjects

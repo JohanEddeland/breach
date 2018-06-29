@@ -766,26 +766,45 @@ classdef BreachProblem < BreachStatus
          function summary = SaveResults(this, varargin)
             BLog = this.GetBrSet_Logged();   
             summary = BLog.SaveResults(varargin{:});
+         end
+        
+        function Rlog = GetLog(this,varargin)
+            Rlog = this.GetBrSet_Logged(varargin{:});
         end
-            
+        
     end
     
     methods (Access=protected)
         
         function display_status_header(this)
-            fprintf(  '#calls (max:%5d)           time spent (max: %g)           best                         obj\n',...
-                this.max_obj_eval, this.max_time);
+            if ~isempty(this.Spec.precond_monitors)
+                fprintf(  '#calls (max:%5d)           time spent (max: %g)           best                         obj                    contraint\n',...
+                    this.max_obj_eval, this.max_time);
+            else
+                fprintf(  '#calls (max:%5d)           time spent (max: %g)           best                         obj\n',...
+                    this.max_obj_eval, this.max_time);
+            end
         end
         
-        function display_status(this,fval)
+        function display_status(this,fval, const_val)
             
             if ~strcmp(this.display,'off')
                 if nargin==1
                     fval = this.obj_log(end); % bof bof
+                    if ~isempty(this.Spec.precond_monitors)
+                        const_val = min(min(this.Spec.traces_vals_precond));
+                    end
                 end
                 
-                st__= sprintf('    %5d                   %7.1f                            %+5.5e             %+5.5e\n', ...
+                st__= sprintf('    %5d                        %7.1f                            %+5.5e             %+5.5e', ...
                     this.nb_obj_eval, this.time_spent, this.obj_best, fval);
+                if exist('const_val', 'var')
+                    st__ = sprintf([st__ '          %+5.5e\n'], const_val);
+                else
+                    st__ = [st__ '\n'];  
+                end
+                
+                
                 switch this.display
                     case 'on'
                         fprintf(st__);

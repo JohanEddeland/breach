@@ -22,57 +22,61 @@ classdef BreachRequirement < BreachTraceSystem
         
         function this = BreachRequirement(req_monitors, postprocess_signal_gens, precond_monitors)
             
-            %% work out arguments
-            if ~iscell(req_monitors)
-                req_monitors=  {req_monitors};
-            end
-            
-            % requirement formulas
-            [~, monitors] = get_monitors(req_monitors);
-           
-           % postprocessing functions 
-            if  exist('postprocess_signal_gens', 'var')&&~isempty(postprocess_signal_gens)
-                if ~iscell(postprocess_signal_gens)
-                    postprocess_signal_gens = {postprocess_signal_gens};
-                end
-            end
-            
-            % precondition requirements
-            if  exist('precond_monitors', 'var')&&~isempty(precond_monitors)
-               if ~iscell(precond_monitors)
-                    precond_monitors = {precond_monitors};
-               end
-               
-               [~,  precond_monitors] = get_monitors(precond_monitors);
-           
-            end
-           
             this = this@BreachTraceSystem({});
             
+            % Adds requirement monitors, at least one
+            this.req_monitors = {};
+            this.AddReq(req_monitors);
+         
             % Add output gens
+            this.postprocess_signal_gens={};
             if exist('postprocess_signal_gens', 'var')&&~isempty(postprocess_signal_gens)
-                this.postprocess_signal_gens = postprocess_signal_gens;
-                for ippsg = 1:numel(postprocess_signal_gens)
-                    this.AddOutput(postprocess_signal_gens{ippsg});
-                end
+                this.AddPostProcess(postprocess_signal_gens);
+            end
+      
+           % precondition requirements
+           this.precond_monitors = {}; 
+           if  exist('precond_monitors', 'var')&&~isempty(precond_monitors)
+                this.AddPreCond(precond_monitors);
             end
             
-            % Add precond and formula monitor            
-            this.req_monitors = monitors;
+            % Reset signal map and figure out what signals are required input signals
+            this.ResetSigMap();
+            
+        end
+        
+        
+        function AddReq(this, req_monitors)
+            
+            [~, monitors] = get_monitors(req_monitors);
             for ifo = 1:numel(monitors)
                 this.AddOutput(monitors{ifo});
             end
-            
-            if  exist('precond_monitors', 'var')&&~isempty(precond_monitors)
-                this.precond_monitors = precond_monitors;
-                for ifo = 1:numel(precond_monitors)
-                    this.AddOutput(precond_monitors{ifo});
-                end
+            this.req_monitors = [this.req_monitors monitors];
+            this.signals_in = this.get_signals_in();
+        end
+        
+        function AddPostProcess(this, postprocess_signal_gens)
+        
+            if ~iscell(postprocess_signal_gens)
+                postprocess_signal_gens = {postprocess_signal_gens};
             end
-
-            % Figure out what signals are required input signals
-            this.ResetSigMap();
+            for ifo = 1:numel(postprocess_signal_gens)
+                this.AddOutput(postprocess_signal_gens{ifo});
+            end
+            this.postprocess_signal_gens = [this.postprocess_signal_gens postprocess_signal_gens];
+            this.signals_in = this.get_signals_in();
+        end
+        
+        function AddPreCond(this, precond_monitors)
             
+            [~, monitors] = get_monitors(precond_monitors);
+            for ifo = 1:numel(monitors)
+                this.AddOutput(monitors{ifo});
+            end
+            this.precond_monitors = [this.precond_monitors monitors];
+            this.signals_in = this.get_signals_in();
+       
         end
         
         function this = SetSignalMap(this, varargin)
