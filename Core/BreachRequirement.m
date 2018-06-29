@@ -794,18 +794,19 @@ classdef BreachRequirement < BreachTraceSystem
            
            if ~isempty(this.precond_monitors)
                for req = this.precond_monitors
+                   all_inputs_req = true;
                    if ~isempty(req{1}.signals_in)
-                       all_inputs_req = true;
                        for sig = req{1}.signals_in
                            if ~this.is_a_model_input(sig{1})
                                all_input_req = false;
                                break
                            end
                        end
-                       if all_inputs_req
-                           B.AddInputSpec(req{1}.formula_id);
-                       end
                    end
+                   if all_inputs_req
+                       B.AddInputSpec(req{1}.formula_id);
+                   end
+                   
                end
            end
            %  checks whether we need only input signals
