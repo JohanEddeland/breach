@@ -139,6 +139,7 @@ end
 function [valarray, time_values] = GetValues(Sys, phi, P, traj, interval)
 global BreachGlobOpt;
 global objToUse;
+global useVboolImplicationRobustness;
 eval(BreachGlobOpt.GlobVarsDeclare);
 if strcmp(objToUse, 'vbool')
     % Do nothing
@@ -147,6 +148,11 @@ elseif strcmp(objToUse, 'vbool_v1')
 else
     objToUse = 'standard';
 end
+
+if isempty(useVboolImplicationRobustness)
+    useVboolImplicationRobustness = 0;
+end
+
 %disp(phi.type);
 switch(phi.type)
     
@@ -223,8 +229,16 @@ switch(phi.type)
         
         switch objToUse
             case 'vbool'
-                [time_values, valarray] = robustAndPlus(time_values1, -valarray1, time_values2, -valarray2);
-                valarray = -valarray;
+                if useVboolImplicationRobustness
+                    % Use specific VBool implication robustness
+                    % Multiply robustness of antecedent with 1000
+                    [time_values, valarray] = robustAndPlus(time_values1, -valarray1*1000, time_values2, -valarray2);
+                    valarray = -valarray;
+                else
+                    % Standard implication, but with vbool andPlus
+                    [time_values, valarray] = robustAndPlus(time_values1, -valarray1, time_values2, -valarray2);
+                    valarray = -valarray;
+                end
             case 'standard'
                 [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
             case 'vbool_v1'
