@@ -234,7 +234,7 @@ classdef BreachProblem < BreachStatus
             rfprintf_reset();
             
             % robustness
-            this.BrSys = this.BrSet.copy(); 
+            this.BrSys = BrSet.copy(); 
             this.robust_fn = @(x) (this.Spec.Eval(this.BrSys, this.params, x));
             
             this.BrSet_Best = [];
@@ -798,9 +798,14 @@ classdef BreachProblem < BreachStatus
         function [BrOut, Berr,  BbadU] = ExportBrSet(this,B)
             % ExportBrSet prepares a BreachSet such as best, logged, etc to be
             % returned
-            B.Sys.Verbose=1;
             Berr = [];
             BbadU = [];
+            if isempty(B)
+                BrOut = [];
+                return;
+            end
+             B.Sys.Verbose=1;
+           
             [idx_ok, idx_sim_error, idx_invalid_input, st_status]  = B.GetTraceStatus();
             
             if ~isempty(idx_sim_error)||~isempty(idx_invalid_input)

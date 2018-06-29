@@ -839,7 +839,11 @@ classdef BreachRequirement < BreachTraceSystem
                 trajR = struct();
                 trajR.param = this.P.pts(:,1)';
                 if ~isempty(idx_param_sys_R)
-                    trajR.param(1,idx_param_sys_R) = B.P.traj{it}.param(1, idx_param_sys_B);
+                    if idx_param_sys_B <= B.P.DimP
+                        trajR.param(1,idx_param_sys_R) = B.P.traj{it}.param(1, idx_param_sys_B);
+                    else
+                        trajR.param(1,idx_param_sys_R) = B.P.pts(idx_param_sys_B,it)';  %  Spec parameter for B, have to look into pts, risky wrt traj_ref
+                    end
                 end
                 
                 trajR.time = B.P.traj{it}.time;
