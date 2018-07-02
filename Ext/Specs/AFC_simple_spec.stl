@@ -22,4 +22,3 @@ AF_ok_check := alw_[t_0, t_end] (check[t]>0  => AF_ok)
 # A => ev B formula
 param t_stab=0.5
 AF_overshoot_req := alw_[t_start, t_end] ( AF_above_ref => ev_[0, t_stab] ( AF_abs_ok )  ) 
- 
