@@ -279,12 +279,15 @@ classdef BreachOpenSystem < BreachSystem
                 
                 % if an inputspec is violated, sabotage U into NaN
                 if ~isempty(this.InputGenerator.Specs)
-                    rob = this.InputGenerator.CheckSpec();
-                    if rob<0
-                        this.InputGenerator.addStatus(1,'input_spec_false', 'A specification on inputs is not satisfied.')
-                        U.t=NaN;
-                        U.u=NaN;
-                        return;
+                    Uspecs = this.InputGenerator.Specs.values();
+                    for ip = 1:numel(Uspecs)
+                        rob = this.InputGenerator.CheckSpec(Uspecs{ip});
+                        if rob<0
+                            this.InputGenerator.addStatus(1,'input_spec_false', 'A specification on inputs is not satisfied.')
+                            U.t=NaN;
+                            U.u=NaN;
+                            return;
+                        end
                     end
                 end
                 

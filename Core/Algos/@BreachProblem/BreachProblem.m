@@ -60,7 +60,7 @@ classdef BreachProblem < BreachStatus
         Spec
         T_Spec=0
         constraints_fn    % constraints function
-        robust_fn   % base robustness function - typically the robust satisfaction of some property by some trace
+        robust_fn           % base robustness function - typically the robust satisfaction of some property by some trace
     end
     
     % properties related to the function to minimize
@@ -583,7 +583,6 @@ classdef BreachProblem < BreachStatus
              if size(x,1) ~= numel(this.params)
                 x = x';
              end
-             
         
             nb_eval =  size(x,2);
             fval = inf*ones(1, nb_eval);
@@ -657,7 +656,7 @@ classdef BreachProblem < BreachStatus
         
         function b = stopping(this)
             b =  (this.time_spent > this.max_time) ||...
-                    (this.nb_obj_eval> this.max_obj_eval) ;
+                    (this.nb_obj_eval> this.max_obj_eval);
         end
               
         %% Misc methods
