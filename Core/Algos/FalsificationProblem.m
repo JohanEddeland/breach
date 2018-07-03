@@ -21,13 +21,9 @@ classdef FalsificationProblem < BreachProblem
     end
     
     methods (Static)
-        function load_runs(folder, filepath)
-            if nargin==1
-                evalin('base', ['load(''' folder filesep 'FalsificationProblem_Runs'');']);
-            elseif nargin==2
-                evalin('base', ['load(''' folder filesep 'FalsificationProblem_Runs'');']);
-                evalin('base', ['falsif_pb.SetupDiskCaching(''' 'DiskCachingRoot''' ',''' filepath ''')']);
-            end
+        function falsif_pb = load_runs(logFilePath)
+            load([logFilePath, filesep, 'FalsificationProblem_Runs']);
+            falsif_pb.SetupDiskCaching('DiskCachingRoot', logFilePath);
         end
     end
     
