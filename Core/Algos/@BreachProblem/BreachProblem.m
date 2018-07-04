@@ -540,6 +540,13 @@ classdef BreachProblem < BreachStatus
                     else
                         fval = rand*1000;
                     end
+                elseif journalPaperExperimentUseRandomObj == 2
+                    % We want a constant objective function
+                    if fval < 0
+                        fval = -100;
+                    else
+                        fval = 100;
+                    end
                 end
                 
                 % logging and updating best
