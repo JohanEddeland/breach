@@ -745,6 +745,13 @@ classdef BreachProblem < BreachStatus
                             break
                         end
                     end
+                elseif journalPaperExperimentUseRandomObj == 2
+                    % We want a constant objective function
+                    if fval < 0
+                        fval = -100;
+                    else
+                        fval = 100;
+                    end
                 end
             else
                 fval = this.obj_best*ones(1, nb_eval);
