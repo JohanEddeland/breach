@@ -200,7 +200,11 @@ classdef BreachSystem < BreachSet
             evalin('base', this.InitFn);
             this.CheckinDomainParam();
             if nargin==1
-                tspan = this.Sys.tspan;
+                if this.hasTraj()
+                    tspan = [0 this.P.traj{1}.time(end)];
+                else
+                    tspan = this.Sys.tspan;
+                end
             end
             this.P = ComputeTraj(this.Sys, this.P, tspan);
             this.CheckinDomainTraj();
