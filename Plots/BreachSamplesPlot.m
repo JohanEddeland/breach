@@ -109,7 +109,6 @@ classdef BreachSamplesPlot < handle
             cursor_h.SnapToDataVertex = 'on';
             datacursormode on
             
-            
             function [txt] = myupdatefcn(obj,event_obj)
                 pos = event_obj.Position;
                 ipts = pos(1);

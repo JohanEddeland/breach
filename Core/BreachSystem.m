@@ -353,11 +353,15 @@ classdef BreachSystem < BreachSet
             
             % FIXME: this is going to break with multiple trajectories with
             % some of them containing NaN -
+              
             if any(isnan(this.P.traj{1}.X))
                 tau = t_phi;
                 rob = t_phi;
                 rob(:) = NaN;
             else
+                if ischar(phi)
+                    phi = STL_Formula('phi__tmp__', phi);
+                end
                 [rob, tau] = STL_Eval(this.Sys, phi, this.P, this.P.traj,t_phi);
             end
             
