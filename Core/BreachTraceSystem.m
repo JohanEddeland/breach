@@ -66,7 +66,7 @@ classdef BreachTraceSystem < BreachSystem
             end
             
             % assumes now that we have signal names
-            this.Sys = CreateExternSystem('TraceObject', signal_names, {'trace_id'},1);
+            this.Sys = CreateSystem(signal_names, {},zeros(numel(signal_names),1));
             this.P = CreateParamSet(this.Sys);
             
             if exist('trace1', 'var')
@@ -77,7 +77,7 @@ classdef BreachTraceSystem < BreachSystem
             end
             
             %  Default domains
-            for ip = this.P.DimP
+            for ip = 1:this.P.DimP
                 this.Domains(ip) = BreachDomain();
             end
             
@@ -163,7 +163,6 @@ classdef BreachTraceSystem < BreachSystem
                 traj.param = [this.Sys.p'];
             end
             
-            traj.param(this.Sys.DimX+1) = nb_traces+1;
             Pnew.traj={traj};
             Pnew.traj_ref = 1;
             Pnew.traj_to_compute =  [];
@@ -173,9 +172,6 @@ classdef BreachTraceSystem < BreachSystem
             else
                 this.P = SConcat(this.P, Pnew);
             end
-            this.P.traj_ref = 1:nb_traces+1;
-            this.P.traj_to_compute =  [];
-            this.P.pts(this.P.DimX+1,:) = 1:nb_traces+1; % index traces
             this.Sys.tspan = traj.time;
             
             if isfield(this.P, 'Xf')

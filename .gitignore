@@ -36,3 +36,4 @@ wiki/
 @STL_Formula/private/recomp.m
 Ext/ModelsData
 /Examples/docrun_backup.mat
+*.mexa64
