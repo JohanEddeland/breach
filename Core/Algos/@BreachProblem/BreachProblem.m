@@ -553,13 +553,14 @@ classdef BreachProblem < BreachStatus
             this.BrSys.SetupParallel(varargin{:});      
             
             % Enable DiskCaching
-            if this.log_traces
-                this.SetupDiskCaching();
-            end
+            this.SetupDiskCaching();
 
-            % Possible need to change the optinmization optinion
-            this.setup_solver();
-
+            % Possible need to change the optimization option
+            % this.setup_solver();
+            % TODO: review when needed on solver-by-solver basis - maybe
+            % warning in order ?
+            
+            
         end
         
         function StopParallel(this)
@@ -568,6 +569,7 @@ classdef BreachProblem < BreachStatus
         end
         
         function SetupDiskCaching(this, varargin)
+            this.log_traces = 0;  % FIXME
             this.BrSys.SetupDiskCaching(varargin{:});
         end
         

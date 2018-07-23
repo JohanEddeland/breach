@@ -109,7 +109,7 @@ classdef FalsificationProblem < BreachProblem
                 this.obj_false = [this.obj_false fval];
                 if (this.log_traces)&&~this.use_parallel
                     if isempty(this.BrSet_False)
-                        this.BrSet_False = this.BrSys.copy();
+                        this.BrSet_False = this.Spec.BrSet.copy();
                     else
                         this.BrSet_False.Concat(this.BrSys);
                     end
