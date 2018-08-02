@@ -403,6 +403,90 @@ classdef BreachSystem < BreachSet
             SplotSat(this.Sys,this.P, phi, depth, tau, ipts);
             
         end
+             
+        function PlotRelRobustInSat(this, phi, depth, tau, ipts)
+            % Plots satisfaction signal
+            
+            % check arguments
+            if(~exist('ipts','var')||isempty(ipts))
+                ipts = 1;
+            end
+            
+            if(~exist('tau','var')||isempty(tau)) % also manage empty cell
+                tau = [];
+            end
+            
+            if ~exist('depth','var')||isempty(depth)
+                depth = inf;
+            end
+            
+            gca;
+            SplotSatIO(this.Sys,this.P, phi, depth, tau, ipts, 'in', 'rel');
+            
+        end
+        
+        function PlotAbsRobustInSat(this, phi, depth, tau, ipts)
+            % Plots satisfaction signal
+            
+            % check arguments
+            if(~exist('ipts','var')||isempty(ipts))
+                ipts = 1;
+            end
+            
+            if(~exist('tau','var')||isempty(tau)) % also manage empty cell
+                tau = [];
+            end
+            
+            if ~exist('depth','var')||isempty(depth)
+                depth = inf;
+            end
+            
+            gca;
+            SplotSatIO(this.Sys,this.P, phi, depth, tau, ipts, 'in', 'abs');
+            
+        end
+        
+        function PlotRelRobustOutSat(this, phi, depth, tau, ipts)
+            % Plots satisfaction signal
+            
+            % check arguments
+            if(~exist('ipts','var')||isempty(ipts))
+                ipts = 1;
+            end
+            
+            if(~exist('tau','var')||isempty(tau)) % also manage empty cell
+                tau = [];
+            end
+            
+            if ~exist('depth','var')||isempty(depth)
+                depth = inf;
+            end
+            
+            gca;
+            SplotSatIO(this.Sys,this.P, phi, depth, tau, ipts, 'out', 'rel');
+            
+        end
+        
+        function PlotAbsRobustOutSat(this, phi, depth, tau, ipts)
+            % Plots satisfaction signal
+            
+            % check arguments
+            if(~exist('ipts','var')||isempty(ipts))
+                ipts = 1;
+            end
+            
+            if(~exist('tau','var')||isempty(tau)) % also manage empty cell
+                tau = [];
+            end
+            
+            if ~exist('depth','var')||isempty(depth)
+                depth = inf;
+            end
+            
+            gca;
+            SplotSatIO(this.Sys,this.P, phi, depth, tau, ipts, 'out', 'abs');
+            
+        end
         
         function PlotSatParams(this, phi, params, varargin)
             % BreachSet.PlotSatParams(req, params)
