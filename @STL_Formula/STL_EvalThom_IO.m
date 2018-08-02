@@ -44,7 +44,6 @@ function [val__, time_values__] = STL_EvalThom_IO(Sys, phi, P, trajs, inout, rel
 %  This works with piecewise affine signals.
 %
 
-
 %% defines the parameter as global variables so that they are available for
 % all subsequent computations
 
@@ -159,16 +158,21 @@ switch(phi.type)
         catch %#ok<CTCH>
             valarray = arrayfun(evalfn, time_values);
         end
-        
-        if (strcmp(inout,'in') && isempty(get_in_signal_names(phi))) || (strcmp(inout,'out') && isempty(get_out_signal_names(phi)))         
-            switch relabs
-                case 'rel'
-                    valarray = Inf*(2*(valarray>0)-1);
-                case 'abs'
-                    valarray = realmin('double')*(2*(valarray>0)-1); 
+
+        switch relabs
+            case 'rel'
+            if (strcmp(inout,'in') && isempty(get_in_signal_names(phi))) || (strcmp(inout,'out') && isempty(get_out_signal_names(phi)))         
+                valarray = Inf*(2*(valarray>0)-1);
             end
+            case 'abs'
+                % FIXME: assumes partition of signals between in and out.
+                % For predicates involving more several signals, we should 
+                % test for nonemptiness of complement of in (out) instead.
+            if (strcmp(inout,'in') && ~isempty(get_out_signal_names(phi))) || (strcmp(inout,'out') && ~isempty(get_in_signal_names(phi)))         
+                valarray = realmin('double')*(2*(valarray>0)-1);
+            end 
         end
-            
+    
         
     case 'not'
         [valarray, time_values] = GetValues(Sys, phi.phi, P, traj, inout, relabs, interval);
@@ -253,6 +257,12 @@ switch(phi.type)
         end
         [time_values, valarray] = RobustUntil(time_values1, valarray1, time_values2, valarray2, I___);
 end
+
+%% Debug
+display('subformula:')
+debug_print_io(phi)
+valarray
+time_values
 
 %%  Sanity checks
 
