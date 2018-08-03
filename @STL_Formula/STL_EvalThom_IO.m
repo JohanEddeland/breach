@@ -258,12 +258,6 @@ switch(phi.type)
         [time_values, valarray] = RobustUntil(time_values1, valarray1, time_values2, valarray2, I___);
 end
 
-%% Debug
-display('subformula:')
-debug_print_io(phi)
-valarray
-time_values
-
 %%  Sanity checks
 
 % time progress
@@ -275,20 +269,11 @@ if find(isblocked)
     time_values = time_values(keep);
 end
 
-ibof = isnan(valarray)|isnan(time_values)|isinf(valarray)|isinf(time_values);
+ibof = isnan(time_values)|isinf(time_values)
 if ~isempty(find(ibof, 1))
     val_ok = valarray(~ibof);
     time_ok = time_values(~ibof);
-    if ~isempty(val_ok)
-        warning('STL_Eval:Inf_or_Nan', 'Some values are NaN or inf for property %s (use warning(''off'', ''STL_Eval:Inf_or_Nan'') to disable warning)', disp(phi));
-    if numel(val_ok)==1
-        valarray(1,:) = val_ok;
-    else
-        valarray = interp1(time_ok, val_ok, time_values, 'nearest');
-    end
-    else
-        warning('STL_Eval:Inf_or_Nan', 'All values are NaN or inf for property %s', disp(phi));
-    end     
+    valarray = interp1(time_ok, val_ok, time_values, 'nearest');
 end
 
 

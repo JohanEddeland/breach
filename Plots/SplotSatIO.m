@@ -110,22 +110,25 @@ for np = npb+1:nb_phis+npb
         traj = P.traj{P.traj_ref(ii)};
         Ptmp.pts = P.pts(:,ii);
         if ~isempty(tau)
-            P.props_values(iphi,ii).tau = tau;
-            P.props_values(iphi,ii).val = STL_Eval_IO(Sys, phi, Ptmp, traj, inout, relabs, tau);
-            val(np-npb,ii) = P.props_values(iphi,ii).val(1);
+            phi_tspan = tau;
+            phi_val = STL_Eval_IO(Sys, phi, Ptmp, traj, inout, relabs, tau);
+            val(np-npb,ii) = phi_val(1);
         else
-            [P.props_values(iphi,ii).val, P.props_values(iphi,ii).tau] = STL_Eval_IO(Sys, phi, Ptmp, traj, inout, relabs);
-            val(np-npb,ii) = P.props_values(iphi,ii).val(1);
+            [phi_val, phi_tspan] = STL_Eval_IO(Sys, phi, Ptmp, traj, inout, relabs);
+            val(np-npb,ii) = phi_val(1);
         end
         
 %        while(floor(60*ii/numel(ipts))>iprog)
 %           fprintf('^');
 %            iprog = iprog+1;
 %        end
+        %display(phi);
+        %display(phi_tspan);
+        %display(phi_val);
         
-        % plot property values
-        phi_tspan = P.props_values(iphi,ii).tau;
-        phi_val = P.props_values(iphi,ii).val;
+        % output property values
+        P.props_values(iphi,ii).tau = phi_tspan;
+        P.props_values(iphi,ii).val = phi_val;
         
         %plot(phi_tspan*time_mult, phi_val);
         %stairs(phi_tspan*time_mult, (phi_val>0)*max(abs(phi_val))/2,'-r');
