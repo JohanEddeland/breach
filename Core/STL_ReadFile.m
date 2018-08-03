@@ -152,9 +152,7 @@ while ischar(tline)
             % ok try wrapping up what we have so far before starting a new formula
             if (~isempty(current_id)&& got_it == 0)
                 try
-                    phi = wrap_up(current_id, current_formula, new_params);
-                    phi = set_in_signal_names(phi, in_signal_names);
-                    phi = set_out_signal_names(phi, out_signal_names);
+                    phi = wrap_up(current_id, current_formula, new_params, in_signal_names, out_signal_names);
                     props = [props, {phi}]; %#ok<*AGROW>
                     props_names = [props_names, {current_id}];
                 catch err
@@ -190,10 +188,7 @@ end
 
 
 try
-    phi = wrap_up(current_id, current_formula, new_params);
-    phi = set_in_signal_names(phi, in_signal_names);
-    phi = set_out_signal_names(phi, out_signal_names);
-    debug_print_io(phi);
+    phi = wrap_up(current_id, current_formula, new_params, in_signal_names, out_signal_names);
     props = [props, {phi}];
     props_names = [props_names, {current_id}];
 catch err
@@ -205,8 +200,13 @@ end
 
 end
 
-function phi = wrap_up(current_id, current_formula, new_params)
+function phi = wrap_up(current_id, current_formula, new_params, in_signal_names, out_signal_names)
 phi = STL_Formula(current_id, current_formula);
+
+% label subformulas by input/output signal names
+
+phi = set_in_signal_names(phi, in_signal_names);
+phi = set_out_signal_names(phi, out_signal_names);
 
 % looks for potential parameters in the formula that could be overriden by
 % new_params
