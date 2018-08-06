@@ -11,6 +11,10 @@
   recomputing with default time (was causing weird GetRobustSat behavior)
 - log_format deactivated when using diskcaching wo parallel until figuring better solution 
 
+## Developpers
+- Added jsonlab toolbox 
+
+
 # Release 1.3.3
 
 - Fixed violation signals for alw (A => ev_[] B) types of requirements

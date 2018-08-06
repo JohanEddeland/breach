@@ -122,23 +122,26 @@ classdef BreachSamplesPlot < handle
                     end
                     
                     switch this.y_axis
-                        case 'idx'
-                            ydata_pos = pos_idx_traj;
                         case 'auto'
                             if strcmp(this.x_axis,'idx')&&(numel(this.BrSet.req_monitors)==1)||...
                                     has_neg&&~has_pos||...
                                     has_pos&&~has_neg
-                                    ydata_pos = this.data.pos_pts.v_sum_pos;
+                                ydata_pos = this.data.pos_pts.v_sum_pos;
+                                plot_this = @plot_sum;
                             else
                                 ydata_pos = this.data.neg_pts.v_num_neg;
+                                plot_this = @plot_num;
                             end
-            
+                            
                         case 'sum'
                             ydata_pos = this.data.pos_pts.v_sum_pos;
+                            plot_this = @plot_sum;
                         case 'num'
                             ydata_pos = this.data.pos_pts.v_num_pos;
+                            plot_this = @plot_num;
                         otherwise
                             ydata_pos = this.BrSet.GetParam(this.y_axis, pos_idx);
+                            plot_this = @plot_param;
                     end
                 end
                 
@@ -154,36 +157,29 @@ classdef BreachSamplesPlot < handle
                     end
                     
                     switch this.y_axis
-                        case 'idx'
-                            ydata_neg = neg_idx;
                         case 'auto'
                             if strcmp(this.x_axis,'idx')&&(numel(this.BrSet.req_monitors)==1)||...
                                     has_neg&&~has_pos||...
                                     has_pos&&~has_neg
                                     ydata_neg = this.data.neg_pts.v_sum_neg;
-                                    plot_sum();
+                                    plot_this = @plot_sum;
                             else
                                 ydata_neg = this.data.neg_pts.v_num_neg;
-                                plot_num();
+                                plot_this=@plot_num;
                             end
                         case 'sum'
                             ydata_neg = this.data.neg_pts.v_sum_neg;
-                            plot_sum();
+                            plot_this = @plot_sum;
                         case 'num'
                             ydata_neg = this.data.neg_pts.v_num_neg;
-                            plot_num();
+                            plot_this = @plot_num;
                         otherwise
                             ydata_neg = this.BrSet.GetParam(this.y_axis, neg_idx);
-                            plot_param();
+                            plot_this =  @plot_param;
                     end
                 end
-                
-              if has_pos
-                set(this.pos_plot, 'UserData', pos_idx_traj);
-              end
-              if has_neg
-                set(this.neg_plot, 'UserData', neg_idx_traj);
-              end
+              
+              plot_this();  
               
             else
                 
@@ -227,10 +223,10 @@ classdef BreachSamplesPlot < handle
                 if has_neg
                     ydata_neg = this.data.neg_pts.v_num_neg;
                     this.neg_plot = bar(xdata_neg, ydata_neg ,0.5,'r');
+                    set(gca, 'YLim', [min(ydata_neg)-.1, max(ydata_pos)+.1],  'Ytick', ceil(min(ydata_neg)-.1):1:floor(max(ydata_pos)+.1));
                 end
                 xlabel(this.x_axis, 'Interpreter', 'None');
                 ylabel('Num. requirement falsified/satisfied');
-                set(gca, 'YLim', [min(ydata_neg)-.1, max(ydata_pos)+.1],  'Ytick', ceil(min(ydata_neg)-.1):1:floor(max(ydata_pos)+.1));
             end   
             h = title('Left click on data to get details, right click to plot signals/diagnosis', 'FontWeight', 'normal', 'FontSize', 10);
             
@@ -286,7 +282,6 @@ classdef BreachSamplesPlot < handle
             end
          
             top_y = uimenu(cm, 'Label', ['Change y-axis']);
-            uimenu(top_y, 'Label', 'idx','Callback',@(o,e)(this.set_y_axis('idx')));
             uimenu(top_y, 'Label', 'auto','Callback',@(o,e)(this.set_y_axis('auto')));
             uimenu(top_y, 'Label', 'sum','Callback',@(o,e)(this.set_y_axis('sum')));
             uimenu(top_y, 'Label', 'num','Callback',@(o,e)(this.set_y_axis('num')));

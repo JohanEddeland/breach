@@ -741,7 +741,7 @@ classdef BreachRequirement < BreachTraceSystem
                         error('getTraces:no_traces', 'No traces to eval requirement on.' )
                     end
                 case 1  %  assumes a BreachSystem given
-                    B = varargin{1}.copy();
+                    B = varargin{1};
                 case 2   % time, X - easiest, sort of
                     %  orient time and X as breach usual
                     time = varargin{1};
@@ -773,7 +773,7 @@ classdef BreachRequirement < BreachTraceSystem
                    B = BreachTraceSystem(this.signals_in,traj);
                     
                 case 3 % B, params, values --> assigns values to parameters in B
-                    B = varargin{1}.copy();
+                    B = varargin{1};
                     params = varargin{2};
                     values = varargin{3};
                     if ischar(params)
@@ -954,8 +954,7 @@ classdef BreachRequirement < BreachTraceSystem
                 if ~isempty(idx_sig_req)
                     [val , this.P.traj{it}.time, Xout] ...
                         = this.evalRequirement(req, time, Xin, p_in);
-                this.P.traj{it}.X( idx_sig_req,:) = Xout;
-                
+                    this.P.traj{it}.X( idx_sig_req,:) = Xout;
                 else
                     val  = this.evalRequirement(req, time, Xin, p_in);
                 end
