@@ -1,5 +1,5 @@
 Init_BrAFC
-STL_ReadFile('simple_spec.stl')
+STL_ReadFile('AFC_simple_spec.stl')
 
 BrMap = BrAFC.copy(); 
 BrMap.PlotRobustMap(AF_alw_ok, {'Pedal_Angle_pulse_amp'}, [10 80]);
