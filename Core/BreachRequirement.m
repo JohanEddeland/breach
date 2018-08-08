@@ -156,6 +156,21 @@ classdef BreachRequirement < BreachTraceSystem
             this.val = global_val;
         end
         
+        function [global_val, traces_vals, traces_vals_precond] = Eval_IO(this, traces, inout, relabs)
+            % BreachRequirement.Eval returns evaluation of the requirement -
+            % compute it for all traces available and returns min (implicit
+            % conjunction)
+            
+            % Collect traces from context and eval them
+            [traces_vals, traces_vals_precond] = this.evalAllTracesIO(traces, inout, relabs);
+            this.traces_vals = traces_vals;
+            this.traces_vals_precond = traces_vals_precond;
+            
+            % A BreachRequirement must return a single value
+            global_val = min(min(traces_vals));
+            this.val = global_val;
+        end
+        
         function F = PlotDiagnosis(this, idx_req_monitors, itraj)
             if nargin<2
                 idx_req_monitors = 1;
@@ -928,6 +943,80 @@ classdef BreachRequirement < BreachTraceSystem
             end
         
         end
+ 
+        function [traces_vals, traces_vals_precond] =evalAllTracesIO(this,traces,inout,relabs)
+            % BreachRequirement.evalAllTraces collect traces and apply
+            % evalTrace
+            this.getBrSet(traces);            
+            for i_req = 1:numel(this.req_monitors)
+                this.req_monitors{i_req}.set_mode(inout,relabs);
+            end
+            
+            num_traj = numel(this.BrSet.P.traj);
+            traces_vals = nan(num_traj, numel(this.req_monitors));        
+            traces_vals_precond = nan(num_traj, numel(this.precond_monitors));        
+            % eval pre conditions
+            if ~isempty(this.precond_monitors)
+                for it = 1:num_traj
+                        time = this.P.traj{it}.time;
+                        for ipre = 1:numel(this.precond_monitors)
+                            req = this.precond_monitors{ipre};
+                            traces_vals_precond(it, ipre)  = eval_req();
+                        end
+                end
+            end
+            
+            % eval requirement 
+            for it = 1:num_traj
+                if any(traces_vals_precond(it,:)<0)
+                    traces_vals(it, :)  = NaN;
+                else
+                    time = this.P.traj{it}.time;
+                    for ipre = 1:numel(this.req_monitors)
+                        req = this.req_monitors{ipre};
+                        traces_vals(it, ipre)  = eval_req();
+                    end
+                end
+            end
+            this.traces_vals_precond = traces_vals_precond;
+            this.traces_vals = traces_vals;
+
+            % common code for precond and req
+            function  val = eval_req()
+                idx_sig_req = FindParam(this.P, req.signals); 
+                idx_par_req = FindParam(this.P, req.params);
+                p_in = this.P.traj{it}.param(1, idx_par_req);
+                if ~isempty(req.signals_in)
+                    Xin = this.GetSignalValues(req.signals_in, it);
+                else
+                    Xin = [];
+                end
+                % checks if a signal is missing (need postprocess)
+                while any(isnan(Xin))    
+                    % should do only one iteration if postprocessing function are 
+                    % properly ordered following dependency
+                    for ipp = 1:numel(this.postprocess_signal_gens)
+                        psg  = this.postprocess_signal_gens{ipp};
+                        Xpp_in = this.GetSignalValues(psg.signals_in, it);
+                        idx_param_pp_in = FindParam(this.P, psg.params);
+                        idx_Xout = FindParam(this.P, psg.signals);
+                        param_pp_in = this.P.traj{it}.param(1, idx_param_pp_in);
+                        [~, this.P.traj{it}.X(idx_Xout,:)]  = this.postprocessSignals(this.postprocess_signal_gens{ipp},time, Xpp_in, param_pp_in);
+                    end
+                    Xin = this.GetSignalValues(req.signals_in, it);
+                end
+                if ~isempty(idx_sig_req)
+                    [val , this.P.traj{it}.time, Xout] ...
+                        = this.evalRequirement(req, time, Xin, p_in);
+                this.P.traj{it}.X( idx_sig_req,:) = Xout;
+                
+                else
+                    val  = this.evalRequirement(req, time, Xin, p_in);
+                end
+            end
+        
+        end
+        
         
         function  [time, Xout] = postprocessSignals(this, pp, time, Xin, pin)
             % postprocessSignals applies intermediate signals computations

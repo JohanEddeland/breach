@@ -269,7 +269,7 @@ if find(isblocked)
     time_values = time_values(keep);
 end
 
-ibof = isnan(time_values)|isinf(time_values)
+ibof = isnan(time_values)|isinf(time_values);
 if ~isempty(find(ibof, 1))
     val_ok = valarray(~ibof);
     time_ok = time_values(~ibof);
