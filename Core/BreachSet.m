@@ -1583,7 +1583,7 @@ classdef BreachSet < BreachStatus
             if isfield(this.P,'props_names')
                 spec_names = this.P.props_names;
             end
-            
+            summary.signature= this.GetSignature();
             summary.date = datestr(now);
             summary.num_traces = num_traces;
             summary.params.names = param_names;

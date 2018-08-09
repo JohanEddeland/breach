@@ -66,7 +66,7 @@ classdef stl_monitor < req_monitor
         
         function plot_diagnosis(this, F)
             % Assumes F has data about this formula
-            F.BrSet.PlotRobustSat(this.formula,[],[],F.itraj);
+            F.BrSet.PlotRobustSat(this.formula,[],[],F.ipts);
             
 %             if ~isempty(this.predicates)
 %                 F.AddAxes();

@@ -5,6 +5,8 @@
 - BreachSamplesPlot improvement  
 - Better support for req_monitors which are not stl_monitors
 - Support for requirement parameters sampling at BreachRequirement level
+- Updated Automatic transmission example
+
 
 ## Bugfixes
 - Sim() recompute without argument now checks if traces are present before 

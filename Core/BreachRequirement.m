@@ -22,7 +22,7 @@ classdef BreachRequirement < BreachTraceSystem
         
         function this = BreachRequirement(req_monitors, postprocess_signal_gens, precond_monitors)
             
-            this = this@BreachTraceSystem({});
+            this = this@BreachTraceSystem({}, [], {'data_trace_idx_'});
             
             % Adds requirement monitors, at least one
             this.req_monitors = {};
@@ -140,6 +140,15 @@ classdef BreachRequirement < BreachTraceSystem
             this.eval_precond_only = false;
         end
          
+        function ResetSimulations(this)
+            ResetSimulations@BreachSet(this);
+            this.traces_vals =[];
+            this.val = []; 
+            this.traces_vals_precond= [];
+            this.BrSet =[];
+        
+        end
+        
         function [global_val, traces_vals, traces_vals_precond] = Eval(this, varargin)
             % BreachRequirement.Eval returns evaluation of the requirement -
             % compute it for all traces available and returns min (implicit
@@ -802,14 +811,21 @@ classdef BreachRequirement < BreachTraceSystem
            if isa(B,'struct')   % reading one struct obtained from a SaveResult command
                 B = BreachTraceSystem(B);
            end  % here we need to handle pre-conditions, input requirements, etc
+
+           this.BrSet = B;
+           paramB = this.BrSet.GetParamList();
+           idxR_paramR = this.P.DimX+2:this.P.DimP;
+           paramR = this.P.ParamList(idxR_paramR);
+           paramR_wo_B = setdiff( paramR, paramB); % parameters in R that are not in B - need to be combined
            
            % if this has more than one value, needs to combine them with
            % those of B
-           if size(this.P.pts,2)>1
-              B.SetParam(this.P.ParamList(this.P.DimX+1:this.P.DimP), this.P.pts(this.P.DimX+1:this.P.DimP,:), 'combine'); 
+           multiple_paramR_vals  = size(this.P.pts,2)>1;
+           if multiple_paramR_vals
+              values_req_wo_sys =  this.GetParam(paramR_wo_B);
+              B.SetParam(paramR_wo_B, values_req_wo_sys, 'combine'); % now B contains all params for requirement
+              idxB_paramR = FindParam(B.P, paramR); 
            end
-           
-           this.BrSet = B;
            
            if this.eval_precond_only   % find what needs to be computed
                sigs_need = {};
@@ -860,14 +876,11 @@ classdef BreachRequirement < BreachTraceSystem
            % initialize or reset traces
             num_pts = size(B.P.pts,2);
 
-            param_sys = intersect(this.BrSet.GetParamList(), this.P.ParamList(this.P.DimX+1:end));
-            idx_param_sys_B = FindParam(this.BrSet.P, param_sys);
-            idx_param_sys_R = FindParam(this.P, param_sys);
-
             % Eval reset and recompute - not so much as Sim() 
             if this.hasTraj()
                 this.ResetParamSet();
             end
+            this.P = Sselect(this.P,1);
             
             if isfield(this.BrSet.P,'traj_ref')
                 itrajs = B.P.traj_ref;
@@ -877,14 +890,12 @@ classdef BreachRequirement < BreachTraceSystem
             
             for it =1:num_pts
                 trajR = struct();
-                trajR.param = this.P.pts(:,1)';
-                paramB= B.P.pts(:,it);
-                if ~isempty(idx_param_sys_R)
-                    if idx_param_sys_B <= B.P.DimP
-                        trajR.param(1,idx_param_sys_R) = paramB(1, idx_param_sys_B);
-                    else
-                        trajR.param(1,idx_param_sys_R) = B.P.pts(idx_param_sys_B,it)';  %  Spec parameter for B, have to look into pts, risky wrt traj_ref
-                    end
+                trajR.param = zeros(1,this.Sys.DimX);      
+                trajR.param(this.Sys.DimX+1) = itrajs(it);
+                if ~multiple_paramR_vals %  parameters of R were combined previously, 
+                    trajR.param = [trajR.param this.P.pts(idxR_paramR,1)']; % simple case: only one pts in R otherwise...
+                else
+                    trajR.param = [trajR.param B.P.pts(idxB_paramR,it)']; 
                 end
                 trajR.time = B.P.traj{itrajs(it)}.time;
                 trajR.X = NaN(this.Sys.DimX, numel(trajR.time));

@@ -4,7 +4,7 @@ classdef BreachTraceSystem < BreachSystem
     
     methods
         % constructor - takes signal names and an optional trace
-        function this = BreachTraceSystem(signals, trace)
+        function this = BreachTraceSystem(signals, trace, params)
             InitBreach;
             if (nargin==0)
                 return;
@@ -66,13 +66,18 @@ classdef BreachTraceSystem < BreachSystem
             end
             
             % assumes now that we have signal names
-            this.Sys = CreateSystem(signal_names, {},zeros(numel(signal_names),1));
+            if exist('params', 'var')&&~isempty(params)
+                this.Sys = CreateSystem(signal_names, params,zeros(numel(signal_names)+numel(params),1));
+            else
+                this.Sys = CreateSystem(signal_names, {},zeros(numel(signal_names),1));
+            end
+            
             this.P = CreateParamSet(this.Sys);
             
-            if exist('trace1', 'var')
+            if exist('trace1', 'var')&&~isempty(trace1)
                 this.AddTrace(trace1);
             end
-            if exist('trace', 'var')
+            if exist('trace', 'var')&&~isempty(trace)
                 this.AddTrace(trace);
             end
             
@@ -140,7 +145,6 @@ classdef BreachTraceSystem < BreachSystem
                                 traj.X(isig,:) = trace.signals.values(idx_sig,:);
                             end
                     end
-                    
                 end
             elseif isnumeric(trace)
                 traj.X = trace(:, 2:end)';

@@ -6,6 +6,7 @@ classdef BreachSamplesPlot < handle
         params
         data
         summary
+        signature
         ax
     end
         
@@ -42,25 +43,29 @@ classdef BreachSamplesPlot < handle
                 this.params = {};
             end
        
-             this.summary = BrSet.GetSummary(); % all data should be there 
+             this.summary = BrSet.GetSummary(); 
+             this.signature = this.summary.signature;
              this.update_plot();
         
         end
         
         function update_data(this)
             
-            num_samples = this.summary.num_traces_evaluated;
-            signature = this.summary.signature; 
+            num_samples = size(this.BrSet.P.pts,2);
             
             % variables
-            if isfield(signature,'variables_idx')
-                this.data.variables = signature.params(signature.variables_idx);
+            if isfield(this.signature,'variables_idx')
+                this.data.variables = this.signature.params(this.signature.variables_idx);
             else 
                 this.data.variables = {};
             end
             
-            vals = this.summary.requirements.rob;
             all_pts = 1:num_samples;
+            if isa(this.BrSet, 'BreachRequirement')
+                vals = this.summary.requirements.rob;
+            else
+                vals = 0*all_pts'+1;
+            end
             
             this.data.all_pts.idx = all_pts;
             
@@ -71,32 +76,39 @@ classdef BreachSamplesPlot < handle
             % falsified requirements
             vals_neg = vals';
             vals_neg(vals'>=0) = 0;
-             
+            
             % idx pos and neg
             num_vals_pos = sum(vals_pos>=0&vals_neg==0,1);
             num_vals_neg = sum(vals_neg<0,1);
             idx_pos = num_vals_pos  >0;
-            idx_neg = num_vals_neg >0; 
+            idx_neg = num_vals_neg >0;
             
             if any(idx_pos)
-                this.data.pos_pts.idx_traj= all_pts(idx_pos);
-                this.data.pos_pts.idx = arrayfun(@(c)(find(this.BrSet.P.traj_ref==c,1)),this.data.pos_pts.idx_traj);
+                this.data.pos_pts.idx= all_pts(idx_pos);
+                this.data.pos_pts.idx_traj = this.BrSet.P.traj_ref(this.data.pos_pts.idx);
                 this.data.pos_pts.v_sum_pos = sum(vals_pos(:,idx_pos),1);
                 this.data.pos_pts.v_num_pos = num_vals_pos(idx_pos);
             end
             
             if any(idx_neg)
-                this.data.neg_pts.idx_traj= all_pts(idx_neg);
-                this.data.neg_pts.idx = arrayfun(@(c)(find(this.BrSet.P.traj_ref==c,1)),this.data.neg_pts.idx_traj);
+                this.data.neg_pts.idx= all_pts(idx_neg);
+                this.data.neg_pts.idx_traj = this.BrSet.P.traj_ref(this.data.neg_pts.idx);
                 this.data.neg_pts.v_sum_neg = sum(vals_neg(:, idx_neg),1);
                 this.data.neg_pts.v_num_neg = -num_vals_neg(idx_neg);
             end
-              
+            
         end
         
         function update_plot(this)
             
             this.update_data();
+            
+            if isa(this.BrSet, 'BreachRequirement')
+                B = this.BrSet.BrSet;
+            else
+                B = this.BrSet;
+            end       
+            
             figure(this.Fig);
             if isempty(this.ax)
                 this.ax = axes();
@@ -106,85 +118,75 @@ classdef BreachSamplesPlot < handle
             cla;
             grid on;
     
-            %% Are we plotting a BreachSet or BreachRequirement?
-            % checks if there's any pos or neg stuff
-            has_pos = isfield(this.data, 'pos_pts'); 
+            has_pos = isfield(this.data, 'pos_pts');
             has_neg = isfield(this.data, 'neg_pts');
-            if has_pos||has_neg
-                if has_pos 
-                    pos_idx = this.data.pos_pts.idx;
-                    pos_idx_traj = this.data.pos_pts.idx_traj;
-                    switch this.x_axis
-                        case 'idx'
-                            xdata_pos = pos_idx_traj;
-                        otherwise  % assumes parameter name
-                            xdata_pos = this.BrSet.GetParam(this.x_axis, pos_idx);
-                    end
-                    
-                    switch this.y_axis
-                        case 'auto'
-                            if strcmp(this.x_axis,'idx')&&(numel(this.BrSet.req_monitors)==1)||...
-                                    has_neg&&~has_pos||...
-                                    has_pos&&~has_neg
-                                ydata_pos = this.data.pos_pts.v_sum_pos;
-                                plot_this = @plot_sum;
-                            else
-                                ydata_pos = this.data.neg_pts.v_num_neg;
-                                plot_this = @plot_num;
-                            end
-                            
-                        case 'sum'
+            if has_pos
+                pos_idx = this.data.pos_pts.idx;
+                switch this.x_axis
+                    case 'idx'
+                        xdata_pos = pos_idx;
+                    otherwise  % assumes x_axis is a parameter name
+                        xdata_pos = B.GetParam(this.x_axis, pos_idx);
+                end
+                
+                switch this.y_axis
+                    case 'auto'
+                        if ~isa(this.BrSet,'BreachRequirement')||(isa(this.BrSet,'BreachRequirement')&&numel(this.BrSet.req_monitors)==1)||...
+                                has_neg&&~has_pos||...
+                                has_pos&&~has_neg
                             ydata_pos = this.data.pos_pts.v_sum_pos;
                             plot_this = @plot_sum;
-                        case 'num'
-                            ydata_pos = this.data.pos_pts.v_num_pos;
+                        else
+                            ydata_pos = this.data.neg_pts.v_num_neg;
                             plot_this = @plot_num;
-                        otherwise
-                            ydata_pos = this.BrSet.GetParam(this.y_axis, pos_idx);
-                            plot_this = @plot_param;
-                    end
+                        end
+                        
+                    case 'sum'
+                        ydata_pos = this.data.pos_pts.v_sum_pos;
+                        plot_this = @plot_sum;
+                    case 'num'
+                        ydata_pos = this.data.pos_pts.v_num_pos;
+                        plot_this = @plot_num;
+                    otherwise
+                        ydata_pos = B.GetParam(this.y_axis, pos_idx);
+                        plot_this = @plot_param;
+                end
+            end
+            
+            if has_neg
+                neg_idx = this.data.neg_pts.idx;
+                
+                switch this.x_axis
+                    case 'idx'
+                        xdata_neg = neg_idx;
+                    otherwise  % assumes parameter name
+                        xdata_neg = B.GetParam(this.x_axis, neg_idx);
                 end
                 
-                if has_neg
-                    neg_idx = this.data.neg_pts.idx;
-                    neg_idx_traj = this.data.neg_pts.idx_traj;
-
-                    switch this.x_axis
-                        case 'idx'
-                            xdata_neg = neg_idx_traj;
-                        otherwise  % assumes parameter name
-                            xdata_neg = this.BrSet.GetParam(this.x_axis, neg_idx);
-                    end
-                    
-                    switch this.y_axis
-                        case 'auto'
-                            if strcmp(this.x_axis,'idx')&&(numel(this.BrSet.req_monitors)==1)||...
-                                    has_neg&&~has_pos||...
-                                    has_pos&&~has_neg
-                                    ydata_neg = this.data.neg_pts.v_sum_neg;
-                                    plot_this = @plot_sum;
-                            else
-                                ydata_neg = this.data.neg_pts.v_num_neg;
-                                plot_this=@plot_num;
-                            end
-                        case 'sum'
+                switch this.y_axis
+                    case 'auto'
+                        if ~isa(this.BrSet,'BreachRequirement')||(isa(this.BrSet,'BreachRequirement')&&numel(this.BrSet.req_monitors)==1)||...
+                                has_neg&&~has_pos||...
+                                has_pos&&~has_neg
                             ydata_neg = this.data.neg_pts.v_sum_neg;
                             plot_this = @plot_sum;
-                        case 'num'
+                        else
                             ydata_neg = this.data.neg_pts.v_num_neg;
-                            plot_this = @plot_num;
-                        otherwise
-                            ydata_neg = this.BrSet.GetParam(this.y_axis, neg_idx);
-                            plot_this =  @plot_param;
-                    end
+                            plot_this=@plot_num;
+                        end
+                    case 'sum'
+                        ydata_neg = this.data.neg_pts.v_sum_neg;
+                        plot_this = @plot_sum;
+                    case 'num'
+                        ydata_neg = this.data.neg_pts.v_num_neg;
+                        plot_this = @plot_num;
+                    otherwise
+                        ydata_neg = B.GetParam(this.y_axis, neg_idx);
+                        plot_this =  @plot_param;
                 end
-              
-              plot_this();  
-              
-            else
-                
-            
             end
+            
+            plot_this();
             
             function plot_param()
                 if has_pos
@@ -198,8 +200,7 @@ classdef BreachSamplesPlot < handle
                 xlabel(this.x_axis, 'Interpreter', 'None');
                 ylabel(this.y_axis, 'Interpreter', 'None');
             end
-            
-            
+                    
             function plot_sum()
                 if has_pos
                     this.pos_plot = plot(xdata_pos,ydata_pos,'.g', 'MarkerSize', 20);
@@ -228,7 +229,7 @@ classdef BreachSamplesPlot < handle
                 xlabel(this.x_axis, 'Interpreter', 'None');
                 ylabel('Num. requirement falsified/satisfied');
             end   
-            h = title('Left click on data to get details, right click to plot signals/diagnosis', 'FontWeight', 'normal', 'FontSize', 10);
+            h = title('Left click on data to get details, right click to plot signals', 'FontWeight', 'normal', 'FontSize', 10);
             
             
             %% Datacursor mode customization
@@ -241,26 +242,30 @@ classdef BreachSamplesPlot < handle
                 pos = event_obj.Position;
                 ipos = find(event_obj.Target.XData==pos(1)&event_obj.Target.YData==pos(2),1); 
                 if isequal(this.neg_plot, event_obj.Target)
-                    itraj = neg_idx_traj(ipos); 
+                    i_pts_req = neg_idx(ipos);
                 elseif isequal(this.pos_plot, event_obj.Target)
-                    itraj = pos_idx_traj(ipos);
-                elseif isequal(this.plot, event_obj.Target)
-                    itraj = find(this.BrSet.P.traj_ref==ipos,1);
+                    i_pts_req = pos_idx(ipos);
                 end
-                    
-                this.idx_tipped = itraj;
-           
-                txt{1} = ['idx trace:' num2str(itraj)] ;
                 
-                for irr = 1:numel(this.summary.requirements.names)
-                    txt{end+1} = [this.summary.requirements.names{irr} ':' num2str(this.summary.requirements.rob(itraj, irr))];
+                this.idx_tipped = i_pts_req;
+                
+                if isa(this.BrSet,'BreachRequirement')
+                    data_trace_idx_ = this.BrSet.GetParam('data_trace_idx_',i_pts_req);
+                    txt{1} = ['req_val_idx_:' num2str(i_pts_req)] ;
+                    txt{2} = ['data_trace_idx_:' num2str(data_trace_idx_)] ;
+                    txt{3} = '--------------';
+                    for irr = 1:numel(this.summary.requirements.names)
+                        txt{end+1} = [this.summary.requirements.names{irr} ':' num2str(this.summary.requirements.rob(i_pts_req, irr))];
+                    end
+                else
+                    txt{1} = ['Sample idx:' num2str(i_pts_req)] ;
                 end
-                ipts = find(this.BrSet.P.traj_ref==itraj,1);
-                if isfield(this.summary.signature, 'variables_idx')
+                
+                if isfield(this.signature, 'variables_idx')
                     txt{end+1} = '--------------';
-                    for irr = 1:numel(this.summary.signature.variables_idx)
-                        var_name = this.summary.signature.params{this.summary.signature.variables_idx(irr)};
-                        var_value = this.BrSet.GetParam(var_name, ipts);
+                    for irr = 1:numel(this.signature.variables_idx)
+                        var_name = this.signature.params{this.signature.variables_idx(irr)};
+                        var_value =B.GetParam(var_name, i_pts_req);
                         txt{end+1} = [var_name ': ' num2str(var_value)];
                     end
                 end
@@ -270,11 +275,12 @@ classdef BreachSamplesPlot < handle
             cm = uicontextmenu;
             uimenu(cm, 'Label', 'Open signals plot','Callback', @ctxtfn_signals_plot)
             
-            top_diag = uimenu(cm, 'Label', ['Plot diagnosis']);
-            for ir = 1:numel(this.summary.requirements.names)
-                uimenu(top_diag,'Label', this.summary.requirements.names{ir},'Callback', @(o,e)ctxtfn_plot_diagnosis(ir, o, e));
+            if isa(this.BrSet, 'BreachRequirement')
+                top_diag = uimenu(cm, 'Label', ['Plot diagnosis']);
+                for ir = 1:numel(this.summary.requirements.names)
+                    uimenu(top_diag,'Label', this.summary.requirements.names{ir},'Callback', @(o,e)ctxtfn_plot_diagnosis(ir, o, e));
+                end
             end
-            
             top_x = uimenu(cm, 'Label', ['Change x-axis']);
             uimenu(top_x, 'Label', 'idx','Callback',@(o,e)(this.set_x_axis('idx')));
             for ip = 1:numel(this.data.variables)
@@ -307,7 +313,7 @@ classdef BreachSamplesPlot < handle
                 else
                     it = this.idx_tipped(1);
                 end
-                sig = this.summary.signature.signals{1};
+                sig = this.signature.signals{1};
                 F = BreachSignalsPlot(this.BrSet,sig, it);
                 set(F.Fig,'Name', ['Trace idx= ' num2str(it)]);
             end
@@ -321,13 +327,11 @@ classdef BreachSamplesPlot < handle
                 cla(this.ax,'reset');
                 this.update_plot();
             catch ME
-                g = warndlg(sprintf('Error: %s', ME.message));
-                uiwait(g);
+                warning('BreachSamplesPlot:set_axis_fail', 'set_x_axis failed with error %s',   ME.message );
                 this.set_x_axis(current_axis)
             end
         end
             
-     
         function set_y_axis(this, param)
             current_axis = this.y_axis;
             try
@@ -335,145 +339,12 @@ classdef BreachSamplesPlot < handle
                 cla(this.ax,'reset');
                 this.update_plot();
             catch ME
-                g= warndlg(sprintf('Error: %s', ME.message));
-                uiwait(g);
+                warning('BreachSamplesPlot:set_axis_fail', 'set_y_axis failed with error %s',   ME.message );
                 this.set_y_axis(current_axis)
             end
         
         end
         
-     
-        
-        
-        function update_plot_old(this)
-            num_samples = this.summary.num_traces_evaluated;
-            figure(this.Fig);
-            clf;
-            grid on;
-      
-            vals = this.summary.requirements.rob;
-            all_pts = 1:num_samples;
-           
-            % satisfied requirements
-            vals_pos = vals';
-            vals_pos(vals'<=0) = 0;
-            
-            % falsified requirements
-            vals_neg = vals';
-            vals_neg(vals'>=0) = 0;
-             
-            % idx pos and neg
-            num_vals_pos = sum(vals_pos>=0&vals_neg==0,1);
-            num_vals_neg = sum(vals_neg<0,1);
-            idx_pos = num_vals_pos  >0;
-            idx_neg = num_vals_neg >0; 
-            
-            % Attempt to pick the most interesting plot  
-            
-            if size(vals_pos,1)==1|| (all(idx_pos)&&(~any(idx_neg))) ||(all(idx_neg)&&(~any(idx_pos)) )  % only one requirement or all positive or all negative
-                plot_sum();
-            else
-                plot_num();
-            end
-                
-            function plot_sum()
-                if any(idx_pos)
-                    y_pos = sum(vals_pos(:,idx_pos),1);
-                    plot(all_pts(idx_pos),y_pos,'.g', 'MarkerSize', 20);
-                end
-                
-                hold on;
-                if any(idx_neg)
-                    y_neg = sum(vals_neg(:, idx_neg),1);
-                    plot(all_pts(idx_neg),y_neg,'.r', 'MarkerSize', 20);
-                end
-                grid on;
-                xlabel('idx trace');
-                set(gca, 'Xtick', []);
-                ylabel('Cumulative satisfactions/violations');
-            end
-     
-            function plot_num()
-                if any(idx_pos)
-                    y_pos = num_vals_pos(idx_pos);
-                    bar(all_pts(idx_pos), y_pos ,0.1,'g');
-                end
-                hold on;
-                if any(idx_neg)
-                    y_neg = -num_vals_neg(idx_neg);
-                    bar(all_pts(idx_neg),y_neg,0.1,'r');
-                end
-                grid on;
-                xlabel('idx trace');
-                ylabel('Num. requirement falsified/satisfied');
-                set(gca, 'YLim', [min(y_neg)-.1, max(y_pos)+.1],  'Ytick', ceil(min(y_neg)-.1):1:floor(max(y_pos)+.1));
-            end   
-            h = title('Left click on data to get details, right click to plot signals/diagnosis', 'FontWeight', 'normal', 'FontSize', 10);
-           
-            
-            %% Datacursor mode customization
-            cursor_h = datacursormode(this.Fig);
-            cursor_h.UpdateFcn = @myupdatefcn;
-            cursor_h.SnapToDataVertex = 'on';
-            datacursormode on
-            
-            function [txt] = myupdatefcn(obj,event_obj)
-                pos = event_obj.Position;
-                itraj = pos(1);
-                ipts = find(this.BrSet.BrSet.P.traj_ref==itraj,1);
-                val = pos(2);
-                this.idx_tipped = itraj;
-           
-                txt{1} = ['idx trace:' num2str(itraj)] ;
-                
-                for irr = 1:numel(this.summary.requirements.names)
-                    if (this.summary.requirements.rob(itraj, irr)*val>0||(this.summary.requirements.rob(itraj, irr) ==0&&val>=0)) 
-                        txt{end+1} = [this.summary.requirements.names{irr} ':' num2str(this.summary.requirements.rob(itraj, irr))];
-                    end
-                end
-               
-                if isfield(this.summary.signature, 'variables_idx')
-                    txt{end+1} = '--------------';
-                    for irr = 1:numel(this.summary.signature.variables_idx)
-                        var_name = this.summary.signature.params{this.summary.signature.variables_idx(irr)};
-                        var_value = this.BrSet.GetParam(var_name, itraj);
-                        txt{end+1} = [var_name ': ' num2str(var_value)];
-                    end
-                end
-            end
-            
-            %% Context menu
-            cm = uicontextmenu;
-            uimenu(cm, 'Label', 'Open signals plot','Callback', @ctxtfn_signals_plot)
-            top = uimenu(cm, 'Label', ['Plot diagnosis']);
-            for ir = 1:numel(this.summary.requirements.names)
-                uimenu(top,'Label', this.summary.requirements.names{ir},'Callback', @(o,e)ctxtfn_plot_diagnosis(ir, o, e));
-            end
-            
-            set(cursor_h, 'UIContextMenu', cm);
-         
-            function ctxtfn_plot_diagnosis(ir, o,e)
-                if isempty(this.idx_tipped)
-                    it = 1;
-                else
-                    it = this.idx_tipped(1);
-                end
-                F = this.BrSet.PlotDiagnosis(ir, it);
-                set(F.Fig,'Name', ['Trace idx= ' num2str(it)]);
-            end
-            
-            function ctxtfn_signals_plot(o,e)
-                if isempty(this.idx_tipped)
-                    it = 1;
-                else
-                    it = this.idx_tipped(1);
-                end
-                sig = this.summary.signature.signals{1};
-                F = BreachSignalsPlot(this.BrSet,sig, it);
-                set(F.Fig,'Name', ['Trace idx= ' num2str(it)]);
-            end
-            
-        end
     end
 end
 
