@@ -1,17 +1,14 @@
-% 1. Just for making log "allLogFalsify"
-display('******** Start tuto_falsify_TMCandTMNA.m ********')
-tuto_falsify_TMCandTMNA;
+%% 1. Creating log "allLogFalsify"
+display('******** Start tuto_falsify_w_disk_caching.m ********')
+tuto_falsify_w_disk_caching;
 
-% 2. Our one use-case is storing this log on file-sever 
-display('******** Rename ChachFolder Name ********')
-movefile('allLogFalsify','fileSeverFolder/allLogFalsify')
+%% 2. Use-case is storing log on different file server 
+display('******** Rename CachingFolder Name ********')
+movefile('allLogFalsify','fileServerFolder/allLogFalsify')
 clear;
 
-% 3. Use stored folder again
-display('******** Recreate Brlog ********')
-falsif_pb = FalsificationProblem.load_runs('fileSeverFolder/allLogFalsify');
-BrLog = falsif_pb.BrSys;
-falsif_pb.X_log = unique(falsif_pb.X_log','rows')';
-BrLog.SetParam(falsif_pb.params, falsif_pb.X_log);
-BrLog.Sim();
-[v, V] = falsif_pb.Spec.Eval(BrLog);
+%% 3. Use stored folder again
+display('******** Recreate Blog ********')
+falsif_pb = FalsificationProblem.load_runs('fileServerFolder/allLogFalsify');
+Blog = falsif_pb.GetLog();
+BreachSamplesPlot(Blog);
