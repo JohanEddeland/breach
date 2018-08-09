@@ -816,6 +816,9 @@ classdef BreachRequirement < BreachTraceSystem
            paramB = this.BrSet.GetParamList();
            idxR_paramR = this.P.DimX+2:this.P.DimP;
            paramR = this.P.ParamList(idxR_paramR);
+           paramR_in_B = intersect(paramB, paramR);
+           idxB_paramR_in_B = FindParam(B.P, paramR_in_B);
+           idxR_paramR_in_B = FindParam(this.P, paramR_in_B);
            paramR_wo_B = setdiff( paramR, paramB); % parameters in R that are not in B - need to be combined
            
            % if this has more than one value, needs to combine them with
@@ -894,6 +897,7 @@ classdef BreachRequirement < BreachTraceSystem
                 trajR.param(this.Sys.DimX+1) = itrajs(it);
                 if ~multiple_paramR_vals %  parameters of R were combined previously, 
                     trajR.param = [trajR.param this.P.pts(idxR_paramR,1)']; % simple case: only one pts in R otherwise...
+                    trajR.param(1,idxR_paramR_in_B) = B.P.pts(idxB_paramR_in_B,it)'; 
                 else
                     trajR.param = [trajR.param B.P.pts(idxB_paramR,it)']; 
                 end
