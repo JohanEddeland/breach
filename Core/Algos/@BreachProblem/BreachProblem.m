@@ -572,7 +572,8 @@ classdef BreachProblem < BreachStatus
         %% Objective wrapper        
         function obj = objective_fn(this,x)
             % default objective_fn is simply robust satisfaction of the least
-            obj = min(this.robust_fn(x));
+%            obj = min(this.robust_fn(x));
+            obj = this.robust_fn(x);
         end
         
         function fval = objective_wrapper(this,x)
@@ -583,7 +584,7 @@ classdef BreachProblem < BreachStatus
              end
         
             nb_eval =  size(x,2);
-            fval = inf*ones(1, nb_eval);
+            fval = inf*ones(size(this.Spec.req_monitors,2), nb_eval);
             fun = @(isample) this.objective_fn(x(:, isample));
             nb_iter = min(nb_eval, this.max_obj_eval);
      
@@ -606,35 +607,30 @@ classdef BreachProblem < BreachStatus
                             fval(iter) = this.obj_log(idx);
                         else
                             % calling actual objective function
-                            fval(iter) = fun(iter);
+                            fval(:,iter) = fun(iter);
                         end
 
                         % logging and updating best
-                        this.LogX(x(:, iter), fval(iter));
+                        this.LogX(x(:, iter), fval(:,iter));
                         
                         % update status
                         if rem(this.nb_obj_eval,this.freq_update)==0
                             this.display_status();
-                        end
-                 
-                        % stops if falsified or
-                        if this.stopping()
-                            break
-                        end
+                        end                 
                  
                     end
                 else % Parallel case 
                     
                     % Launch tasks
                     for iter = 1:nb_iter
-                        par_f(iter) = parfeval(fun,1, iter);
+                        par_f(:,iter) = parfeval(fun,1, iter);
                     end
                     
                     fq = this.freq_update;                  
                     for iter=1:nb_iter
                         [idx, value] = fetchNext(par_f);
-                        fval(idx) = value;
-                        this.LogX(x(:, idx), fval(idx));
+                        fval(:,idx) = value;
+                        this.LogX(x(:, idx), fval(:,idx));
                         
                         % update status
                         if rem(iter,fq)==0
@@ -678,7 +674,7 @@ classdef BreachProblem < BreachStatus
                 end
             end
             
-            [fmin , imin] = min(fval);
+            [fmin , imin] = min(fval(1,:));
             x_min =x(:, imin);
             if fmin < this.obj_best
                 this.x_best = x_min;
@@ -687,7 +683,7 @@ classdef BreachProblem < BreachStatus
             end
             
             % Timing and num_eval       
-            this.nb_obj_eval= numel(this.obj_log);
+            this.nb_obj_eval= numel(this.obj_log(1,:));
             this.time_spent = toc(this.time_start);
            
         end

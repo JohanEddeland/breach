@@ -74,7 +74,8 @@ classdef FalsificationProblem < BreachProblem
         function obj = objective_fn(this,x)
             % For falsification, default objective_fn is simply robust satisfaction of the least
             this.robust_fn(x);
-            robs = min(this.Spec.traces_vals,[], 2);
+            robs = this.Spec.traces_vals;
+%            robs = min(this.Spec.traces_vals,[], 2);
             if (~isempty(this.Spec.traces_vals_precond))
                 for itr = 1:size(this.Spec.traces_vals_precond,1)
                     precond_rob = min(this.Spec.traces_vals_precond(itr,:));
@@ -86,7 +87,8 @@ classdef FalsificationProblem < BreachProblem
             
             NaN_idx = isnan(robs); % if rob is undefined, make it inf to ignore it
             robs(NaN_idx) = inf;
-            obj = min(robs);
+%            obj = min(robs);
+            obj = robs;
             
         end     
         

@@ -160,7 +160,7 @@ classdef BreachRequirement < BreachTraceSystem
             this.traces_vals_precond = traces_vals_precond;
             
             % A BreachRequirement must return a single value
-            global_val = min(min(traces_vals));
+            global_val = traces_vals;
             this.val = global_val;
         end
         
@@ -946,7 +946,7 @@ classdef BreachRequirement < BreachTraceSystem
             function  val = eval_req()
                 idx_sig_req = FindParam(this.P, req.signals); 
                 idx_par_req = FindParam(this.P, req.params);
-                p_in = this.P.traj{it}.param(1, idx_par_req);
+                p_in = req.p0;
                 if ~isempty(req.signals_in)
                     Xin = this.GetSignalValues(req.signals_in, it);
                 else
