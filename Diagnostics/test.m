@@ -1,8 +1,8 @@
-t1 = [0, 1, 2, 3, 4, 5];
-v1 = [-2, -1, 1, 2, 4, 5];
+t1 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+v1 = [-2, -3, -4, 1, 2, 3, -1, -1, -1, 1, 2, 3, 4];
 
-t2 = [0, 0.5, 2.5, 4.2, 5];
-v2 = [2.2, 7.4, 3.3, -1, -0.7];
+t2 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+v2 = [2, 2, 0, 1, -2, -2, 4, 2, 2, 2, -1, -1, -1];
 
 s1.times = t1;
 s1.values = v1;
@@ -10,15 +10,15 @@ s1.values = v1;
 s2.times = t2;
 s2.values = v2;
 
-interval.begin = 0.8;
-interval.end = 4.6;
+interval.begin = 3.8;
+interval.end = 9.6;
 
 implicant = BreachImplicant;
 implicant = implicant.addInterval(interval.begin, interval.end);
 
 target = 2;
 
-BreachDiagnostics.diag_or_t(s1, s2, implicant, target);
+[implicant1, implicant2] = BreachDiagnostics.diag_or_t(s1, s2, implicant, target);
 
 %signal.times = t;
 %signal.values = v;
