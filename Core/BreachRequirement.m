@@ -157,7 +157,7 @@ classdef BreachRequirement < BreachTraceSystem
         end
         
         function [global_val, traces_vals, traces_vals_precond] = Eval_IO(this, traces, inout, relabs)
-            % BreachRequirement.Eval returns evaluation of the requirement -
+            % BreachRequirement.Eval_IO returns IO-aware evaluation of the requirement -
             % compute it for all traces available and returns min (implicit
             % conjunction)
             
