@@ -4,7 +4,7 @@ function [val__, time_values__] = STL_EvalThom_Gen(Sys, phi, P, trajs, partition
 % This function uses a variable time step robust
 % monitoring algorithm.
 %
-% Synopsis: [val__, time_values__] = STL_EvalThom_IO(Sys, phi, P, trajs, partition, relabs, t)
+% Synopsis: [val__, time_values__] = STL_EvalThom_GEN(Sys, phi, P, trajs, partition, relabs, t)
 %
 % Input:
 %  - Sys   : is the system
@@ -14,11 +14,10 @@ function [val__, time_values__] = STL_EvalThom_Gen(Sys, phi, P, trajs, partition
 %  - trajs : is a structure with fields X and time. It may contains many
 %            trajectories. In this case, all will be checked considering
 %            the property parameters described in P.
-%  - partition  : is the partition of signals given as an array of strings:
-%                 the robustness computation is done with respect to the 
-%                 signals defined in the partition.
+%  - partition  : is a set of signals given as an array of strings:
+%                 the robustness computation is computed in these signals.
 %  - relabs : is a string indicating how to treat variables that are 
-%             interpreted qualitatively: 'rel' for -inf/+inf or 'abs' for
+%             not in the partition: 'rel' for -inf/+inf or 'abs' for
 %             +0/-0.
 %  - t     : (optional, default=traj.time) is the time point(s), so
 %            possibly an array, when to eval the satisfaction of the

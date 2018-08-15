@@ -1,8 +1,8 @@
-function [val, tau] = STL_Eval_IO(Sys, phi, P, trajs, partition, relabs, taus)
-%STL_EVAL_IO computes the satisfaction function of a property for one or
+function [val, tau] = STL_Eval_Gen(Sys, phi, P, trajs, partition, relabs, taus)
+%STL_EVAL_Gen computes the satisfaction function of a property for one or
 % many traces.
 % 
-% Synopsis: [val, tau] = STL_Eval_IO(Sys, phi, P, partition, relabs, trajs[, taus])
+% Synopsis: [val, tau] = STL_Eval_Gen(Sys, phi, P, partition, relabs, trajs[, taus])
 % 
 % Inputs:
 %  - Sys    : the system
@@ -13,10 +13,9 @@ function [val, tau] = STL_Eval_IO(Sys, phi, P, trajs, partition, relabs, taus)
 %             trajectories. In this case, all will be checked wrt the
 %             property parameter described in P.
 %  - partition  : is the partition of signals given as an array of strings:
-%                 the robustness computation is done with respect to the 
-%                 signals defined in the partition.
+%             the robsutness is computed in the signals of the partition.
 %  - relabs : is a string indicating how to treat variables that are 
-%             interpreted qualitatively: 'rel' for -inf/+inf or 'abs' for
+%             not in the partition: 'rel' for -inf/+inf or 'abs' for
 %             +0/-0.
 %  - taus   : (Optional, default=traj.time for each traj in trajs) is the
 %             time, possibly an array, when to eval the satisfaction of the
@@ -72,7 +71,7 @@ switch nargin
     case 6
         [val, tau] = STL_EvalThom_Gen(Sys, phi, P, trajs, partition, relabs);
     case 7
-        [val, tau] = STL_EvalThom_IO(Sys, phi, P, trajs, partition, relabs, taus);
+        [val, tau] = STL_EvalThom_Gen(Sys, phi, P, trajs, partition, relabs, taus);
 end
 
 end
