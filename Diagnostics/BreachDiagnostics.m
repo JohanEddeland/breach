@@ -1,4 +1,14 @@
 classdef BreachDiagnostics
+    properties
+        stl_formula;
+    end
+    
+    methods
+        function obj = BreachDiagnostics(formula)
+            stl_formula = formula;
+        end
+    end
+    
     methods (Static)
         function [out_implicant, error] = diag_not_f(in, in_implicant, value)
             [out_implicant, error] = BreachDiagnostics.diag_unary_plogic (in, in_implicant, value);
@@ -68,8 +78,9 @@ classdef BreachDiagnostics
             error = 0;
         end
         
-        function [out_implicant, error] = diag_ev_false_t(in, bound, in_implicant, value)
+        function [out_implicant, error] = diag_ev_f(in, bound, in_implicant, value)
             out_implicant = BreachImplicant;
+            error = 0;
             size = in_implicant.getIntervalsSize();
             for(i=0:size)
                 interval = in_implicant.getInterval(i);
@@ -78,10 +89,41 @@ classdef BreachDiagnostics
             end
         end
         
-        function [out_implicant, error] = diag_ev_t(in, in_implicant, value)
-            out1_implicant = in_implicant;
-            out2_implicant = in_implicant;
-            error = 0;
+        function [out_implicant, error] = diag_ev_t(in, in_implicant, bound, value)
+            % DIAG_EV_T
+            out_implicant = BreachImplicant;
+            size = in_implicant.getIntervalsSize();
+            for(i=1:size)
+                interval_to_explain = in_implicant.getInterval(i);
+                while (interval_to_explain.end > interval_to_explain.begin)
+                    search_interval.begin = interval_to_explain.begin + bound.begin;
+                    search_interval.end = interval_to_explain.begin + bound.end;
+                    tmp = BreachDiagnostics.diag_signal_restrict_to_interval(in, search_interval);
+                    tmp_size = length(tmp.times);
+                    prev_time = tmp.times(1);
+                    prev_value = tmp.values(1);
+                    begin_time = inf;
+                    if (prev_value >= 0)
+                        begin_time = prev_time;
+                    end
+                
+                    for(j=2:tmp_size)
+                        current_time = tmp.times(j);
+                        current_value = tmp.values(j);
+                        if (current_value >= 0 && prev_value < 0)
+                            begin_time = current_time;
+                        elseif ((current_value < 0 && prev_value >= 0) || ...
+                                (current_value >= 0 && j == tmp_size))
+                            end_time = current_time;
+                            out_implicant = out_implicant.addInterval(begin_time, end_time);
+                        end
+                        prev_time = current_time;
+                        prev_value = current_value;
+                    end
+                    interval_to_explain.begin = end_time - bound.begin;
+                end
+                error = 0;
+            end
         end
     end
     
