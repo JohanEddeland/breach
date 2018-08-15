@@ -91,6 +91,11 @@ classdef FalsificationProblem < BreachProblem
             
         end     
         
+        function set_robust_fn(this, inout, absrel)
+            %this.robust_fn = @(x) (phi.Eval(this.BrSys, this.params, x));
+            this.robust_fn = @(x) (this.Spec.Eval_IO(this.BrSys, inout, absrel)); 
+        end
+        
         % Nothing fancy - calls parent solve then returns falsifying params
         % if found.
         function [Xfalse, res] = solve(this)
