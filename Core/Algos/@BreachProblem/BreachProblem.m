@@ -188,7 +188,7 @@ classdef BreachProblem < BreachStatus
             
             % robustness
             this.BrSys = this.BrSet.copy(); 
-            this.robust_fn = @(x) (phi.evalAllTraces(this.BrSys, this.params, x));
+            this.robust_fn = @(x) (phi.Eval(this.BrSys, this.params, x));
             
             this.BrSys.Sys.Verbose=0;
              
