@@ -221,6 +221,7 @@ classdef BreachProblem < BreachStatus
             this.BrSet.SetParam(this.params, x0__,'spec');  % not sure this is useful anymore, if ever
             this.x0 = unique(x0__', 'rows')';
             
+            this.x_best = this.x0; % otherwise when obj +Inf case x_best is never set
         end
         
         function ResetObjective(this, BrSet)
@@ -512,7 +513,7 @@ classdef BreachProblem < BreachStatus
         end
         
         function x0 = generate_new_x0(this)
-            x0 = (this.ub-this.lb).*rand(3,1) + this.lb;
+            x0 = (this.ub-this.lb).*rand(length(this.ub),1) + this.lb;
         end
         
         function problem = get_problem(this)
@@ -707,7 +708,7 @@ classdef BreachProblem < BreachStatus
             end
             
             if this.nb_obj_eval > this.max_obj_eval
-                fprintf('\n Stopped after max_obj_eval was reached (maximum number of objective function evaluation.\n' );
+                fprintf('\n Stopped after max_obj_eval was reached (maximum number of objective function evaluations).\n' );
             end
             
             if numel(this.res) > 1 && this.use_parallel
