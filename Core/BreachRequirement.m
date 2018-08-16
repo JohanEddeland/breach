@@ -156,13 +156,13 @@ classdef BreachRequirement < BreachTraceSystem
             this.val = global_val;
         end
         
-        function [global_val, traces_vals, traces_vals_precond] = Eval_IO(this, traces, inout, relabs)
+        function [global_val, traces_vals, traces_vals_precond] = Eval_IO(this, inout, relabs, varargin)
             % BreachRequirement.Eval_IO returns IO-aware evaluation of the requirement -
             % compute it for all traces available and returns min (implicit
             % conjunction)
             
             % Collect traces from context and eval them
-            [traces_vals, traces_vals_precond] = this.evalAllTracesIO(traces, inout, relabs);
+            [traces_vals, traces_vals_precond] = this.evalAllTracesIO(inout, relabs, varargin{:});
             this.traces_vals = traces_vals;
             this.traces_vals_precond = traces_vals_precond;
             
@@ -944,10 +944,10 @@ classdef BreachRequirement < BreachTraceSystem
         
         end
  
-        function [traces_vals, traces_vals_precond] =evalAllTracesIO(this,traces,inout,relabs)
+        function [traces_vals, traces_vals_precond] =evalAllTracesIO(this,inout,relabs,varargin)
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
-            this.getBrSet(traces);            
+            this.getBrSet(varargin{:});            
             for i_req = 1:numel(this.req_monitors)
                 this.req_monitors{i_req}.set_mode(inout,relabs);
             end

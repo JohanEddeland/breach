@@ -91,9 +91,26 @@ classdef FalsificationProblem < BreachProblem
             
         end     
         
-        function set_robust_fn(this, inout, absrel)
+        function set_IO_robustness_mode(this, mode)
             %this.robust_fn = @(x) (phi.Eval(this.BrSys, this.params, x));
-            this.robust_fn = @(x) (this.Spec.Eval_IO(this.BrSys, inout, absrel)); 
+            switch mode
+                case 'default'
+                    this.robust_fn = @(x) (phi.Eval(this.BrSys, this.params, x));
+                    %this.constraints_fn = []; % could we use this to 
+                                               % disable if previously set?
+                case 'constrained'
+                    this.robust_fn = @(x) (this.Spec.Eval_IO('out', 'rel', this.BrSys, this.params, x));
+                    this.constraints_fn = @(x) (deal(this.Spec.Eval_IO('in', 'abs', this.BrSys, this.params, x), []));
+                case 'combined'
+                    this.robust_fn = @(x) (this.combined_IO_robustness(x));
+            end
+        end
+        
+        function rio = combined_IO_robustness(this, x)
+            rio = this.Spec.Eval_IO('in', 'abs', this.BrSys, this.params, x);
+            if (-realmin('double') <= rio && rio <= realmin('double'))
+                rio = this.Spec.Eval_IO('out', 'rel', this.BrSys, this.params, x);
+            end
         end
         
         % Nothing fancy - calls parent solve then returns falsifying params
