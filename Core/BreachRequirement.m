@@ -345,7 +345,7 @@ classdef BreachRequirement < BreachTraceSystem
                 end
             end
         end
-        
+         
         function dom  = GetDomain(this, param)
             if ischar(param)
                 param =  {param};
@@ -369,6 +369,146 @@ classdef BreachRequirement < BreachTraceSystem
         
         function PlotRobustSat(this, varargin)
             this.BrSet.PlotRobustSat(varargin{:});
+        end
+        
+        function PlotDiag_debug(this,robustness_map, diag_map)
+            gca;
+            nb_plots = robustness_map.size(1);
+            keys = robustness_map.keys();
+            for (i=1:nb_plots)
+                id = keys{i};
+                h = subplot(nb_plots, 1, i);
+                hold on;
+                grid on;
+                title(keys{i}, 'Interpreter', 'none');
+                signal = robustness_map(id);               
+                stairs(signal.times, signal.values);
+                
+                ylim = get(h, 'YLim');
+                ylim_bot = ylim(1);
+                ylim_top = ylim(2);
+                
+                implicant = diag_map(id);
+                size = implicant.getIntervalsSize();
+                for(j=1:size)
+                    interval = implicant.getInterval(j);
+                    x = interval.begin;
+                    y = interval.end;
+                    if (x == y)
+                        line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
+                    elseif (y > x)
+                        line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
+                        line([y y],[ylim_bot ylim_top],'Color',[1 0 0]);
+                        p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], 'r'); 
+                        alpha(p, 0.2);
+                        set(p,'EdgeColor','none');
+                    end
+                end
+            end
+        end
+        
+        function Explain(this, B, phi)
+            robustness_map = containers.Map;
+            [val tau robustness_map] = STL_Eval_IO_Rob(this.BrSet.Sys, phi, this.P, this.P.traj{1}, 'out', 'rel', robustness_map);
+            diag_map = containers.Map;
+            
+            top_signal = robustness_map(get_id(phi));
+            val = top_signal.values(1);
+            if(val < 0)
+                flag = 0;
+            else
+                flag = 1;
+            end
+            
+            implicant = BreachImplicant;
+            implicant = implicant.addInterval(0, 0);
+            id = get_id(phi);
+            diag_map(id) = implicant;
+            
+            [phi, diag_map] = this.Diag(phi, robustness_map, diag_map, flag);
+            this.PlotDiag_debug(robustness_map, diag_map);
+           
+        end
+        
+        function [phi, diag_map] = Diag(this, phi, robustness_map, diag_map, flag)
+            value = 0;
+            in_implicant = diag_map(get_id(phi));
+            id = get_id(phi);
+            
+            psis = get_children(phi);
+            switch(get_type(phi))
+                case 'predicate'
+                case 'not'
+                    signal = robustness_map(get_id(psis{1}));
+                    if(flag)
+                        [implicant] = BreachDiagnostics.diag_not_t(signal, in_implicant, value);
+                    else
+                        [implicant] = BreachDiagnostics.diag_not_f(signal, in_implicant, value);
+                    end
+                    diag_map(get_id(psis{1})) = implicant;
+                    [psis{1}, diag_map] = this.Diag(psis{1}, robustness_map, diag_map, ~flag);
+                case 'or'
+                    signal1 = robustness_map(get_id(psis{1}));
+                    signal2 = robustness_map(get_id(psis{2}));
+                    if(flag)
+                        [implicant1 implicant2] = BreachDiagnostics.diag_or_t(signal1, signal2, in_implicant, value);
+                    else
+                        [implicant1 implicant2] = BreachDiagnostics.diag_or_f(signal1, signal2, in_implicant, value);
+                    end
+                    diag_map(get_id(psis{1})) = implicant1;
+                    diag_map(get_id(psis{2})) = implicant2;
+                    [psis{1}, diag_map] = this.Diag(psis{1}, robustness_map, diag_map, flag);
+                    [psis{2}, diag_map] = this.Diag(psis{2}, robustness_map, diag_map, flag);
+                case 'and'
+                    signal1 = robustness_map(get_id(psis{1}));
+                    signal2 = robustness_map(get_id(psis{2}));
+                    if(flag)
+                        [implicant1 implicant2] = BreachDiagnostics.diag_and_t(signal1, signal2, in_implicant, value);
+                    else
+                        [implicant1 implicant2] = BreachDiagnostics.diag_and_f(signal1, signal2, in_implicant, value);
+                    end
+                    diag_map(get_id(psis{1})) = implicant1;
+                    diag_map(get_id(psis{2})) = implicant2;
+                    [psis{1}, diag_map] = this.Diag(psis{1}, robustness_map, diag_map, flag);
+                    [psis{2}, diag_map] = this.Diag(psis{2}, robustness_map, diag_map, flag);
+                case '=>'
+                    signal1 = robustness_map(get_id(psis{1}));
+                    signal2 = robustness_map(get_id(psis{2}));
+                    if(flag)
+                        [implicant1 implicant2] = BreachDiagnostics.diag_implies_t(signal1, signal2, in_implicant, value);
+                    else
+                        [implicant1 implicant2] = BreachDiagnostics.diag_implies_f(signal1, signal2, in_implicant, value);
+                    end
+                    diag_map(get_id(psis{1})) = implicant1;
+                    diag_map(get_id(psis{2})) = implicant2;
+                    [psis{1}, diag_map] = this.Diag(psis{1}, robustness_map, diag_map, flag);
+                    [psis{2}, diag_map] = this.Diag(psis{2}, robustness_map, diag_map, flag);
+                case 'always'
+                    signal = robustness_map(get_id(psis{1}));
+                    I = get_interval(phi);
+                    bound.begin = I(1);
+                    bound.end = I(2);
+                    if(flag)
+                        [implicant] = BreachDiagnostics.diag_alw_t(signal, bound, in_implicant, value);
+                    else
+                        [implicant] = BreachDiagnostics.diag_alw_f(signal, bound, in_implicant, value);
+                    end
+
+                    diag_map(get_id(psis{1})) = implicant;
+                    [psis{1}, diag_map] = this.Diag(psis{1}, robustness_map, diag_map, flag);
+                case 'eventually'
+                    signal = robustness_map(get_id(psis{1}));
+                    I = get_interval(phi);
+                    bound.begin = I(1);
+                    bound.end = I(2);
+                    if(flag)
+                        [implicant] = BreachDiagnostics.diag_ev_t(signal, bound, in_implicant, value);
+                    else
+                        [implicant] = BreachDiagnostics.diag_ev_f(signal, bound, in_implicant, value);
+                    end
+                    diag_map(get_id(psis{1})) = implicant;
+                    [psis{1}, diag_map] = this.Diag(psis{1}, robustness_map, diag_map, flag);        
+            end
         end
         
         

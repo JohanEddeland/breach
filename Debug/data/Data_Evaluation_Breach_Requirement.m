@@ -16,9 +16,11 @@ phi1 = STL_Formula('phi1', '(alw (speed[t]<vmax and speed[t]>=0)) and (alw (RPM[
 phi1 = set_params(phi1,{'vmax', 'rpm_max'}, [160 4500]);
 phi1 = set_out_signal_names(phi1, {'speed', 'RPM'});
 
-close all;
-
 % Set up the Breach requirement
 MyReq = BreachRequirement(phi1);
 [v, V] = MyReq.Eval_IO(B,'out','rel');
+MyReq.Explain(B, phi1);
+%MyReq.PlotRobustSat(phi1);
+
+
 
