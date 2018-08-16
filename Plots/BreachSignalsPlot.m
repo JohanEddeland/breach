@@ -79,7 +79,7 @@ classdef BreachSignalsPlot < handle
         end
         
         function ax = AddAxesContextMenu(this, ax)
-            cm = uicontextmenu;
+            cm = uicontextmenu(this.Fig);
             set(ax, 'UIContextMenu', cm);
             
             % all signals

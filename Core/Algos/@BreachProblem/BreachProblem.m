@@ -187,9 +187,8 @@ classdef BreachProblem < BreachStatus
             this.Reset_x0();
             
             % robustness
-            % [this.robust_fn, this.BrSys] =  this.BrSet.GetRobustSatFn(phi, this.params, this.T_Spec);
             this.BrSys = this.BrSet.copy(); 
-            this.robust_fn = @(x) (phi.Eval(this.BrSys, this.params, x));
+            this.robust_fn = @(x) (phi.evalAllTraces(this.BrSys, this.params, x));
             
             this.BrSys.Sys.Verbose=0;
              
@@ -571,8 +570,8 @@ classdef BreachProblem < BreachStatus
         
         %% Objective wrapper        
         function obj = objective_fn(this,x)
-            % default objective_fn is simply robust satisfaction of the least
-            obj = min(this.robust_fn(x));
+            % default objective_fn is simply robust satisfaction 
+            obj = this.robust_fn(x);
         end
         
         function fval = objective_wrapper(this,x)
