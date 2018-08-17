@@ -1,11 +1,19 @@
 % This script runs a sequence of falsification analyses for a powertrain
 % control (PTC) benchmark model.
 %
-% J. Kapinski
+% J. Kapinski & T. Ferrere
 % 8-2018
 
+%% Initialize
+close all; % for debug only!
+clc; % for debug only!
 clear;
 InitBreach;
+
+% solver config
+my_solver = 'fmincon';
+%my_solver = 'cmaes';
+%my_solver = 'ga';
 
 fuel_inj_tol = 1.0; 
 MAF_sensor_tol = 1.0;
@@ -22,8 +30,7 @@ mdl = 'AbstractFuelControl';
 
 BrAFC = BreachSimulinkSystem(mdl, 'all', [], {}, [], 'Verbose',0,'SimInModelsDataFolder', false); 
 
-%% 
-% First we create the parameter search domain and load specifications. 
+%% Load specifications
 
 STL_ReadFile('AFC_example_spec.stl');
 
@@ -44,26 +51,88 @@ BrAFC.SetInputGen(InputGen);
 
 BrAFC.SetParamRanges({'Pedal_Angle_u0', 'Pedal_Angle_u1','Pedal_Angle_u2','Engine_Speed_u0'}, [10 60; 10 60; 10 60; 900 1100 ]);
 
-%% Stating and Solving a Falsification Problem
-
+%% State and Solve a Falsification Problem
+display('---------------------------------- Classic Robustness -------------------------------------');
 AFC_Falsify = BrAFC.copy();
 
 AFC_Falsify = FalsificationProblem(AFC_Falsify, Overshoot_req);
-AFC_Falsify.setup_solver('cmaes');
+AFC_Falsify.setup_solver(my_solver);
+tic
 AFC_Falsify.solve();
-               
-figure; AFC_Falsify.BrSet_Best.PlotRobustSat(Overshoot_req); % Plot best robustness
+toc
 
+%% State and Solve the same Falsification Problem, but with Output Robustness
+display('---------------------------------- Output Robustness -------------------------------------');
+AFC_Falsify_O = BrAFC.copy();
 
-%% Stating and Solving the Same Falsification Problem, but with Combined IO Robustness
+AFC_Falsify_O = FalsificationProblem(AFC_Falsify_O, Overshoot_req);
+AFC_Falsify_O.setup_solver(my_solver);
+AFC_Falsify_O.set_IO_robustness_mode('out');
+tic
+AFC_Falsify_O.solve();
+toc
 
+%% State and Solve the same Falsification Problem, but with Combined IO Robustness
+display('---------------------------------- Combined IO Robustness -------------------------------------');
 AFC_Falsify_Rio = BrAFC.copy();
 
 AFC_Falsify_Rio = FalsificationProblem(AFC_Falsify_Rio, Overshoot_req);
+AFC_Falsify_Rio.setup_solver(my_solver);
 AFC_Falsify_Rio.set_IO_robustness_mode('combined');
-AFC_Falsify_Rio.setup_solver('cmaes');
+tic
 AFC_Falsify_Rio.solve();
-               
-figure; AFC_Falsify_Rio.BrSet_Best.PlotIORobustSat(Overshoot_req,'out','rel'); % Plot best robustness
-figure; AFC_Falsify_Rio.BrSet_Best.PlotIORobustSat(Overshoot_req,'in','abs'); % Plot best robustness
+toc
 
+%% State and Solve the same Falsification Problem, but with Constrained IO Robustness
+display('---------------------------------- Constrained IO Robustness -------------------------------------');
+AFC_Falsify_Cio = BrAFC.copy();
+
+AFC_Falsify_Cio = FalsificationProblem(AFC_Falsify_Cio, Overshoot_req);
+AFC_Falsify_Cio.setup_solver(my_solver);
+AFC_Falsify_Cio.set_IO_robustness_mode('constrained');
+tic
+AFC_Falsify_Cio.solve();
+toc
+
+
+%% Plotting and Comparison
+% Standard Robustness falsifying behavior
+% figure; AFC_Falsify.BrSet_Best.PlotRobustSat(Overshoot_req); % Plot best robustness
+% 
+% % Output Robsutness falsifying behavior
+% figure; AFC_Falsify_O.BrSet_Best.PlotIORobustSat(Overshoot_req,'out','rel'); % Plot best robustness
+% 
+% % Combined IO Robustness falsifying behavior
+% figure; AFC_Falsify_Rio.BrSet_Best.PlotRobustSat(Overshoot_req,'out','rel'); % Plot best robustness
+% 
+% % Constrained IO Robsutness falsifying behavior
+% figure; AFC_Falsify_Cio.BrSet_Best.PlotIORobustSat(Overshoot_req,'out','rel'); % Plot best robustness
+
+% Evolution of parameters and cost function
+figure;
+subplot(2,2,1);
+plot(AFC_Falsify.obj_log);
+title('Standard cost function')
+subplot(2,2,2);
+plot(AFC_Falsify_O.obj_log);
+title('Output cost function')
+subplot(2,2,3);
+plot(AFC_Falsify.X_log(2,:),AFC_Falsify.X_log(3,:));
+title('Standard exploration of Pedal\_Angle');
+subplot(2,2,4);
+plot(AFC_Falsify_O.X_log(2,:),AFC_Falsify_O.X_log(3,:));
+title('Output exploration of Pedal\_Angle');
+
+figure;
+subplot(2,2,1);
+plot(AFC_Falsify_Rio.obj_log);
+title('Combined IO cost function')
+subplot(2,2,2);
+plot(AFC_Falsify_Cio.obj_log);
+title('Constrained IO cost function')
+subplot(2,2,3);
+plot(AFC_Falsify_Rio.X_log(2,:),AFC_Falsify_Rio.X_log(3,:));
+title('Combined IO exploration of Pedal\_Angle');
+subplot(2,2,4);
+plot(AFC_Falsify_Cio.X_log(2,:),AFC_Falsify_Cio.X_log(3,:));
+title('Constrained IO exploration of Pedal\_Angle');

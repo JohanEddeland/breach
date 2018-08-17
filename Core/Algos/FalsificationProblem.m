@@ -18,6 +18,8 @@ classdef FalsificationProblem < BreachProblem
         X_false
         obj_false
         StopAtFalse=true
+        Rio_Mode
+        Rio_Mode_log=[]
     end
     
     methods (Static)
@@ -92,27 +94,31 @@ classdef FalsificationProblem < BreachProblem
         end     
         
         function set_IO_robustness_mode(this, mode)
-            %this.robust_fn = @(x) (phi.Eval(this.BrSys, this.params, x));
             switch mode
                 case 'default'
-                    this.robust_fn = @(x) (phi.Eval(this.BrSys, this.params, x));
-                    %this.constraints_fn = []; % could we use this to 
-                                               % disable if previously set?
+                    this.robust_fn = @(x) (this.Spec.Eval(this.BrSys, this.params, x));
+                    this.constraints_fn = [];
+                case 'in'
+                    this.robust_fn = @(x) (this.Spec.Eval_IO('in', 'rel', this.BrSys, this.params, x));
+                    this.constraints_fn = [];
+                case 'out'
+                    this.robust_fn = @(x) (this.Spec.Eval_IO('out', 'rel', this.BrSys, this.params, x));
+                    this.constraints_fn = [];
                 case 'constrained'
                     this.robust_fn = @(x) (this.Spec.Eval_IO('out', 'rel', this.BrSys, this.params, x));
-                    this.constraints_fn = @(x) (deal(this.Spec.Eval_IO('in', 'abs', this.BrSys, this.params, x), []));
+                    this.constraints_fn = @(x) (this.Spec.Eval_IO('in', 'abs', this.BrSys, this.params, x));
                 case 'combined'
                     this.robust_fn = @(x) (this.combined_IO_robustness(x));
+                    this.constraints_fn = [];
             end
         end
-        
+
         function rio = combined_IO_robustness(this, x)
-            rio = this.Spec.Eval_IO('in', 'abs', this.BrSys, this.params, x);
-            if (-realmin('double') <= rio && rio <= realmin('double'))
-                rio = this.Spec.Eval_IO('out', 'rel', this.BrSys, this.params, x);
-            end
-        end
-        
+            ri = this.Spec.Eval_IO('in', 'abs', this.BrSys, this.params, x);
+            ro = this.Spec.Eval_IO('out','rel', this.BrSys, this.params, x);
+            rio = ri + 2/pi * atan(ro);
+        end        
+   
         % Nothing fancy - calls parent solve then returns falsifying params
         % if found.
         function [Xfalse, res] = solve(this)
@@ -126,6 +132,7 @@ classdef FalsificationProblem < BreachProblem
        
             % Logging default stuff
             this.LogX@BreachProblem(x, fval);
+            this.Rio_Mode_log = [ this.Rio_Mode_log this.Rio_Mode ];
             
             %  Logging falsifying parameters found      
             [~, i_false] = find(fval<0);
