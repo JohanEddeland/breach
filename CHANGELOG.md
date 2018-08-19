@@ -7,7 +7,7 @@
 ## Bugfix
 - traj_ref support fixed for BreachRequirement, would cause to fetch wrong 
   signal values for requirement evaluation some times  
-
+- small bug in BreachSamplesPlot when instantiating contextual menus 
 
 # Release 1.4.0
 
