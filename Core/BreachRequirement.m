@@ -396,10 +396,11 @@ classdef BreachRequirement < BreachTraceSystem
                 end
                 if any(ifoundB)
                     idxB = idxB(ifoundB==1);
-                    if nargin>1 && isfield(this.BrSet.P, 'traj_ref')
-                        iptsB = varargin{2};
-                        for it= 1:numel(iptsB)
-                            itracesB(it) = this.BrSet.P.traj_ref(iptsB(it));
+                    if nargin>2 && isfield(this.BrSet.P, 'traj_ref')
+                        itraces = varargin{2};
+                        itracesB = itraces;
+                        for it= 1:numel(itraces)
+                            itracesB(it) = this.P.traj{itraces(it)}.param(this.Sys.DimX+1); % uses trace_data_idx_ to recover trace in B
                         end
                         varargin{2} = itracesB;
                     end
