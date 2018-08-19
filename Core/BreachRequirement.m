@@ -877,8 +877,16 @@ classdef BreachRequirement < BreachTraceSystem
             
             if isa(B,'struct')   % reading one struct obtained from a SaveResult command
                 B = BreachTraceSystem(B);
-            end  % here we need to handle pre-conditions, input requirements, etc
+            end  
             
+            % We got B, checks whether it contains necessary signals
+            absent_signals_in = setdiff(this.signals_in, B.GetSignalList());
+            if ~isempty(absent_signals_in)
+                error('BreachRequirement:Eval', 'Signal %s is not provided by data or model',absent_signals_in{1});
+            end
+            
+            
+            % checksi parameters in B and in Req
             this.BrSet = B;
             paramB = this.BrSet.GetParamList();
             idxR_paramR = this.P.DimX+2:this.P.DimP;
@@ -912,7 +920,7 @@ classdef BreachRequirement < BreachTraceSystem
                     if ~isempty(req{1}.signals_in)
                         for sig = req{1}.signals_in
                             if ~this.is_a_model_input(sig{1})
-                                all_input_req = false;
+                                all_inputs_req = false;
                                 break
                             end
                         end

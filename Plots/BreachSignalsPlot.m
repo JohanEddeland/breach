@@ -37,9 +37,7 @@ classdef BreachSignalsPlot < handle
                 this.AddSignals(signals{is}, is);
             end
             
-            
         end
-        
         
         
         function ax = AddAxes(this, pos)
