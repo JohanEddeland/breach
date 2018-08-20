@@ -11,7 +11,7 @@ classdef BreachRequirement < BreachTraceSystem
         signals_in
         traces_vals_precond % results for individual traces & precond_monitors
         traces_vals % results for individual traces & req_monitors
-        val             % summary evaluation for all traces & req_monitors
+        val         % summary evaluation for all traces & req_monitors
         robustness_map
         diag_map
         formula_names_map
@@ -156,7 +156,8 @@ classdef BreachRequirement < BreachTraceSystem
             
             % A BreachRequirement must return a single value
             global_val = min(min(traces_vals));
-            this.val = global_val;
+            global_precond_val = min(min(traces_vals_precond));
+            this.val = min([global_val,-global_precond_val]);
         end
         
         function [global_val, traces_vals, traces_vals_precond] = Eval_IO(this, inout, relabs, varargin)
@@ -171,7 +172,8 @@ classdef BreachRequirement < BreachTraceSystem
             
             % A BreachRequirement must return a single value
             global_val = min(min(traces_vals));
-            this.val = global_val;
+            global_precond_val = min(min(traces_vals_precond));
+            this.val = min([global_val,-global_precond_val]);
         end
         
         function F = PlotDiagnosis(this, idx_req_monitors, itraj)
