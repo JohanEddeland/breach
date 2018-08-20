@@ -1,5 +1,5 @@
 classdef BreachOperator
     enumeration
-        NOT, OR, AND, IMPLIES, IFF, XOR;
+        NOT, OR, AND, IMPLIES, IFF, XOR, EV, ALW;
     end
 end
