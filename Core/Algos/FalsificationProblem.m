@@ -20,6 +20,7 @@ classdef FalsificationProblem < BreachProblem
         StopAtFalse=true
         Rio_Mode
         Rio_Mode_log=[]
+        val_max=inf
     end
     
     methods (Static)
@@ -76,36 +77,47 @@ classdef FalsificationProblem < BreachProblem
         
         function obj = objective_fn(this,x)
             % For falsification, default objective_fn is simply robust satisfaction of the least
-            this.robust_fn(x);
-            robs = min(this.Spec.traces_vals,[], 2);
-            if (~isempty(this.Spec.traces_vals_precond))
-                for itr = 1:size(this.Spec.traces_vals_precond,1)
-                    precond_rob = min(this.Spec.traces_vals_precond(itr,:));
-                    if  precond_rob<0
-                        robs(itr)= -precond_rob;
-                    end
-                end
-            end
+            obj = this.robust_fn(x);
+            if obj == inf
+                obj = this.val_max;
+            end%             robs = min(this.Spec.traces_vals,[], 2);
+%             if (~isempty(this.Spec.traces_vals_precond))
+%                 for itr = 1:size(this.Spec.traces_vals_precond,1)
+%                     precond_rob = min(this.Spec.traces_vals_precond(itr,:));
+%                     if  precond_rob<0
+%                         robs(itr)= -precond_rob;
+%                     end
+%                 end
+%             end
+%             
+%             NaN_idx = isnan(robs); % if rob is undefined, make it inf to ignore it
+%             robs(NaN_idx) = inf;
+%             obj = min(robs);
             
-            NaN_idx = isnan(robs); % if rob is undefined, make it inf to ignore it
-            robs(NaN_idx) = inf;
-            obj = min(robs);
-            
-        end     
+        end   
         
-        function set_IO_robustness_mode(this, mode)
+        function set_IO_robustness_mode(this, mode, cap)
             switch mode
                 case 'default'
                     this.robust_fn = @(x) (this.Spec.Eval(this.BrSys, this.params, x));
                     this.constraints_fn = [];
                 case 'in'
                     this.robust_fn = @(x) (this.Spec.Eval_IO('in', 'rel', this.BrSys, this.params, x));
+                    if exist('cap','var')
+                        this.val_max = cap;
+                    end
                     this.constraints_fn = [];
                 case 'out'
                     this.robust_fn = @(x) (this.Spec.Eval_IO('out', 'rel', this.BrSys, this.params, x));
+                    if exist('cap','var')
+                        this.val_max = cap;
+                    end
                     this.constraints_fn = [];
                 case 'constrained'
                     this.robust_fn = @(x) (this.Spec.Eval_IO('out', 'rel', this.BrSys, this.params, x));
+                    if exist('cap','var')
+                        this.val_max = cap;
+                    end
                     this.constraints_fn = @(x) (this.Spec.Eval_IO('in', 'abs', this.BrSys, this.params, x));
                 case 'combined'
                     this.robust_fn = @(x) (this.combined_IO_robustness(x));
