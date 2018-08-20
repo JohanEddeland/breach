@@ -12,6 +12,9 @@ classdef BreachRequirement < BreachTraceSystem
         traces_vals_precond % results for individual traces & precond_monitors
         traces_vals % results for individual traces & req_monitors
         val             % summary evaluation for all traces & req_monitors
+        robustness_map
+        diag_map
+        formula_names_map
     end
     
     properties (Access=protected)
@@ -371,8 +374,12 @@ classdef BreachRequirement < BreachTraceSystem
             this.BrSet.PlotRobustSat(varargin{:});
         end
         
-        function PlotDiag_debug(this,robustness_map, diag_map)
+        function PlotDiag_debug(this)
             gca;
+            figure;
+            robustness_map = this.robustness_map;
+            diag_map = this.diag_map;
+            formula_names_map = this.formula_names_map;
             nb_plots = robustness_map.size(1);
             keys = robustness_map.keys();
             for (i=1:nb_plots)
@@ -380,7 +387,8 @@ classdef BreachRequirement < BreachTraceSystem
                 h = subplot(nb_plots, 1, i);
                 hold on;
                 grid on;
-                title(keys{i}, 'Interpreter', 'none');
+                formula_name = formula_names_map(id);
+                title(formula_name, 'Interpreter', 'none');
                 signal = robustness_map(id);               
                 stairs(signal.times, signal.values);
                 
@@ -397,22 +405,76 @@ classdef BreachRequirement < BreachTraceSystem
                     if (x == y)
                         line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
                     elseif (y > x)
-                        line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
-                        line([y y],[ylim_bot ylim_top],'Color',[1 0 0]);
+                        %line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
+                        %line([y y],[ylim_bot ylim_top],'Color',[1 0 0]);
                         p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], 'r'); 
-                        alpha(p, 0.2);
+                        alpha(p, 0.05);
                         set(p,'EdgeColor','none');
                     end
                 end
             end
         end
         
+        function PlotDiag(this, phi)
+            gca;
+                       
+            robustness_map = this.robustness_map;
+            diag_map = this.diag_map;
+            formula_names_map = this.formula_names_map;
+            signal_names = STL_ExtractSignals(phi);
+            nb_plots = length(signal_names);
+            keys = signal_names;
+            for (i=1:nb_plots)
+                id = keys{i};
+                h = subplot(nb_plots, 1, i);
+                hold on;
+                grid on;
+                formula_name = formula_names_map(id);
+                title(formula_name, 'Interpreter', 'none');
+                signal = robustness_map(id);               
+                stairs(signal.times, signal.values);
+                
+                ylim = get(h, 'YLim');
+                ylim_bot = ylim(1);
+                ylim_top = ylim(2);
+                
+                implicant = diag_map(id);
+                size = implicant.getIntervalsSize();
+                for(j=1:size)
+                    interval = implicant.getInterval(j);
+                    x = interval.begin;
+                    y = interval.end;
+                    if (x == y)
+                        line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
+                    elseif (y > x)
+                        %line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
+                        %line([y y],[ylim_bot ylim_top],'Color',[1 0 0]);
+                        p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], 'r'); 
+                        alpha(p, 0.05);
+                        set(p,'EdgeColor','none');
+                    end
+                end
+            end
+            a = axes;
+            t1 = title(display(phi), 'Interpreter', 'none');
+            a.Visible = 'off'; % set(a,'Visible','off');
+            t1.Visible = 'on'; % set(t1,'Visible','on');
+        end
+        
+        
+        
         function Explain(this, B, phi)
             robustness_map = containers.Map;
-            [val tau robustness_map] = STL_Eval_IO_Rob(this.BrSet.Sys, phi, this.P, this.P.traj{1}, 'out', 'rel', robustness_map);
+            %this.getBrSet(B);
+            
+            [val tau robustness_map] = STL_Eval_IO_Rob(B.Sys, phi, B.P, B.P.traj{1}, 'out', 'rel', robustness_map);
             diag_map = containers.Map;
             
+            formula_names_map = containers.Map;
+            formula_names_map = get_formula_name_map(phi, formula_names_map);
+            
             top_signal = robustness_map(get_id(phi));
+  
             val = top_signal.values(1);
             if(val < 0)
                 flag = 0;
@@ -426,7 +488,11 @@ classdef BreachRequirement < BreachTraceSystem
             diag_map(id) = implicant;
             
             [phi, diag_map] = this.Diag(phi, robustness_map, diag_map, flag);
-            this.PlotDiag_debug(robustness_map, diag_map);
+            
+            this.robustness_map = robustness_map;
+            this.diag_map = diag_map;
+            this.formula_names_map = formula_names_map;
+            %this.PlotDiag_debug(robustness_map, diag_map, formula_names_map);
            
         end
         
@@ -438,6 +504,14 @@ classdef BreachRequirement < BreachTraceSystem
             psis = get_children(phi);
             switch(get_type(phi))
                 case 'predicate'
+                    signal_names = STL_ExtractSignals(phi);
+                    for(i=1:length(signal_names))
+                        signal_name = signal_names{i};
+                        if(~diag_map.isKey(signal_name))
+                            diag_map(signal_name) = in_implicant;
+                        end
+                    end
+                    
                 case 'not'
                     signal = robustness_map(get_id(psis{1}));
                     if(flag)
@@ -485,9 +559,9 @@ classdef BreachRequirement < BreachTraceSystem
                     [psis{2}, diag_map] = this.Diag(psis{2}, robustness_map, diag_map, flag);
                 case 'always'
                     signal = robustness_map(get_id(psis{1}));
-                    I = get_interval(phi);
+                    I = eval(get_interval(phi));
                     bound.begin = I(1);
-                    bound.end = I(2);
+                    bound.end = min(I(2),max(signal.times));
                     if(flag)
                         [implicant] = BreachDiagnostics.diag_alw_t(signal, bound, in_implicant, value);
                     else
@@ -498,9 +572,9 @@ classdef BreachRequirement < BreachTraceSystem
                     [psis{1}, diag_map] = this.Diag(psis{1}, robustness_map, diag_map, flag);
                 case 'eventually'
                     signal = robustness_map(get_id(psis{1}));
-                    I = get_interval(phi);
+                    I = eval(get_interval(phi));
                     bound.begin = I(1);
-                    bound.end = I(2);
+                    bound.end = min(I(2),max(signal.times));
                     if(flag)
                         [implicant] = BreachDiagnostics.diag_ev_t(signal, bound, in_implicant, value);
                     else

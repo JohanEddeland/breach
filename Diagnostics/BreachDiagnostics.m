@@ -1,6 +1,4 @@
-classdef BreachDiagnostics
-
-    
+classdef BreachDiagnostics  
     methods (Static)
         function [out_implicant, error] = diag_not_f(in, in_implicant, value)
             [out_implicant, error] = BreachDiagnostics.diag_unary_plogic (in, in_implicant, value);
@@ -71,7 +69,7 @@ classdef BreachDiagnostics
         end
         
         function [out_implicant, error] = diag_alw_f(in, bound, in_implicant, value)
-            [out_implicant, error] = diag_unary_tlogic(BreachOperator.ALW, in, in_implicant, bound, value);
+            [out_implicant, error] = BreachDiagnostics.diag_unary_tlogic(BreachOperator.ALW, in, bound, in_implicant, value);
         end
         
         function [out_implicant, error] = diag_alw_t(in, bound, in_implicant, value)
@@ -98,8 +96,8 @@ classdef BreachDiagnostics
             end
         end
         
-        function [out_implicant, error] = diag_ev_t(in, in_implicant, bound, value)
-            [out_implicant, error] = diag_unary_tlogic(BreachOperator.EV, in, in_implicant, bound, value);
+        function [out_implicant, error] = diag_ev_t(in, bound, in_implicant, value)
+            [out_implicant, error] = BreachDiagnostics.diag_unary_tlogic(BreachOperator.EV, in, bound, in_implicant, value);
         end
     end
     
@@ -109,13 +107,19 @@ classdef BreachDiagnostics
             out_implicant = in_implicant;
         end
         
-        function [out_implicant, error] = diag_unary_tlogic(operator, in, in_implicant, bound, value)
+        function [out_implicant, error] = diag_unary_tlogic(operator, in, bound, in_implicant, value)
             % DIAG_EV_T
             out_implicant = BreachImplicant;
+            error = 0;
             size = in_implicant.getIntervalsSize();
             for(i=1:size)
                 interval_to_explain = in_implicant.getInterval(i);
-                while (interval_to_explain.end > interval_to_explain.begin)
+                flag = 1;
+                while (interval_to_explain.end >= interval_to_explain.begin && flag)
+                    if (interval_to_explain.end == interval_to_explain.begin)
+                        flag = 0;
+                    end
+                    
                     search_interval.begin = interval_to_explain.begin + bound.begin;
                     search_interval.end = interval_to_explain.begin + bound.end;
                     tmp = BreachDiagnostics.diag_signal_restrict_to_interval(in, search_interval);
@@ -166,11 +170,11 @@ classdef BreachDiagnostics
                 out1_tmp = BreachDiagnostics.diag_signal_restrict_to_interval(in1, interval);
                 out2_tmp = BreachDiagnostics.diag_signal_restrict_to_interval(in2, interval);
                 
-                [out1_tmp out2_tmp] = BreachDiagnostics.diag_two_signals_normalize_sampling (out1_tmp, out2_tmp);
+                [out1_tmp, out2_tmp] = BreachDiagnostics.diag_two_signals_normalize_sampling (out1_tmp, out2_tmp);
                 
                 begin_time = out1_tmp.times(1);
-                v1 = out1_tmp.times(1);
-                v2 = out2_tmp.times(1);
+                v1 = out1_tmp.values(1);
+                v2 = out2_tmp.values(1);
                 old_value = TwoBitValue.getValue(v1,v2);
                 
                 for(j=2:length(out1_tmp.times))
@@ -183,7 +187,7 @@ classdef BreachDiagnostics
                     if (new_value ~= old_value || j == length(out1_tmp.times))
                         end_time = t;
                         [out1_implicant, out2_implicant] = BreachDiagnostics.diag_binary_plogic_update_implicants( ...
-                            operator, old_value, out1_implicant, out1_implicant, begin_time, end_time);
+                            operator, old_value, out1_implicant, out2_implicant, begin_time, end_time);
                         begin_time = t;
                         old_value = new_value;
                     end
@@ -222,7 +226,7 @@ classdef BreachDiagnostics
             itv = [interval.begin, interval.end];
             
             t_tmp = union(t, itv,'sorted');
-            v_tmp = interp1(t, v, t_tmp);
+            v_tmp = interp1(t, v, t_tmp, 'previous');
             
             size = length(t_tmp);
             t_out = [];
@@ -245,8 +249,8 @@ classdef BreachDiagnostics
             v2 = in2.values;
             
             t_tmp = union(t1, t2, 'sorted');
-            v1_tmp = interp1(t1, v1, t_tmp);
-            v2_tmp = interp1(t2, v2, t_tmp);
+            v1_tmp = interp1(t1, v1, t_tmp, 'previous');
+            v2_tmp = interp1(t2, v2, t_tmp, 'previous');
             
             out1.times = t_tmp;
             out1.values = v1_tmp;

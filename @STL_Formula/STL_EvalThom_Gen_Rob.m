@@ -187,6 +187,17 @@ switch(phi.type)
                     valarray = realmin('double')*(2*(valarray>0)-1);
                 end
         end
+        
+        signal_names = STL_ExtractSignals(phi);
+        for(i=1:length(signal_names))
+            signal_name = signal_names{i};
+            index = FindParam(Sys, signal_name);
+            signal.times = P.traj{1}.time;
+            signal.values = P.traj{1}.X(index,:);
+            if(~robustness_map.isKey(signal_name))
+              robustness_map(signal_name) = signal;
+            end
+        end
     
         
     case 'not'

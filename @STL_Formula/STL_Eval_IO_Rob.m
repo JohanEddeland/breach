@@ -1,4 +1,4 @@
-function [val, tau, robustness_map] = STL_Eval_IO(Sys, phi, P, trajs, inout, relabs, robustness_map, taus)
+function [val, tau, robustness_map] = STL_Eval_IO_Rob(Sys, phi, P, trajs, inout, relabs, robustness_map, taus)
 %STL_EVAL_IO computes the satisfaction function of a property for one or
 % many traces.
 % 
