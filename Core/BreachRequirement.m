@@ -997,11 +997,11 @@ classdef BreachRequirement < BreachTraceSystem
                     end
                     
                     if ~isempty(params_sys)
-                        B.SetParam(params_sys,values(i_sys,:));
+                        B.SetParam(params_sys, values(i_sys));
                     end
                     
                     if ~isempty(params_req)
-                        this.SetParam(params_req, values(i_req,:));
+                        this.SetParam(params_req, values(i_req));
                     end
                    
            end
