@@ -1,13 +1,15 @@
 classdef BreachImplicant
     properties
         Intervals
-        SignificantTime
+        SampleTime
+        SampleValue
     end
     
     methods
         function obj = BreachImplicant(obj)
             obj.Intervals = [];
-            obj.SignificantTime = {};
+            obj.SampleTime = {};
+            obj.SampleValue = {};
         end 
         
         function obj = addInterval (obj, begin_value, end_value)
@@ -18,8 +20,9 @@ classdef BreachImplicant
             end
         end
         
-        function obj = setSignificantTime (obj, significant_time)
-            obj.SignificantTime = significant_time;
+        function obj = setSignificantSample (obj, sample_time, sample_value)
+            obj.SampleTime = sample_time;
+            obj.SampleValue = sample_value;
         end
         
         function intervals = getIntervals(obj)
@@ -38,8 +41,12 @@ classdef BreachImplicant
             size = length(obj.Intervals);
         end
         
-        function significant_time = getSignificantTime(obj)
-            significant_time = obj.SignificantTime;
+        function sample_time = getSampleTime(obj)
+            sample_time = obj.SampleTime;
+        end
+        
+        function sample_value = getSampleValue(obj)
+            sample_value = obj.SampleValue;
         end
     end
 end

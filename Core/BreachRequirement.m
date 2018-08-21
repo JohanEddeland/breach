@@ -376,9 +376,14 @@ classdef BreachRequirement < BreachTraceSystem
             this.BrSet.PlotRobustSat(varargin{:});
         end
         
-        function PlotDiag_debug(this)
+        function PlotDiag_debug(this, verdict)
             gca;
             figure;
+            if (verdict)
+                color = 'g';
+            else
+                color = 'r';
+            end
             robustness_map = this.robustness_map;
             diag_map = this.diag_map;
             formula_names_map = this.formula_names_map;
@@ -393,6 +398,8 @@ classdef BreachRequirement < BreachTraceSystem
                 title(formula_name, 'Interpreter', 'none');
                 signal = robustness_map(id);               
                 stairs(signal.times, signal.values);
+                %sample_time = implicant.getSampleTime();
+               
                 
                 ylim = get(h, 'YLim');
                 ylim_bot = ylim(1);
@@ -405,11 +412,11 @@ classdef BreachRequirement < BreachTraceSystem
                     x = interval.begin;
                     y = interval.end;
                     if (x == y)
-                        line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
+                        line([x x],[ylim_bot ylim_top],'Color',color);
                     elseif (y > x)
                         %line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
                         %line([y y],[ylim_bot ylim_top],'Color',[1 0 0]);
-                        p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], 'r'); 
+                        p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color); 
                         alpha(p, 0.05);
                         set(p,'EdgeColor','none');
                     end
@@ -417,9 +424,14 @@ classdef BreachRequirement < BreachTraceSystem
             end
         end
         
-        function PlotDiag(this, phi)
+        function PlotDiag(this, phi, verdict)
             gca;
-                       
+            figure;
+            if (verdict)
+                color = 'g';
+            else
+                color = 'r';
+            end
             robustness_map = this.robustness_map;
             diag_map = this.diag_map;
             formula_names_map = this.formula_names_map;
@@ -447,11 +459,9 @@ classdef BreachRequirement < BreachTraceSystem
                     x = interval.begin;
                     y = interval.end;
                     if (x == y)
-                        line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
+                        line([x x],[ylim_bot ylim_top],'Color',color);
                     elseif (y > x)
-                        %line([x x],[ylim_bot ylim_top],'Color',[1 0 0]);
-                        %line([y y],[ylim_bot ylim_top],'Color',[1 0 0]);
-                        p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], 'r'); 
+                        p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color); 
                         alpha(p, 0.05);
                         set(p,'EdgeColor','none');
                     end
@@ -465,7 +475,7 @@ classdef BreachRequirement < BreachTraceSystem
         
         
         
-        function Explain(this, B, phi)
+        function [verdict] = Explain(this, B, phi)
             robustness_map = containers.Map;
             %this.getBrSet(B);
             
@@ -479,17 +489,20 @@ classdef BreachRequirement < BreachTraceSystem
   
             val = top_signal.values(1);
             if(val < 0)
-                flag = 0;
+                verdict = 0;
             else
-                flag = 1;
+                verdict = 1;
             end
             
             implicant = BreachImplicant;
             implicant = implicant.addInterval(0, 0);
+            implicant = implicant.setSampleTime(0);
+            implicant = implicant.setSampleValue(val);
+            
             id = get_id(phi);
             diag_map(id) = implicant;
             
-            [phi, diag_map] = this.Diag(phi, robustness_map, diag_map, flag);
+            [phi, diag_map] = this.Diag(phi, robustness_map, diag_map, verdict);
             
             this.robustness_map = robustness_map;
             this.diag_map = diag_map;

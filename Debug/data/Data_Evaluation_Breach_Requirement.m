@@ -21,11 +21,8 @@ phi1 = set_out_signal_names(phi1, {'a', 'b'});
 
 % Set up the Breach requirement
 MyReq1 = BreachRequirement(phi1);
-MyReq1.Explain(B, phi1);
-MyReq1.PlotDiag(phi1);
-
-figure;
-
+verdict = MyReq1.Explain(B, phi1);
+MyReq1.PlotDiag(phi1, verdict);
 
 % EXAMPLE 2 -----------------------
 
@@ -35,10 +32,8 @@ phi2 = set_out_signal_names(phi2, {'a', 'b'});
 
 % Set up the Breach requirement
 MyReq2 = BreachRequirement(phi2);
-MyReq2.Explain(B, phi2);
-MyReq2.PlotDiag(phi2);
-
-figure;
+verdict = MyReq2.Explain(B, phi2);
+MyReq2.PlotDiag(phi2, verdict);
 
 % EXAMPLE 3 -----------------------
 
@@ -48,10 +43,8 @@ phi3 = set_out_signal_names(phi3, {'a', 'b'});
 
 % Set up the Breach requirement
 MyReq3 = BreachRequirement(phi3);
-MyReq3.Explain(B, phi3);
-MyReq3.PlotDiag(phi3);
-
-figure;
+verdict = MyReq3.Explain(B, phi3);
+MyReq3.PlotDiag_debug(verdict);
 
 % EXAMPLE 4 -----------------------
 
@@ -61,10 +54,8 @@ phi4 = set_out_signal_names(phi4, {'a', 'b'});
 
 % Set up the Breach requirement
 MyReq4 = BreachRequirement(phi4);
-MyReq4.Explain(B, phi4);
-MyReq4.PlotDiag(phi4);
-
-figure;
+verdict = MyReq4.Explain(B, phi4);
+MyReq4.PlotDiag(phi4, verdict);
 
 % EXAMPLE 5 -----------------------
 
@@ -74,7 +65,7 @@ phi5 = set_out_signal_names(phi5, {'a', 'b'});
 
 % Set up the Breach requirement
 MyReq5 = BreachRequirement(phi5);
-MyReq5.Explain(B, phi5);
-MyReq5.PlotDiag(phi5);
+verdict = MyReq5.Explain(B, phi5);
+MyReq5.PlotDiag(phi5, verdict);
 
 
