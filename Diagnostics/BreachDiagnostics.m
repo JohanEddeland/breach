@@ -347,7 +347,7 @@ classdef BreachDiagnostics
                     % ev_[c,d] phi/alw_[c,d] phi. Hence we should search
                     % for explanations in the interval [a+c,b+d]
                     search_interval.begin = interval_to_explain.begin + bound.begin;
-                    search_interval.end = interval_to_explain.begin + bound.end;
+                    search_interval.end = interval_to_explain.end + bound.end;
                     % We restrict the input signal 
                     % to the segment [a+c, b+d]
                     tmp = BreachDiagnostics.diag_signal_restrict_to_interval(in, search_interval);
