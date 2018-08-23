@@ -3,48 +3,48 @@ classdef BreachDiagnostics
     % functions for computing trace diagnostics
     methods (Static)
         
-        function [out_implicant, error] = diag_not_f(in, in_implicant, value)
+        function [out_implicant, error] = diag_not_f(in, in_implicant, samples)
             %DIAG_NOT_F explains why a not phi formula is false
             %
-            %  syntax : [out_implicant, error] = diag_not_f(in, in_implicant, value)
+            %  syntax : [out_implicant, error] = diag_not_f(in, in_implicant, samples)
             %
             %  INPUT:
             %  in - robustness signal for phi in the form in.times in.values
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
-            %  explaining whz not phi is false
+            %  explaining why not phi is false
             %  error - 0 if there was no error encountered, 1 otherwise
-            [out_implicant, error] = BreachDiagnostics.diag_unary_plogic (in, in_implicant, value);
+            [out_implicant, error] = BreachDiagnostics.diag_unary_plogic (in, in_implicant, samples);
         end  
         
-        function [out_implicant, error] = diag_not_t(in, in_implicant, value)
+        function [out_implicant, error] = diag_not_t(in, in_implicant, samples)
             %DIAG_NOT_T explains why a not phi formula is true
             %
-            %  syntax : [out_implicant, error] = diag_not_t(in, in_implicant, value)
+            %  syntax : [out_implicant, error] = diag_not_t(in, in_implicant, samples)
             %
             %  INPUT:
             %  in - robustness signal for phi in the form in.times in.values
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why not phi is true
             %  error - 0 if there was no error encountered, 1 otherwise
-            [out_implicant, error] = BreachDiagnostics.diag_unary_plogic (in, in_implicant, value);
+            [out_implicant, error] = BreachDiagnostics.diag_unary_plogic (in, in_implicant, samples);
         end    
         
-        function [out1_implicant, out2_implicant, error] = diag_or_f(in1, in2, in_implicant, value)
+        function [out1_implicant, out2_implicant, error] = diag_or_f(in1, in2, in_implicant, samples)
             %DIAG_OR_F explains why a phi1 or phi2 formula is false
             %
-            %  syntax : [out1_implicant, out2_implicant, error] = diag_or_f(in1, in2, in_implicant, value)
+            %  syntax : [out1_implicant, out2_implicant, error] = diag_or_f(in1, in2, in_implicant, samples)
             %
             %  INPUT:
             %  in1 - robustness signal for phi1 in the form in1.times in1.values
             %  in2 - robustness signal for phi2 in the form in2.times in2.values
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why phi1 or phi2 is false
@@ -52,21 +52,41 @@ classdef BreachDiagnostics
             
             %  phi1 or phi2 is false throughout the interval [a,b]
             %  because both phi1 and phi2 are false throughout [a,b]
-            out1_implicant = in_implicant;
-            out2_implicant = in_implicant;
+            out1_implicant = BreachImplicant;
+            out2_implicant = BreachImplicant;
+            
+            % Copy the intervals
+            intervals = in_implicant.getIntervals();
+            for(i=1:length(intervals))
+                interval = intervals(i);
+                out1_implicant = out1_implicant.addInterval(interval.begin, interval.end);
+                out2_implicant = out1_implicant.addInterval(interval.begin, interval.end);
+            end
+            
+            % Update the significant samples
+            samples = in_implicant.getSignificantSamples();
+            for(i=1:length(samples))
+                sample = samples(i);
+                v1 = interp1(in1.times, in1.values, sample.time, 'previous');
+                v2 = interp1(in2.times, in2.values, sample.time, 'previous');
+                
+                out1_implicant.addSignificantSample(sample.time, v1);
+                out2_implicant.addSignificantSample(sample.time, v2);
+            end
+            
             error = 0;
         end
         
-        function [out1_implicant, out2_implicant, error] = diag_or_t(in1, in2, in_implicant, value)
+        function [out1_implicant, out2_implicant, error] = diag_or_t(in1, in2, in_implicant, samples)
             %DIAG_OR_T explains why a phi1 or phi2 formula is true
             %
-            %  syntax : [out1_implicant, out2_implicant, error] = diag_or_f(in1, in2, in_implicant, value)
+            %  syntax : [out1_implicant, out2_implicant, error] = diag_or_f(in1, in2, in_implicant, samples)
             %
             %  INPUT:
             %  in1 - robustness signal for phi1 in the form in1.times in1.values
             %  in2 - robustness signal for phi2 in the form in2.times in2.values
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why phi1 or phi2 is true
@@ -82,19 +102,19 @@ classdef BreachDiagnostics
             % case, and update the explanations accordingly
             % The actual explanation is done in diag_binary_plogic
             [out1_implicant, out2_implicant] = ...
-                BreachDiagnostics.diag_binary_plogic(BreachOperator.OR, in1, in2, in_implicant, value);
+                BreachDiagnostics.diag_binary_plogic(BreachOperator.OR, in1, in2, in_implicant, samples);
         end
         
-        function [out1_implicant, out2_implicant, error] = diag_and_f(in1, in2, in_implicant, value)
+        function [out1_implicant, out2_implicant, error] = diag_and_f(in1, in2, in_implicant, samples)
             %DIAG_AND_F explains why a phi1 and phi2 formula is false
             %
-            %  syntax : [out1_implicant, out2_implicant, error] = diag_and_f(in1, in2, in_implicant, value)
+            %  syntax : [out1_implicant, out2_implicant, error] = diag_and_f(in1, in2, in_implicant, samples)
             %
             %  INPUT:
             %  in1 - robustness signal for phi1 in the form in1.times in1.values
             %  in2 - robustness signal for phi2 in the form in2.times in2.values
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why phi1 and phi2 is false
@@ -111,19 +131,19 @@ classdef BreachDiagnostics
             
             error = 0;
             [out1_implicant, out2_implicant] = ...
-                BreachDiagnostics.diag_binary_plogic(BreachOperator.AND, in1, in2, in_implicant, value);
+                BreachDiagnostics.diag_binary_plogic(BreachOperator.AND, in1, in2, in_implicant, samples);
         end    
         
-        function [out1_implicant, out2_implicant, error] = diag_and_t(in1, in2, in_implicant, value)
+        function [out1_implicant, out2_implicant, error] = diag_and_t(in1, in2, in_implicant, samples)
             %DIAG_AND_T explains why a phi1 and phi2 formula is true
             %
-            %  syntax : [out1_implicant, out2_implicant, error] = diag_and_t(in1, in2, in_implicant, value)
+            %  syntax : [out1_implicant, out2_implicant, error] = diag_and_t(in1, in2, in_implicant, samples)
             %
             %  INPUT:
             %  in1 - robustness signal for phi1 in the form in1.times in1.values
             %  in2 - robustness signal for phi2 in the form in2.times in2.values
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why phi1 and phi2 is true
@@ -131,21 +151,41 @@ classdef BreachDiagnostics
             
             %  phi1 and phi2 is false throughout the interval [a,b]
             %  because both phi1 and phi2 are true throughout [a,b]
-            out1_implicant = in_implicant;
-            out2_implicant = in_implicant;
+            out1_implicant = BreachImplicant;
+            out2_implicant = BreachImplicant;
+            
+            % Copy the intervals
+            intervals = in_implicant.getIntervals();
+            for(i=1:length(intervals))
+                interval = intervals(i);
+                out1_implicant = out1_implicant.addInterval(interval.begin, interval.end);
+                out2_implicant = out1_implicant.addInterval(interval.begin, interval.end);
+            end
+            
+            % Update the significant samples
+            samples = in_implicant.getSignificantSamples();
+            for(i=1:length(samples))
+                sample = samples(i);
+                v1 = interp1(in1.times, in1.values, sample.time, 'previous');
+                v2 = interp1(in2.times, in2.values, sample.time, 'previous');
+                
+                out1_implicant.addSignificantSample(sample.time, v1);
+                out2_implicant.addSignificantSample(sample.time, v2);
+            end
+            
             error = 0;
         end
              
-        function [out1_implicant, out2_implicant, error] = diag_implies_f(in1, in2, in_implicant, value)
+        function [out1_implicant, out2_implicant, error] = diag_implies_f(in1, in2, in_implicant, samples)
             %DIAG_IMPLIES_F explains why phi1 => phi2 formula is false
             %
-            %  syntax : [out1_implicant, out2_implicant, error] = diag_implies_f(in1, in2, in_implicant, value)
+            %  syntax : [out1_implicant, out2_implicant, error] = diag_implies_f(in1, in2, in_implicant, samples)
             %
             %  INPUT:
             %  in1 - robustness signal for phi1 in the form in1.times in1.values
             %  in2 - robustness signal for phi2 in the form in2.times in2.values
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why phi1 => phi2 is false
@@ -153,21 +193,41 @@ classdef BreachDiagnostics
             
             %  phi1 => phi2 is false throughout the interval [a,b]
             %  because both phi1 is true and phi2 is false throughout [a,b]
-            out1_implicant = in_implicant;
-            out2_implicant = in_implicant;
+            out1_implicant = BreachImplicant;
+            out2_implicant = BreachImplicant;
+            
+            % Copy the intervals
+            intervals = in_implicant.getIntervals();
+            for(i=1:length(intervals))
+                interval = intervals(i);
+                out1_implicant = out1_implicant.addInterval(interval.begin, interval.end);
+                out2_implicant = out2_implicant.addInterval(interval.begin, interval.end);
+            end
+            
+            % Update the significant samples
+            samples = in_implicant.getSignificantSamples();
+            for(i=1:length(samples))
+                sample = samples(i);
+                v1 = interp1(in1.times, in1.values, sample.time, 'previous');
+                v2 = interp1(in2.times, in2.values, sample.time, 'previous');
+                
+                out1_implicant = out1_implicant.addSignificantSample(sample.time, v1);
+                out2_implicant = out2_implicant.addSignificantSample(sample.time, v2);
+            end
+            
             error = 0;
         end
         
-        function [out1_implicant, out2_implicant, error] = diag_implies_t(in1, in2, in_implicant, value)
+        function [out1_implicant, out2_implicant, error] = diag_implies_t(in1, in2, in_implicant, samples)
             %DIAG_IMPLIES_T explains why a phi1 and phi2 formula is true
             %
-            %  syntax : [out1_implicant, out2_implicant, error] = diag_implies_t(in1, in2, in_implicant, value)
+            %  syntax : [out1_implicant, out2_implicant, error] = diag_implies_t(in1, in2, in_implicant, samples)
             %
             %  INPUT:
             %  in1 - robustness signal for phi1 in the form in1.times in1.values
             %  in2 - robustness signal for phi2 in the form in2.times in2.values
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why phi1 => phi2 is true
@@ -183,19 +243,19 @@ classdef BreachDiagnostics
             % The actual explanation is done in diag_binary_plogic
             error = 0;
             [out1_implicant, out2_implicant] = ...
-                BreachDiagnostics.diag_binary_plogic(BreachOperator.IMPLIES, in1, in2, in_implicant, value);
+                BreachDiagnostics.diag_binary_plogic(BreachOperator.IMPLIES, in1, in2, in_implicant, samples);
         end
       
-        function [out_implicant, error] = diag_alw_f(in, bound, in_implicant, value)
+        function [out_implicant, error] = diag_alw_f(in, bound, in_implicant, samples)
             %DIAG_ALW_F explains why a alw_I phi is false
             %
-            %  syntax : [out_implicant, error] = diag_alw_f(in, bound, in_implicant, value)
+            %  syntax : [out_implicant, error] = diag_alw_f(in, bound, in_implicant, samples)
             %
             %  INPUT:
             %  in - robustness signal for phi in the form in.times in.values
             %  bound - interval I that bounds the always operator
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why alw_I phi is false
@@ -205,19 +265,19 @@ classdef BreachDiagnostics
             %  of all the segments where phi is false in the interval
             %  [a,b]
             %  These actual segments are computed by diag_unary_tlogic
-            [out_implicant, error] = BreachDiagnostics.diag_unary_tlogic(BreachOperator.ALW, in, bound, in_implicant, value);
+            [out_implicant, error] = BreachDiagnostics.diag_unary_tlogic(BreachOperator.ALW, in, bound, in_implicant, samples);
         end
         
-        function [out_implicant, error] = diag_alw_t(in, bound, in_implicant, value)
+        function [out_implicant, error] = diag_alw_t(in, bound, in_implicant, samples)
             %DIAG_ALW_T explains why alw_I phi is true
             %
-            %  syntax : [out_implicant, error] = diag_alw_t(in, bound, in_implicant, value)
+            %  syntax : [out_implicant, error] = diag_alw_t(in, bound, in_implicant, samples)
             %
             %  INPUT:
             %  in - robustness signal for phi in the form in.times in.values
             %  bound - interval I that bounds the always operator
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why alw_I phi is true
@@ -233,19 +293,32 @@ classdef BreachDiagnostics
                 new_begin = interval.begin + bound.begin;
                 new_end = interval.end + bound.end;
                 out_implicant = out_implicant.addInterval(new_begin, new_end);
+                
+                interval.begin = new_begin;
+                interval.end = new_end;
+                out_tmp = BreachDiagnostics.diag_signal_restrict_to_interval(in, interval);
+                for(j=1:length(samples))
+                    for(k=1:length(out_tmp.values))
+                        if(out_tmp.values(k) == samples(j).value)
+                            out_implicant = out_implicant.addSignificantSample(out_tmp.times(k), out_tmp.values(k));
+                        end
+                    end
+                end
             end
+            
+            
         end
         
-        function [out_implicant, error] = diag_ev_f(in, bound, in_implicant, value)
+        function [out_implicant, error] = diag_ev_f(in, bound, in_implicant, samples)
             %DIAG_EV_F explains why ev_I phi is false
             %
-            %  syntax : [out_implicant, error] = diag_ev_f(in, bound, in_implicant, value)
+            %  syntax : [out_implicant, error] = diag_ev_f(in, bound, in_implicant, samples)
             %
             %  INPUT:
             %  in - robustness signal for phi in the form in.times in.values
             %  bound - interval I that bounds the always operator
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why ev_I phi is false
@@ -261,19 +334,31 @@ classdef BreachDiagnostics
                 new_begin = interval.begin + bound.begin;
                 new_end = interval.end + bound.end;
                 out_implicant = out_implicant.addInterval(new_begin, new_end);
+                
+                interval.begin = new_begin;
+                interval.end = new_end;
+                out_tmp = BreachDiagnostics.diag_signal_restrict_to_interval(in, interval);
+                for(j=1:length(samples))
+                    for(k=1:length(out_tmp.values))
+                        if(out_tmp.values(k) == samples(j).value)
+                            out_implicant = out_implicant.addSignificantSample(out_tmp.times(k), out_tmp.values(k));
+                        end
+                    end
+                end
+       
             end
         end
         
-        function [out_implicant, error] = diag_ev_t(in, bound, in_implicant, value)
+        function [out_implicant, error] = diag_ev_t(in, bound, in_implicant, samples)
             %DIAG_EV_T explains why a ev_I phi is true
             %
-            %  syntax : [out_implicant, error] = diag_ev_t(in, bound, in_implicant, value)
+            %  syntax : [out_implicant, error] = diag_ev_t(in, bound, in_implicant, samples)
             %
             %  INPUT:
             %  in - robustness signal for phi in the form in.times in.values
             %  bound - interval I that bounds the always operator
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why ev_I phi is true
@@ -283,21 +368,21 @@ classdef BreachDiagnostics
             %  of all the segments where phi is true in the interval
             %  [a,b]
             %  These actual segments are computed by diag_unary_tlogic
-            [out_implicant, error] = BreachDiagnostics.diag_unary_tlogic(BreachOperator.EV, in, bound, in_implicant, value);
+            [out_implicant, error] = BreachDiagnostics.diag_unary_tlogic(BreachOperator.EV, in, bound, in_implicant, samples);
         end
     end
     
     methods(Static,Access=private)
-        function [out_implicant, error] = diag_unary_plogic(in, in_implicant, value)
+        function [out_implicant, error] = diag_unary_plogic(in, in_implicant, samples)
             %DIAG_UNARY_PLOGIC private function for explaining why not phi
             % is true or false
             %
-            %  syntax : [out_implicant, error] = diag_unary_plogic(in, in_implicant, value)
+            %  syntax : [out_implicant, error] = diag_unary_plogic(in, in_implicant, samples)
             %
             %  INPUT:
             %  in - robustness signal for phi in the form in.times in.values
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why not phi is true or false
@@ -305,21 +390,37 @@ classdef BreachDiagnostics
             
             %  not phi is true (false) throughout the intervals [a,b] because
             %  phi is (false) true throughout the interval [a,b]
+            out_implicant = BreachImplicant;
+            
+            % Copy the intervals
+            intervals = in_implicant.getIntervals();
+            for(i=1:length(intervals))
+                interval = intervals(i);
+                out_implicant = out_implicant.addInterval(interval.begin, interval.end);
+            end
+            
+            % Update the significant samples
+            samples = in_implicant.getSignificantSamples();
+            for(i=1:length(samples))
+                sample = samples(i);
+                
+                out_implicant.addSignificantSample(sample.time, -sample.value);
+            end
+            
             error = 0;
-            out_implicant = in_implicant;
         end
         
-        function [out_implicant, error] = diag_unary_tlogic(operator, in, bound, in_implicant, value)
+        function [out_implicant, error] = diag_unary_tlogic(operator, in, bound, in_implicant, samples)
             %DIAG_UNARY_TLOGIC private function that explains why ev_I phi/alw_I phi is
             %true/false
             %
-            %  syntax : [out_implicant, error] = diag_unary_tlogic(in, bound, in_implicant, value)
+            %  syntax : [out_implicant, error] = diag_unary_tlogic(in, bound, in_implicant, samples)
             %
             %  INPUT:
             %  in - robustness signal for phi in the form in.times in.values
             %  bound - interval I that bounds the always operator
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why ev_I phi/alw_I is true/false
@@ -398,9 +499,19 @@ classdef BreachDiagnostics
                             end_time = current_time;
                             out_implicant = out_implicant.addInterval(begin_time, end_time);
                         end
+                        samples = in_implicant.getSignificantSamples();
+                        for(k=1:length(samples))
+                            sample = samples(k);
+                            if (sample.value == prev_value)
+                                out_implicant = out_implicant.addSignificantSample(prev_time, prev_value);
+                            end
+                        end
+                        
                         prev_time = current_time;
                         prev_value = current_value;
                     end
+                    
+                    
                     % Find how much we have explained, and remove it from
                     % interval_to_explain
                     interval_to_explain.begin = end_time - bound.begin;
@@ -409,18 +520,18 @@ classdef BreachDiagnostics
             end
         end
         
-        function [out1_implicant, out2_implicant] = diag_binary_plogic(operator, in1, in2, in_implicant, value)
+        function [out1_implicant, out2_implicant] = diag_binary_plogic(operator, in1, in2, in_implicant, samples)
             %DIAG_BINARY_PLOGIC private function that explains why (1) phi1
             %and phi2 formula is false, (2) phi1 or phi2 is true or (3)
             %phi1 => phi2 is true
             %
-            %  syntax : [out1_implicant, out2_implicant, error] = diag_binary_plogic(in1, in2, in_implicant, value)
+            %  syntax : [out1_implicant, out2_implicant, error] = diag_binary_plogic(in1, in2, in_implicant, samples)
             %
             %  INPUT:
             %  in1 - robustness signal for phi1 in the form in1.times in1.values
             %  in2 - robustness signal for phi2 in the form in2.times in2.values
             %  in_implicant - BreachImplicant containing intervals to be explained 
-            %  value - robustness value that guides the explanation
+            %  samples - robustness samples that guides the explanation
             %  OUTPUT:
             %  out_implicant - BreachImplicant containing intervals
             %  explaining why (1) phi1 and phi2 is false, (2) phi1 or phi2 is true, or (3) phi1 => phi2 is true
@@ -449,49 +560,163 @@ classdef BreachDiagnostics
                 % TF - if v1 >= 0 and v2 < 0
                 % TT - if v1 >= 0 and v2 >= 0
                 begin_time = out1_tmp.times(1);
-                v1 = out1_tmp.values(1);
-                v2 = out2_tmp.values(1);
-                old_value = TwoBitValue.getValue(v1,v2);
+                begin_idx = 1;
+                old_v1 = out1_tmp.values(1);
+                old_v2 = out2_tmp.values(1);
+                old_value = TwoBitValue.getValue(old_v1,old_v2);
                 
                 for(j=2:length(out1_tmp.times))
                     t = out1_tmp.times(j);
-                    v1 = out1_tmp.values(j);
-                    v2 = out2_tmp.values(j);
+                    new_v1 = out1_tmp.values(j);
+                    new_v2 = out2_tmp.values(j);
                     
-                    new_value = TwoBitValue.getValue(v1,v2);
+                    new_value = TwoBitValue.getValue(new_v1,new_v2);
                     
                     if (new_value ~= old_value || j == length(out1_tmp.times))
                         end_time = t;
+                        end_idx = j;
                         [out1_implicant, out2_implicant] = BreachDiagnostics.diag_binary_plogic_update_implicants( ...
-                            operator, old_value, out1_implicant, out2_implicant, begin_time, end_time);
+                            operator, old_value, out1_implicant, out2_implicant, begin_time, end_time, begin_idx, end_idx, out1_tmp, out2_tmp, samples);
                         begin_time = t;
+                        begin_idx = j;
                         old_value = new_value;
+                        old_v1 = new_v1;
+                        old_v2 = new_v2;
                     end
                 end
             end
         end    
         
-        function [out1, out2] = diag_binary_plogic_update_implicants(oper, value, in1, in2, btime, etime)
+        function [out1, out2] = diag_binary_plogic_update_implicants(oper, value, in1, in2, btime, etime, bidx, eidx, s1, s2, samples)
             out1 = in1;
             out2 = in2;
+            
             switch(oper)
                 case BreachOperator.OR
                     if (value == TwoBitValue.FT)
-                        out2 = in2.addInterval(btime, etime);
-                    elseif (value == TwoBitValue.TF || value == TwoBitValue.TT)
-                        out1 = in1.addInterval(btime, etime);
+                        out2 = out2.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
+                    elseif (value == TwoBitValue.TF)
+                        out1 = out1.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
+                    elseif (value == TwoBitValue.TT)
+                        flag1 = 0;
+                        flag2 = 0;
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                    flag1 = 1;
+                                end
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                    flag2 = 1;
+                                end
+                            end
+                        end
+                        if (flag1)
+                           out1 = out1.addInterval(btime, etime);
+                        end
+                        if (flag2)
+                           out2 = out2.addInterval(btime, etime);
+                        end
                     end
+                
                 case BreachOperator.AND
-                    if (value == TwoBitValue.FT || value == TwoBitValue.FF)
+                    if (value == TwoBitValue.FT)
                         out1 = in1.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
+                    elseif (value == TwoBitValue.FF)
+                        flag1 = 0;
+                        flag2 = 0;
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                    flag1 = 1;
+                                end
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                    flag2 = 1;
+                                end
+                            end
+                        end
+                        if (flag1)
+                           out1 = out1.addInterval(btime, etime);
+                        end
+                        if (flag2)
+                           out2 = out2.addInterval(btime, etime);
+                        end
                     elseif (value == TwoBitValue.TF)
                         out2 = in2.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
                     end
                 case BreachOperator.IMPLIES
                     if (value == TwoBitValue.TT)
-                        out2 = in2.addInterval(btime, etime);
-                    elseif (value == TwoBitValue.FF || value == TwoBitValue.FT)
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
+                    elseif (value == TwoBitValue.FF)
+                        flag1 = 0;
+                        flag2 = 0;
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == -sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                    flag1 = 1;
+                                end
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                    flag2 = 1;
+                                end
+                            end
+                        end
+                    elseif (value == TwoBitValue.FT)
                         out1 = in1.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == -sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
                     end
             end
         end

@@ -44,7 +44,7 @@ phi3 = set_out_signal_names(phi3, {'a', 'b'});
 % Set up the Breach requirement
 MyReq3 = BreachRequirement(phi3);
 verdict = MyReq3.Explain(B, phi3);
-MyReq3.PlotDiag_debug(verdict);
+MyReq3.PlotDiag(phi3, verdict);
 
 % EXAMPLE 4 -----------------------
 
