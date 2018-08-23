@@ -101,6 +101,9 @@ classdef FalsificationProblem < BreachProblem
                 case 'default'
                     this.robust_fn = @(x) (this.Spec.Eval(this.BrSys, this.params, x));
                     this.constraints_fn = [];
+                case 'random'
+                    this.robust_fn = @(x) this.boolean_verdict(x);
+                    this.constraints_fn = [];
                 case 'in'
                     this.robust_fn = @(x) (this.Spec.Eval_IO('in', 'rel', this.BrSys, this.params, x));
                     if exist('cap','var')
@@ -124,11 +127,20 @@ classdef FalsificationProblem < BreachProblem
                     this.constraints_fn = [];
             end
         end
+        
+        function ert = boolean_verdict(this, x)
+            rob = this.Spec.Eval(this.BrSys, this.params, x);
+            if rob >= 0
+                ert = 0.5;
+            else
+                ert = -0.5;
+            end
+        end 
 
         function rio = combined_IO_robustness(this, x)
             ri = this.Spec.Eval_IO('in', 'abs', this.BrSys, this.params, x);
             ro = this.Spec.Eval_IO('out','rel', this.BrSys, this.params, x);
-            rio = ri + 2/pi * atan(ro);
+            rio = atan(ri) + atan(ro);
         end        
    
         % Nothing fancy - calls parent solve then returns falsifying params

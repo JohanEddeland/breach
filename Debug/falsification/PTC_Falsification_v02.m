@@ -11,6 +11,7 @@ clear;
 InitBreach;
 
 % solver config
+%my_solver = 'global_nelder_mead';
 my_solver = 'fmincon';
 %my_solver = 'cmaes';
 %my_solver = 'ga';
@@ -61,13 +62,36 @@ tic
 AFC_Falsify.solve();
 toc
 
+%% State and Solve a Falsification Problem
+display('---------------------------------- Random -------------------------------------');
+AFC_Falsify_Rand = BrAFC.copy();
+
+AFC_Falsify_Rand = FalsificationProblem(AFC_Falsify_Rand, Overshoot_req);
+AFC_Falsify_Rand.setup_solver(my_solver);
+AFC_Falsify_Rand.set_IO_robustness_mode('random');
+tic
+AFC_Falsify_Rand.solve();
+toc
+
+
+%% State and Solve the same Falsification Problem, but with Output Robustness
+display('---------------------------------- Input Robustness -------------------------------------');
+AFC_Falsify_I = BrAFC.copy();
+
+AFC_Falsify_I = FalsificationProblem(AFC_Falsify_I, Overshoot_req);
+AFC_Falsify_I.setup_solver(my_solver);
+AFC_Falsify_I.set_IO_robustness_mode('in',10^10);
+tic
+AFC_Falsify_I.solve();
+toc
+
 %% State and Solve the same Falsification Problem, but with Output Robustness
 display('---------------------------------- Output Robustness -------------------------------------');
 AFC_Falsify_O = BrAFC.copy();
 
 AFC_Falsify_O = FalsificationProblem(AFC_Falsify_O, Overshoot_req);
 AFC_Falsify_O.setup_solver(my_solver);
-AFC_Falsify_O.set_IO_robustness_mode('out');
+AFC_Falsify_O.set_IO_robustness_mode('out',10^10);
 tic
 AFC_Falsify_O.solve();
 toc
@@ -89,40 +113,43 @@ AFC_Falsify_Cio = BrAFC.copy();
 
 AFC_Falsify_Cio = FalsificationProblem(AFC_Falsify_Cio, Overshoot_req);
 AFC_Falsify_Cio.setup_solver(my_solver);
-AFC_Falsify_Cio.set_IO_robustness_mode('constrained');
+AFC_Falsify_Cio.set_IO_robustness_mode('constrained',10^10);
 tic
 AFC_Falsify_Cio.solve();
 toc
 
-
-%% Plotting and Comparison
-% Standard Robustness falsifying behavior
-% figure; AFC_Falsify.BrSet_Best.PlotRobustSat(Overshoot_req); % Plot best robustness
-% 
-% % Output Robsutness falsifying behavior
-% figure; AFC_Falsify_O.BrSet_Best.PlotIORobustSat(Overshoot_req,'out','rel'); % Plot best robustness
-% 
-% % Combined IO Robustness falsifying behavior
-% figure; AFC_Falsify_Rio.BrSet_Best.PlotRobustSat(Overshoot_req,'out','rel'); % Plot best robustness
-% 
-% % Constrained IO Robsutness falsifying behavior
-% figure; AFC_Falsify_Cio.BrSet_Best.PlotIORobustSat(Overshoot_req,'out','rel'); % Plot best robustness
-
-% Evolution of parameters and cost function
+%% Plotting
+% Standard robustness and random falsification
 figure;
 subplot(2,2,1);
 plot(AFC_Falsify.obj_log);
 title('Standard cost function')
 subplot(2,2,2);
+plot(AFC_Falsify_Rand.obj_log);
+title('Flat cost function')
+subplot(2,2,3);
+scatter(AFC_Falsify.X_log(3,:),AFC_Falsify.X_log(4,:),linspace(1,100,length(AFC_Falsify.X_log)));
+title('Standard exploration of Pedal\_Angle');
+subplot(2,2,4);
+scatter(AFC_Falsify_Rand.X_log(3,:),AFC_Falsify_Rand.X_log(4,:),linspace(1,100,length(AFC_Falsify_Rand.X_log)))
+title('Flat-earth exploration of Pedal\_Angle');
+
+% Input and output robsutness
+figure;
+subplot(2,2,1);
+plot(AFC_Falsify_I.obj_log);
+title('Input cost function')
+subplot(2,2,2);
 plot(AFC_Falsify_O.obj_log);
 title('Output cost function')
 subplot(2,2,3);
-plot(AFC_Falsify.X_log(2,:),AFC_Falsify.X_log(3,:));
-title('Standard exploration of Pedal\_Angle');
+scatter(AFC_Falsify_I.X_log(3,:),AFC_Falsify_I.X_log(4,:),linspace(1,100,length(AFC_Falsify_I.X_log)))
+title('Input-driven exploration of Pedal\_Angle');
 subplot(2,2,4);
-plot(AFC_Falsify_O.X_log(2,:),AFC_Falsify_O.X_log(3,:));
-title('Output exploration of Pedal\_Angle');
+scatter(AFC_Falsify_O.X_log(3,:),AFC_Falsify_O.X_log(4,:),linspace(1,100,length(AFC_Falsify_O.X_log)))
+title('Output-driven exploration of Pedal\_Angle');
 
+% Combined and constrained IO
 figure;
 subplot(2,2,1);
 plot(AFC_Falsify_Rio.obj_log);
@@ -131,8 +158,8 @@ subplot(2,2,2);
 plot(AFC_Falsify_Cio.obj_log);
 title('Constrained IO cost function')
 subplot(2,2,3);
-plot(AFC_Falsify_Rio.X_log(2,:),AFC_Falsify_Rio.X_log(3,:));
-title('Combined IO exploration of Pedal\_Angle');
+scatter(AFC_Falsify_Rio.X_log(3,:),AFC_Falsify_Rio.X_log(4,:),linspace(1,100,length(AFC_Falsify_Rio.X_log)))
+title('Combined IO-driven exploration of Pedal\_Angle');
 subplot(2,2,4);
-plot(AFC_Falsify_Cio.X_log(2,:),AFC_Falsify_Cio.X_log(3,:));
-title('Constrained IO exploration of Pedal\_Angle');
+scatter(AFC_Falsify_Cio.X_log(3,:),AFC_Falsify_Cio.X_log(4,:),linspace(1,100,length(AFC_Falsify_Cio.X_log)))
+title('Constrained IO-driven exploration of Pedal\_Angle');
