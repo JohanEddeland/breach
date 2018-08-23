@@ -683,6 +683,7 @@ classdef BreachDiagnostics
                     end
                 case BreachOperator.IMPLIES
                     if (value == TwoBitValue.TT)
+                        out2 = in2.addInterval(btime, etime);
                         for(i=bidx:eidx)
                             for(j=1:length(samples))
                                 sample = samples(j);
@@ -706,6 +707,12 @@ classdef BreachDiagnostics
                                     flag2 = 1;
                                 end
                             end
+                        end
+                        if (flag1)
+                           out1 = out1.addInterval(btime, etime);
+                        end
+                        if (flag2)
+                           out2 = out2.addInterval(btime, etime);
                         end
                     elseif (value == TwoBitValue.FT)
                         out1 = in1.addInterval(btime, etime);
