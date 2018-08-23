@@ -184,10 +184,14 @@ switch(phi.type)
                 % qualitatively
                 one_outside_partition = ~isempty(setdiff(STL_ExtractSignals(phi), partition));
                 if (one_outside_partition)
-                    valarray = realmin('double')*(2*(valarray>0)-1);
+                    valarray = zeros(size(valarray));
                 end
         end
         
+        % Additional functionality as compared to STL_EvalThom_Gen
+        % which is only needed for the Diangostic feature
+        % Here, we need to store the robustness signals for every
+        % subformula, which is not done by default
         signal_names = STL_ExtractSignals(phi);
         for(i=1:length(signal_names))
             signal_name = signal_names{i};

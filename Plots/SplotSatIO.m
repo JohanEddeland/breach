@@ -141,9 +141,21 @@ for np = npb+1:nb_phis+npb
             end
         end
         
-        phi_bool = phi_val>0;
-        phi_rob = phi_val - realmin('double')*(2*phi_bool-1);
-        ax = plotyy(tsc, phi_rob, tsc, phi_bool, plot_style, 'stairs' );
+        phi_bool = NaN(size(phi_val));
+        for i = 1:size(phi_val,1)
+            for j = 1:size(phi_val,2)           
+                % Notice that the case phi_val(i,j) == 0 should yield 
+                % phi_bool(i,j) == NaN. This is important for consistency 
+                % of results in the case of absolute robustness
+                if phi_val(i,j)>0 % numerical instability ??
+                    phi_bool(i,j) = 1;
+                elseif phi_val(i,j)<0 % numerical instability ??
+                    phi_bool(i,j) = 0;
+                end
+            end
+        end
+
+        ax = plotyy(tsc, phi_val, tsc, phi_bool, plot_style, 'stairs' );
         set(ax(2), 'YLim', [-0.1 1.1], 'YTick', [0 1], 'YTickLabel', {'false', 'true'});
         if np-npb == 1
             legend('Quant. sat', 'Bool. sat');
