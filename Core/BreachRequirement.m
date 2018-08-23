@@ -421,6 +421,13 @@ classdef BreachRequirement < BreachTraceSystem
                         set(p,'EdgeColor','none');
                     end
                 end
+                samples = implicant.getSignificantSamples();
+                for (j=1:length(samples))
+                    sample = samples(j);
+                    hold on;
+                    plot(sample.time, sample.value, 'x');
+                end
+                
             end
         end
         
@@ -437,6 +444,7 @@ classdef BreachRequirement < BreachTraceSystem
             formula_names_map = this.formula_names_map;
             signal_names = STL_ExtractSignals(phi);
             nb_plots = length(signal_names);
+            
             keys = signal_names;
             for (i=1:nb_plots)
                 id = keys{i};
@@ -445,8 +453,9 @@ classdef BreachRequirement < BreachTraceSystem
                 grid on;
                 formula_name = formula_names_map(id);
                 title(formula_name, 'Interpreter', 'none');
-                signal = robustness_map(id);               
+                signal = robustness_map(id);  
                 stairs(signal.times, signal.values);
+                
                 
                 ylim = get(h, 'YLim');
                 ylim_bot = ylim(1);
@@ -462,15 +471,24 @@ classdef BreachRequirement < BreachTraceSystem
                         line([x x],[ylim_bot ylim_top],'Color',color);
                     elseif (y > x)
                         p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color); 
-                        alpha(p, 0.05);
+                        %alpha(p, 0.3);
                         set(p,'EdgeColor','none');
                     end
                 end
+                samples = implicant.getSignificantSamples();
+                for (j=1:length(samples))
+                    sample = samples(j);
+                    hold on;
+                    plot(sample.time, sample.value, 'x');
+                end
+                
+                
             end
-            a = axes;
-            t1 = title(display(phi), 'Interpreter', 'none');
-            a.Visible = 'off'; % set(a,'Visible','off');
-            t1.Visible = 'on'; % set(t1,'Visible','on');
+            %a = axes;
+            %t1 = title(display(phi), 'Interpreter', 'none');
+            %a.Visible = 'off'; % set(a,'Visible','off');
+            %t1.Visible = 'on'; % set(t1,'Visible','on');
+            zoom xon;
         end
         
         
@@ -496,8 +514,7 @@ classdef BreachRequirement < BreachTraceSystem
             
             implicant = BreachImplicant;
             implicant = implicant.addInterval(0, 0);
-            implicant = implicant.setSampleTime(0);
-            implicant = implicant.setSampleValue(val);
+            implicant = implicant.addSignificantSample(0, val);
             
             id = get_id(phi);
             diag_map(id) = implicant;
@@ -512,8 +529,9 @@ classdef BreachRequirement < BreachTraceSystem
         end
         
         function [phi, diag_map] = Diag(this, phi, robustness_map, diag_map, flag)
-            value = 0;
+            
             in_implicant = diag_map(get_id(phi));
+            samples = in_implicant.getSignificantSamples();
             id = get_id(phi);
             
             psis = get_children(phi);
@@ -522,17 +540,30 @@ classdef BreachRequirement < BreachTraceSystem
                     signal_names = STL_ExtractSignals(phi);
                     for(i=1:length(signal_names))
                         signal_name = signal_names{i};
+                        signal = robustness_map(signal_name);
                         if(~diag_map.isKey(signal_name))
-                            diag_map(signal_name) = in_implicant;
+                            out_implicant = BreachImplicant;
+                            intervals = in_implicant.getIntervals();
+                            for(j=1:length(intervals))
+                                interval = intervals(j);
+                                out_implicant = out_implicant.addInterval(interval.begin, interval.end);
+                            end
+                            samples = in_implicant.getSignificantSamples();
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                value = interp1(signal.times, signal.values, sample.time, 'previous');
+                                out_implicant = out_implicant.addSignificantSample(sample.time, value);
+                            end
+                            diag_map(signal_name) = out_implicant;
                         end
                     end
                     
                 case 'not'
                     signal = robustness_map(get_id(psis{1}));
                     if(flag)
-                        [implicant] = BreachDiagnostics.diag_not_t(signal, in_implicant, value);
+                        [implicant] = BreachDiagnostics.diag_not_t(signal, in_implicant, samples);
                     else
-                        [implicant] = BreachDiagnostics.diag_not_f(signal, in_implicant, value);
+                        [implicant] = BreachDiagnostics.diag_not_f(signal, in_implicant, samples);
                     end
                     diag_map(get_id(psis{1})) = implicant;
                     [psis{1}, diag_map] = this.Diag(psis{1}, robustness_map, diag_map, ~flag);
@@ -540,9 +571,9 @@ classdef BreachRequirement < BreachTraceSystem
                     signal1 = robustness_map(get_id(psis{1}));
                     signal2 = robustness_map(get_id(psis{2}));
                     if(flag)
-                        [implicant1 implicant2] = BreachDiagnostics.diag_or_t(signal1, signal2, in_implicant, value);
+                        [implicant1 implicant2] = BreachDiagnostics.diag_or_t(signal1, signal2, in_implicant, samples);
                     else
-                        [implicant1 implicant2] = BreachDiagnostics.diag_or_f(signal1, signal2, in_implicant, value);
+                        [implicant1 implicant2] = BreachDiagnostics.diag_or_f(signal1, signal2, in_implicant, samples);
                     end
                     diag_map(get_id(psis{1})) = implicant1;
                     diag_map(get_id(psis{2})) = implicant2;
@@ -552,9 +583,9 @@ classdef BreachRequirement < BreachTraceSystem
                     signal1 = robustness_map(get_id(psis{1}));
                     signal2 = robustness_map(get_id(psis{2}));
                     if(flag)
-                        [implicant1 implicant2] = BreachDiagnostics.diag_and_t(signal1, signal2, in_implicant, value);
+                        [implicant1 implicant2] = BreachDiagnostics.diag_and_t(signal1, signal2, in_implicant, samples);
                     else
-                        [implicant1 implicant2] = BreachDiagnostics.diag_and_f(signal1, signal2, in_implicant, value);
+                        [implicant1 implicant2] = BreachDiagnostics.diag_and_f(signal1, signal2, in_implicant, samples);
                     end
                     diag_map(get_id(psis{1})) = implicant1;
                     diag_map(get_id(psis{2})) = implicant2;
@@ -564,9 +595,9 @@ classdef BreachRequirement < BreachTraceSystem
                     signal1 = robustness_map(get_id(psis{1}));
                     signal2 = robustness_map(get_id(psis{2}));
                     if(flag)
-                        [implicant1 implicant2] = BreachDiagnostics.diag_implies_t(signal1, signal2, in_implicant, value);
+                        [implicant1 implicant2] = BreachDiagnostics.diag_implies_t(signal1, signal2, in_implicant, samples);
                     else
-                        [implicant1 implicant2] = BreachDiagnostics.diag_implies_f(signal1, signal2, in_implicant, value);
+                        [implicant1 implicant2] = BreachDiagnostics.diag_implies_f(signal1, signal2, in_implicant, samples);
                     end
                     diag_map(get_id(psis{1})) = implicant1;
                     diag_map(get_id(psis{2})) = implicant2;
@@ -578,9 +609,9 @@ classdef BreachRequirement < BreachTraceSystem
                     bound.begin = I(1);
                     bound.end = min(I(2),max(signal.times));
                     if(flag)
-                        [implicant] = BreachDiagnostics.diag_alw_t(signal, bound, in_implicant, value);
+                        [implicant] = BreachDiagnostics.diag_alw_t(signal, bound, in_implicant, samples);
                     else
-                        [implicant] = BreachDiagnostics.diag_alw_f(signal, bound, in_implicant, value);
+                        [implicant] = BreachDiagnostics.diag_alw_f(signal, bound, in_implicant, samples);
                     end
 
                     diag_map(get_id(psis{1})) = implicant;
@@ -591,9 +622,9 @@ classdef BreachRequirement < BreachTraceSystem
                     bound.begin = I(1);
                     bound.end = min(I(2),max(signal.times));
                     if(flag)
-                        [implicant] = BreachDiagnostics.diag_ev_t(signal, bound, in_implicant, value);
+                        [implicant] = BreachDiagnostics.diag_ev_t(signal, bound, in_implicant, samples);
                     else
-                        [implicant] = BreachDiagnostics.diag_ev_f(signal, bound, in_implicant, value);
+                        [implicant] = BreachDiagnostics.diag_ev_f(signal, bound, in_implicant, samples);
                     end
                     diag_map(get_id(psis{1})) = implicant;
                     [psis{1}, diag_map] = this.Diag(psis{1}, robustness_map, diag_map, flag);        

@@ -44,7 +44,7 @@ phi3 = set_out_signal_names(phi3, {'a', 'b'});
 % Set up the Breach requirement
 MyReq3 = BreachRequirement(phi3);
 verdict = MyReq3.Explain(B, phi3);
-MyReq3.PlotDiag_debug(verdict);
+MyReq3.PlotDiag(phi3, verdict);
 
 % EXAMPLE 4 -----------------------
 
@@ -67,5 +67,16 @@ phi5 = set_out_signal_names(phi5, {'a', 'b'});
 MyReq5 = BreachRequirement(phi5);
 verdict = MyReq5.Explain(B, phi5);
 MyReq5.PlotDiag(phi5, verdict);
+
+% EXAMPLE 6 -----------------------
+
+% define the formula
+phi6 = STL_Formula('phi6', 'alw((a[t] >= 2) => ev_[1,2] (b[t] <= 10))');
+phi6 = set_out_signal_names(phi6, {'a', 'b'});
+
+% Set up the Breach requirement
+MyReq6 = BreachRequirement(phi6);
+verdict = MyReq6.Explain(B, phi6);
+MyReq6.PlotDiag_debug(verdict);
 
 
