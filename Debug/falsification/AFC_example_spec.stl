@@ -1,5 +1,5 @@
 # We declare parameters with default values 
-param tol=0.01, af_ref=14.7 
+param tol=0.05, af_ref=14.7 
 
 # We declare also the interface
 input signal AFref, Pedal_Angle
@@ -16,7 +16,7 @@ AF_ok := not (AF_above_ref or AF_below_ref)
 param t_start=10, t_end=40
 
 # Time parameters
-param dt=0.1, tau = 2, sstime = 2, scale = 10
+param dt=0.1, tau = 2, sstime = 2, scale = 1
 
 # Define the threshold values used to define the step inputs
 param Step_Thresh = 0.1 
