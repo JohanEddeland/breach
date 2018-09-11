@@ -29,6 +29,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
     properties
         FindScopes = false
         FindSignalBuilders = false
+        FindFromWorkspace = false
         FindTables = false
         FindStruct = false
         MaxNumTabParam
@@ -99,6 +100,11 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 if  ~this.ParamSrc.isKey(this.P.ParamList{ip})
                     this.ParamSrc(this.P.ParamList{ip}) = BreachParam(this.P.ParamList{ip});
                 end
+            end
+            
+            %%
+            if isempty(this.InputGenerator)
+                this.InputGenerator = BreachSignalGen(constant_signal_gen({}));
             end
             
         end
@@ -195,16 +201,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             % Give it a name
             mdl_breach = [mdl '_breach'];
             load_system(mdl);
-            
-            % Get checksum of the model
-            try
-                chs = Simulink.BlockDiagram.getChecksum(mdl);
-                this.mdl.checksum = chs;
-            catch
-                warning('BreachSimulinkSystem:get_checksum_failed', 'Simulink couldn''t compute a checksum for the model.');
-                this.addStatus(0, 'BreachSimulinkSystem:get_checksum_failed', 'Simulink couldn''t compute a checksum for the model.')
-                this.mdl.checksum = [];
-            end
             
             close_system(mdl_breach,0);
             save_system(mdl,[breach_data_dir filesep mdl_breach]);
@@ -308,19 +304,20 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             end
             
             %% From workspace blocks
-            ifw = find_system(mdl_breach, 'BlockType', 'FromWorkspace');
             sig_fw = {};
-            for i = 1:numel(ifw)
-                nm = get_param(ifw{i}, 'VariableName');
-                sig_fw = {sig_fw{:}, nm};
-                % ensure consistency of signal and ToWorkspace block name -
-                % maybe not necessary, but why not?
-                line_out = get_param(ifw{i}, 'LineHandles');
-                
-                set(line_out.Outport,'Name',nm);
-                set(line_out.Outport,'DataLoggingName', 'Use signal name', 'DataLogging',1 );
+            if this.FindFromWorkspace
+                ifw = find_system(mdl_breach, 'BlockType', 'FromWorkspace');
+                for i = 1:numel(ifw)
+                    nm = get_param(ifw{i}, 'VariableName');
+                    sig_fw = {sig_fw{:}, nm};
+                    % ensure consistency of signal and ToWorkspace block name -
+                    % maybe not necessary, but why not?
+                    line_out = get_param(ifw{i}, 'LineHandles');
+                    
+                    set(line_out.Outport,'Name',nm);
+                    set(line_out.Outport,'DataLoggingName', 'Use signal name', 'DataLogging',1 );
+                end
             end
-            
             % creates default from_workspace input generator
             if ~isempty(sig_fw)
                 fw_input = from_workspace_signal_gen(sig_fw);

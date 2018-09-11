@@ -22,7 +22,7 @@ function varargout = select_cell_gui(varargin)
 
 % Edit the above text to modify the response to help select_cell_gui
 
-% Last Modified by GUIDE v2.5 09-Nov-2017 13:37:29
+% Last Modified by GUIDE v2.5 11-Sep-2018 11:34:23
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -314,7 +314,11 @@ function edit_search_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-exp = get(hObject, 'String');
+handles = update_listbox_all_content(handles);
+guidata(hObject, handles);
+
+function handles = update_listbox_all_content(handles)
+exp = get(handles.edit_search, 'String');
 if isempty(exp)
     handles.content_all = handles.content_really_all;
     set(handles.listbox_all_variables, 'String', handles.content_all);
@@ -332,7 +336,7 @@ else
     set(handles.listbox_all_variables, 'Value',1);
     set(handles.listbox_all_variables, 'String', handles.content_all);
     if ~isempty(content_all_select)
-    nval_all = find(strcmp(handles.content_all, content_all_select));
+        nval_all = find(strcmp(handles.content_all, content_all_select));
     if isempty(nval_all)
         nval_all = 1;
     end
@@ -341,7 +345,7 @@ else
     end
     set(handles.listbox_all_variables, 'Value', nval_all);
 end
-guidata(hObject, handles);
+
 
 % --- Executes during object creation, after setting all properties.
 function edit_search_CreateFcn(hObject, eventdata, handles)
@@ -356,4 +360,18 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
+% --- Executes on button press in button_new_choice.
+function button_new_choice_Callback(hObject, eventdata, handles)
+% hObject    handle to button_new_choice (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+st = inputdlg('Name?');
+if ~isempty(st)
+  handles.content_really_all = union(handles.content_really_all, st, 'stable');
+  content_select = union(get(handles.listbox_selected, 'String'), st, 'stable');
+  set(handles.listbox_selected,'String',content_select);
+  handles = update_listbox_all_content(handles);
+  guidata(hObject, handles);
+end
 

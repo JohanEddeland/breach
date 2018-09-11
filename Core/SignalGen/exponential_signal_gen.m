@@ -19,6 +19,10 @@ classdef exponential_signal_gen < signal_gen
     methods 
         
         function this = exponential_signal_gen(signals)
+           
+           if ischar(signals)
+           signals = {signals};
+           end
            this.signals = signals; 
            this.params = {};
            for i_s = 1:numel(this.signals)

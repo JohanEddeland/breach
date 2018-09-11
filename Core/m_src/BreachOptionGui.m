@@ -68,8 +68,7 @@ classdef BreachOptionGui < handle
             end
             this.reset_fig();
         end
-        
-        
+                
         function reset_fig(this)
             
             this.gui_components = {};
@@ -171,7 +170,6 @@ classdef BreachOptionGui < handle
                 'Position', [this.button_pos this.button_sz]);
             this.gui_components{end+1,1} = g;
             
-            
         end
         
         function g = add_text_box(this, string)
@@ -191,7 +189,7 @@ classdef BreachOptionGui < handle
             this.make_room();
             pos = [this.button_pos this.button_sz];
             num_elements = size(this.gui_components,1);
-            g=     uicontrol('Parent',this.dlg,...
+            g=  uicontrol('Parent',this.dlg,...
                 'Style','edit',...
                 'String', string,...
                 'TooltipString', tooltip,...
@@ -230,8 +228,8 @@ classdef BreachOptionGui < handle
             
             function output = ok_callback(hobj, evt)
                 
-               set(hobj, 'String', 'Please wait...')
-               drawnow;
+                set(hobj, 'String', 'Please wait...')
+                drawnow;
                 close(this.dlg);
             end
             
