@@ -221,7 +221,7 @@ classdef BreachSystem < BreachSet
                 phi_id = MakeUniqueID([this.Sys.name '_spec'],  BreachGlobOpt.STLDB.keys);
                 phi = STL_Formula(phi_id, varargin{1});
             elseif isa(varargin{1}, 'BreachRequirement')
-                phi = STL_Formula(varargin{1}.formulas{1}.formula_id); % some imperfect attempt backward compatibility
+                phi = STL_Formula(varargin{1}.req_monitors{1}.formula_id); % some imperfect attempt backward compatibility
             else
                 error('Argument not a formula.');
             end
