@@ -34,6 +34,7 @@ classdef BreachSet < BreachStatus
     
     properties
         Domains = BreachDomain('double', [])
+        ParamGens % optional classes performing parameter value transformation after a SetParam
         SignalRanges % ranges of values taken by each signal variable
         AppendWhenSample=false % when true, sampling appends new param vectors, otherwise replace.
         log_folder
@@ -291,6 +292,8 @@ classdef BreachSet < BreachStatus
                 end
             end
             
+            this.ApplyParamGens(params);
+            
             % restore traj if needed
             if saved_traj
                 this.P = Pfix_traj_ref(this.P, P0);
@@ -311,6 +314,41 @@ classdef BreachSet < BreachStatus
                 end
             elseif ~exist('ignore_sys_param', 'var')||ignore_sys_param==false
                 error('Attempt to modify a system parameter - use SetParam instead.');
+            end
+           this.ApplyParamGens(params);
+            
+        end
+ 
+        function SetParamGen(this, pg)
+            this.ParamGens{end+1} = pg;
+            this.SetParam(pg.params, pg.p0, true);
+            this.ApplyParamGens();
+        end
+        
+        function ApplyParamGens(this, params)
+            if ~isempty(this.ParamGens)
+                if nargin==1
+                    params = this.GetParamList(); 
+                end
+                
+                % ensures params are names and ip are indices
+                if ~isnumeric(params)
+                    ip = FindParam(this.P, params);
+                else
+                    ip = params;
+                    params = this.P.ParamList{ip};
+                end
+                for ig = 1:numel(this.ParamGens)
+                    pg = this.ParamGens{ig};
+                    params_in= pg.params;
+                    if ~isempty(intersect(params, params_in))
+                       p_in = this.GetParam(params_in);
+                       p_out = pg.computeParams(p_in);
+                       ip_out = FindParam(this.P, pg.params_out);
+                       this.P.pts(ip_out,:) = p_out; 
+                    end
+                
+                end
             end
         end
         
