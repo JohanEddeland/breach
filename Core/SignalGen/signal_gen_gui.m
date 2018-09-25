@@ -75,10 +75,12 @@ handles.select_cells = [];
 % get signal names
 if isa(varargin{1}, 'BreachOpenSystem')
   handles.B = varargin{1};
+  handles.IG = handles.B.InputGenerator.copy();
   signal_names = handles.B.Sys.InputList; 
-else
+elseif isstruct(varargin{1})||ischar(varargin{1})  % configuration struct
     handles.B = [];
-    signal_names = varargin{1};
+    handles.IG = ReadInputGenCfg(varargin{1});
+    signal_names = handles.IG.GetSignalList();
 end
 set(handles.popupmenu_signal_name, 'String', signal_names);
 
@@ -105,11 +107,10 @@ for isig= 1:numel(signal_names)
 
     % try to import from B - works when one sg for one signal (TODO: generalize) 
     try 
-        sg = handles.B.InputGenerator.GetSignalGenFromSignalName(c);
+        sg = handles.IG.GetSignalGenFromSignalName(c);
         if numel(sg.signals)==1
             handles.signal_gen_map(c)=sg;
             sg_class = class(sg);
-            classes = get(handles.popupmenu_signal_gen_type, 'String');
             idx = find(strcmp(signal_types, sg_class));
             if isig == 1
                 set(handles.popupmenu_signal_gen_type,'Value', idx);
@@ -124,7 +125,11 @@ for isig= 1:numel(signal_names)
 end
 
 % Init time
-handles.time = handles.B.GetTime();
+if ~isempty(handles.B)    
+    handles.time = handles.B.GetTime();
+else
+    handles.time = 0:.01:1;
+end
 set( handles.edit_time, 'String', get_time_string(handles.time));
 % Choose default command line output for signal_gen_gui
 signal_gens= handles.signal_gen_map.values;
@@ -163,7 +168,7 @@ function varargout = signal_gen_gui_OutputFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-varargout{1} = handles.main;
+varargout{1} = handles;
 
 
 % --- Executes on selection change in popupmenu_signal_gen_type.
@@ -330,7 +335,7 @@ sg_name = class(sg);
     niou_sg.p0 = sg.p0;
  end
  
- handles.signal_gen_map(sig_name)= niou_sg;
+handles.signal_gen_map(sig_name)= niou_sg;
  
 update_config(handles);
 update_plot(handles);

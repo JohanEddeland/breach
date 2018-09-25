@@ -32,7 +32,7 @@ classdef BreachOpenSystem < BreachSystem
             this.CheckinDomainParam();
             
             if this.use_precomputed_inputs % Input generator drives the thing 
-                ig_params  = this.InputGenerator.GetParamsSysList();
+                ig_params  = this.InputGenerator.GetSysParamList();
                 all_pts_u = this.InputGenerator.GetParam(ig_params);
                 this.SetParam(ig_params, all_pts_u);
             end
@@ -225,7 +225,7 @@ classdef BreachOpenSystem < BreachSystem
 
         end
         
-        function [params, idx] = GetParamsSysList(this)
+        function [params, idx] = GetPlantParamList(this)
             idx_inputs = this.GetParamsInputIdx();
             if isempty(idx_inputs)
                 idx = this.Sys.DimX+1:this.Sys.DimP;
@@ -234,7 +234,12 @@ classdef BreachOpenSystem < BreachSystem
             end
             params = this.Sys.ParamList(idx);
         end
-            
+        
+        function [params, idx] = GetInputParamList(this)
+            idx = this.GetParamsInputIdx();
+            params = this.P.ParamList(idx);
+        end
+        
         function idx = GetParamsInputIdx(this)
             if isempty(this.InputGenerator)
                 [~, idx] = FindParamsInput(this.Sys);
@@ -259,7 +264,7 @@ classdef BreachOpenSystem < BreachSystem
             
             idx_u = this.GetParamsInputIdx();
             pts_u = pts(idx_u);
-            [~, ig_params]  = this.InputGenerator.GetParamsSysList();
+            [~, ig_params]  = this.InputGenerator.GetSysParamList();
             
             if this.use_precomputed_inputs
                 all_pts_u = this.InputGenerator.GetParam(ig_params);
@@ -306,30 +311,8 @@ classdef BreachOpenSystem < BreachSystem
             end
         end
         
-        % not sure why I need a special Concat operator here.
-        % my guess is I don't 
-%         function this = Concat(this,other)
-%             
-%             if isa(this.InputGenerator, 'BreachTraceSystem')
-%                 % TODO Concat other with more than one trace...
-%                 trace = [other.InputGenerator.P.traj{1}.time' other.InputGenerator.P.traj{1}.X'];
-%                 this.InputGenerator.AddTrace(trace);
-%                 % Using SetParam here erases the trajectory...
-%                 i_trace_id = FindParam(other.P, 'trace_id');
-%                 other.P.pts(i_trace_id,1) = numel(this.P.traj)+1;
-%                 other.P.traj{1}.param(i_trace_id) = numel(this.P.traj)+1;
-%                 this.P = SConcat(this.P, other.P);
-%             elseif isa(this.InputGenerator, 'BreachSystem')
-%                 this.InputGenerator.P= SConcat(this.InputGenerator.P, other.InputGenerator.P);
-%                 this.P = SConcat(this.P,other.P);
-%             else % ignore InputGenerator .. 
-%                 this.P = SConcat(this.P,other.P);
-%             end
-%             
-%         end
-%         
         function hsi = SetInputGenGUI(this)
-            hsi=  signal_gen_gui(this);
+            hsi= signal_gen_gui(this);
         end
         
         function idx = GetInputSignalsIdx(this)

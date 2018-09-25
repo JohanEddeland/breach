@@ -54,6 +54,10 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 return;
             end
             
+            if ~ischar(mdl_name)
+               error('BreachSimulinkSystem:wrong_argument', 'First argument of BreachSimulinkSystem must be a string naming a Simulink system.'); 
+            end
+            
             if ~exist(mdl_name)==4  
                 error('BreachSimulinkSystem first argument must be the name of a Simulink model.');
             end

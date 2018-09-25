@@ -434,13 +434,8 @@ classdef BreachSet < BreachStatus
             params = this.P.ParamList(this.P.DimX+1:end);
         end
         
-        function sys_params = GetSysParamList(this)
-            % GetSysParamList returns system parameter names
-            sys_params = this.P.ParamList(this.P.DimX+1:this.P.DimP);
-        end
-        
-        function [params, idx] = GetParamsSysList(this)
-            % GetParamsSysList ahem, consider merging with GetSysParamList...
+        function [params, idx] = GetSysParamList(this)
+            % GetSysParamList 
             idx = this.P.DimX+1:this.P.DimP;
             params = this.P.ParamList(idx);
         end
@@ -763,7 +758,7 @@ classdef BreachSet < BreachStatus
                 error(['Couldn''t create folder'  folder '. mkdir returned error: ' msg]);
             end
             
-            [sys_param_list, sys_param_idx] = this.GetParamsSysList();
+            [sys_param_list, sys_param_idx] = this.GetSysParamList();
             for ip = 1:numel(i_trajs)
                 fname = [folder filesep name num2str(ip) '.mat'];
                 time = this.P.traj{ip}.time';

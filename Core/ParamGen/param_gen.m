@@ -6,6 +6,5 @@ classdef param_gen < handle
     end
     methods (Abstract)
        p_out = computeParams(this, p_in)
-    end
-    
+    end   
 end

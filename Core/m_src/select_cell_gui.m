@@ -22,7 +22,7 @@ function varargout = select_cell_gui(varargin)
 
 % Edit the above text to modify the response to help select_cell_gui
 
-% Last Modified by GUIDE v2.5 11-Sep-2018 11:34:23
+% Last Modified by GUIDE v2.5 20-Sep-2018 18:25:44
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -83,24 +83,41 @@ set(hObject, 'Name', ['Choose from list']);
   handles.content_really_all = content_all;
   handles.content_all = content_all;   
 
+  % Initialize default values and aliases 
+  handles.p0 = containers.Map();
+  handles.aliases = containers.Map();
+  
   % fill variable list 
   set(handles.listbox_all_variables,'String',content_all);
  
-  % fill selected var  
+  % fill selected list 
   set(handles.listbox_selected,'String',content_select);
-    
+ 
+  % init handles.selected_var
+  handles.selected_var = content_all{1};
+  
   % Choose default command line output for select_cell_gui
   handles.output = content_all;
-  
+
+  % 
+  handles = update_default_and_aliases(handles);
+
   % focus on listbox with all 
   uicontrol(handles.listbox_all_variables);
   
-  % Update handles structure
+  if nargin>=4
+      handles.wait = varargin{4};
+  else
+      handles.wait = true;
+  end
+% UIWAIT makes select_cell_gui wait for user response (see UIRESUME)
+if handles.wait  
+    uiwait(handles.main);
+end
+
+% Update handles structure
   guidata(hObject, handles);
   
-% UIWAIT makes select_cell_gui wait for user response (see UIRESUME)
-  uiwait(handles.main);
-
 
 % --- Outputs from this function are returned to the command line.
 function varargout = select_cell_gui_OutputFcn(hObject, eventdata, handles) 
@@ -111,40 +128,56 @@ function varargout = select_cell_gui_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output';
+varargout{2} = handles;
 
-% The figure can be deleted now
-delete(handles.main);
+if handles.wait
+    % The figure can be deleted now
+    delete(handles.main);
+end
 
 % --- Executes on selection change in listbox_all_variables.
 function listbox_all_variables_Callback(hObject, eventdata, handles)
 
-  val= get(hObject,'Value');
-  handles.selected_var = val;  
-  guidata(hObject, handles);
-
+val= get(hObject,'Value');
+handles.selected_var = val;
+handles = update_default_and_aliases(handles);
+guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
 function listbox_all_variables_CreateFcn(hObject, eventdata, handles)
 
-  if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
-  end
+end
   
-
 % --- Executes on selection change in listbox_selected.
 function listbox_selected_Callback(hObject, eventdata, handles)
-  val= get(hObject,'Value');
-  handles.selected_var_to_plot = val;  
-  guidata(hObject, handles);
- 
+val= get(hObject,'Value');
+handles.selected_var_to_plot = val;
+handles = update_default_and_aliases(handles);
+guidata(hObject, handles);
+  
+% 
+function handles = update_default_and_aliases(handles)
+if handles.p0.isKey(handles.selected_var)
+    set(handles.edit_default_value, 'String', num2str(handles.p0(handles.selected_var)));
+else
+    set(handles.edit_default_value, 'String', '0.');
+end
+
+if handles.aliases.isKey(handles.selected_var)
+    set(handles.edit_alias, 'String',handles.aliases(handles.selected_var));
+else
+    set(handles.edit_alias, 'String','');
+end
+  
 
 % --- Executes during object creation, after setting all properties.
 function listbox_selected_CreateFcn(hObject, eventdata, handles)
 
-  if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
-  end
-
+end
 
 % --- Executes on button press in button_add.
 function button_add_Callback(hObject, eventdata, handles)
@@ -189,6 +222,7 @@ function button_ok_Callback(hObject, eventdata, handles)
 % --- Executes on button press in button_cancel.
 function button_cancel_Callback(hObject, eventdata, handles)
   handles.output=0;
+  set(handles.listbox_selected, 'String', '');
   guidata(hObject, handles);
   uiresume(handles.main);
 
@@ -359,10 +393,9 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on button press in button_new_choice.
-function button_new_choice_Callback(hObject, eventdata, handles)
-% hObject    handle to button_new_choice (see GCBO)
+% --- Executes on button press in button_create_new.
+function button_create_new_Callback(hObject, eventdata, handles)
+% hObject    handle to button_create_new (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -375,3 +408,45 @@ if ~isempty(st)
   guidata(hObject, handles);
 end
 
+function edit_default_value_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_default_value (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if isfield(handles, 'selected_var')&&~isempty(handles.selected_var)
+    st = get(hObject, 'String');
+    this.p0(handles.selected_var) = str2double(st);
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_default_value_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_default_value (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function edit_alias_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_alias (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if isfield(handles, 'selected_var')&&~isempty(handles.selected_var)
+    st = get(hObject, 'String');
+    this.p0(handles.selected_var) = str2double(st);
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_alias_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_alias (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
