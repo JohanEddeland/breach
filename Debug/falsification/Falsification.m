@@ -5,8 +5,8 @@ clear;
 InitBreach;
 
 %% Solver config
-%my_solver = 'global_nelder_mead';
-my_solver = 'fmincon';
+my_solver = 'global_nelder_mead';
+%my_solver = 'fmincon';
 %my_solver = 'cmaes';
 %my_solver = 'ga';
 

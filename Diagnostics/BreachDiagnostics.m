@@ -404,7 +404,7 @@ classdef BreachDiagnostics
             for(i=1:length(samples))
                 sample = samples(i);
                 
-                out_implicant.addSignificantSample(sample.time, -sample.value);
+                out_implicant = out_implicant.addSignificantSample(sample.time, -sample.value);
             end
             
             error = 0;
