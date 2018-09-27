@@ -496,8 +496,7 @@ classdef BreachRequirement < BreachTraceSystem
             
             implicant = BreachImplicant;
             implicant = implicant.addInterval(0, 0);
-            implicant = implicant.setSampleTime(0);
-            implicant = implicant.setSampleValue(val);
+            implicant = implicant.setSignificantSample(0, val);
             
             id = get_id(phi);
             diag_map(id) = implicant;
