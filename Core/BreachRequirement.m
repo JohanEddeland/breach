@@ -471,7 +471,7 @@ classdef BreachRequirement < BreachTraceSystem
                         line([x x],[ylim_bot ylim_top],'Color',color);
                     elseif (y > x)
                         p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color); 
-                        %alpha(p, 0.3);
+                        alpha(p, 0.3);
                         set(p,'EdgeColor','none');
                     end
                 end
@@ -514,7 +514,6 @@ classdef BreachRequirement < BreachTraceSystem
             
             implicant = BreachImplicant;
             implicant = implicant.addInterval(0, 0);
-            implicant = implicant.setSignificantSample(0, val);
             implicant = implicant.addSignificantSample(0, val);
             
             id = get_id(phi);

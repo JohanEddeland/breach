@@ -692,7 +692,7 @@ classdef BreachDiagnostics
                                 end
                             end
                         end
-                    elseif (value == TwoBitValue.FF)
+                    elseif (value == TwoBitValue.FT)
                         flag1 = 0;
                         flag2 = 0;
                         for(i=bidx:eidx)
@@ -714,7 +714,7 @@ classdef BreachDiagnostics
                         if (flag2)
                            out2 = out2.addInterval(btime, etime);
                         end
-                    elseif (value == TwoBitValue.FT)
+                    elseif (value == TwoBitValue.FF)
                         out1 = in1.addInterval(btime, etime);
                         for(i=bidx:eidx)
                             for(j=1:length(samples))
