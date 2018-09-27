@@ -1,6 +1,8 @@
 function [val, tau, robustness_map] = STL_Eval_Gen_Rob(Sys, phi, P, trajs, partition, relabs, robustness_map, taus)
 %STL_EVAL_Gen computes the satisfaction function of a property for one or
 % many traces.
+% NEEDED FOR DIAGNOSTIC functionality only, not meant to be the user
+% callable
 % 
 % Synopsis: [val, tau] = STL_Eval_Gen(Sys, phi, P, partition, relabs, trajs[, taus])
 % 
@@ -13,10 +15,9 @@ function [val, tau, robustness_map] = STL_Eval_Gen_Rob(Sys, phi, P, trajs, parti
 %             trajectories. In this case, all will be checked wrt the
 %             property parameter described in P.
 %  - partition  : is the partition of signals given as an array of strings:
-%             the robsutness is computed in the signals of the partition.
+%             the robustness is computed in the signals of the partition.
 %  - relabs : is a string indicating how to treat variables that are 
-%             not in the partition: 'rel' for -inf/+inf or 'abs' for
-%             +0/-0.
+%             not in the partition: 'rel' for -inf/+inf or 'abs' for 0.
 %  - taus   : (Optional, default=traj.time for each traj in trajs) is the
 %             time, possibly an array, when to eval the satisfaction of the
 %             property. All time points not belonging to traj.time will be

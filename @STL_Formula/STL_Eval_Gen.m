@@ -13,10 +13,9 @@ function [val, tau] = STL_Eval_Gen(Sys, phi, P, trajs, partition, relabs, taus)
 %             trajectories. In this case, all will be checked wrt the
 %             property parameter described in P.
 %  - partition  : is the partition of signals given as an array of strings:
-%             the robsutness is computed in the signals of the partition.
+%             the robustness is computed in the signals of the partition.
 %  - relabs : is a string indicating how to treat variables that are 
-%             not in the partition: 'rel' for -inf/+inf or 'abs' for
-%             +0/-0.
+%             not in the partition: 'rel' for -inf/+inf or 'abs' for 0.
 %  - taus   : (Optional, default=traj.time for each traj in trajs) is the
 %             time, possibly an array, when to eval the satisfaction of the
 %             property. All time points not belonging to traj.time will be

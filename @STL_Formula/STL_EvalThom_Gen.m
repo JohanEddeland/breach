@@ -17,8 +17,7 @@ function [val__, time_values__] = STL_EvalThom_Gen(Sys, phi, P, trajs, partition
 %  - partition  : is a set of signals given as an array of strings:
 %                 the robustness computation is computed in these signals.
 %  - relabs : is a string indicating how to treat variables that are 
-%             not in the partition: 'rel' for -inf/+inf or 'abs' for
-%             +0/-0.
+%             not in the partition: 'rel' for -inf/+inf or 'abs' for 0.
 %  - t     : (optional, default=traj.time) is the time point(s), so
 %            possibly an array, when to eval the satisfaction of the
 %            property. All time points not belonging to traj.time will be
@@ -176,7 +175,7 @@ switch(phi.type)
                 % qualitatively
                 one_outside_partition = ~isempty(setdiff(STL_ExtractSignals(phi), partition));
                 if (one_outside_partition)
-                    valarray = realmin('double')*(2*(valarray>0)-1);
+                    valarray = zeros(size(valarray));
                 end
         end
     
