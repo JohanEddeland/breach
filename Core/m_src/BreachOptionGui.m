@@ -78,8 +78,6 @@ classdef BreachOptionGui < handle
             
         end
         
-    
-        
         function merge_options(this, opt_other, choices_other, tips_other)
             fn= fieldnames(opt_other);
             for ifn = 1:numel(fn)
@@ -252,6 +250,7 @@ classdef BreachOptionGui < handle
                 
                 set(hobj, 'String', 'Please wait...')
                 drawnow;
+                output = this.struct_cfg;
                 close(this.dlg);
             end
             

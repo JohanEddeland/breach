@@ -1740,18 +1740,23 @@ classdef BreachSet < BreachStatus
             end
         end
         
-        function PrintSignals(this)
-            disp( '---- SIGNALS ----')
-                for isig = 1:this.P.DimX
-                    fprintf('%s %s\n', this.P.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}));
-                end
-                fprintf('\n')
-            this.PrintAliases();
+        function st = PrintSignals(this)
+            st = sprintf('---- SIGNALS ----\n');
+            for isig = 1:this.P.DimX
+                st = sprintf([st '%s %s\n'], this.P.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}));
+            end
+            st = sprintf([st '\n']);
+            st = [st this.PrintAliases()];
+            if nargout==0
+                fprintf(st);
+            end
+            
         end
         
-        function PrintAliases(this)
+        function st = PrintAliases(this)
+            st = '';
             if ~isempty(this.sigMap)
-                disp( '---- ALIASES ----')
+                st = sprintf('---- ALIASES ----\n');
                 keys = union(this.sigMap.keys(), this.sigMapInv.keys());
                 printed = {};
                 for ik = 1:numel(keys)
@@ -1774,11 +1779,15 @@ classdef BreachSet < BreachStatus
                          al_st = [al_st(1:end-2) ' (not linked to data)' ];
                      end
                      if ~ismember(sig, printed)
-                        fprintf('%s <--> %s\n', sig, al_st )
+                        st = sprintf([st '%s <--> %s\n'], sig, al_st );
                         printed = [printed {sig} aliases];
                     end
                  end
-                fprintf('\n')
+                st = sprintf([st '\n']);
+                if nargout==0
+                    fprintf(st);
+                end
+            
             end
         end
         
@@ -1796,22 +1805,26 @@ classdef BreachSet < BreachStatus
             end
         end
         
-        function PrintParams(this)
+        function st = PrintParams(this)
+            st = '';
             nb_pts= this.GetNbParamVectors();
             if (nb_pts<=1)
-                disp('-- PARAMETERS --')
+                st = sprintf('-- PARAMETERS --\n');
                 for ip = this.P.DimX+1:numel(this.P.ParamList)
-                    fprintf('%s=%g       %s',this.P.ParamList{ip},this.P.pts(ip,1), this.Domains(ip).short_disp(1));
-                    fprintf('\n');
+                    st = sprintf([st '%s=%g       %s\n'],this.P.ParamList{ip},this.P.pts(ip,1), this.Domains(ip).short_disp(1));
                 end
             else
-                fprintf('-- PARAMETERS -- (%d vectors):\n',nb_pts);
+                st = sprintf([st '-- PARAMETERS -- (%d vectors):\n'],nb_pts);
                 for ip = this.P.DimX+1:numel(this.P.ParamList)
-                    fprintf('%s     %s\n',this.P.ParamList{ip}, this.Domains(ip).short_disp(1));
+                    st = sprintf([st '%s     %s\n'],this.P.ParamList{ip}, this.Domains(ip).short_disp(1));
                 end
             end
             
-            disp(' ')
+            st = sprintf([st ' \n']);
+            
+            if nargout==0
+                fprintf(st);
+            end
         end
         
         %% Misc

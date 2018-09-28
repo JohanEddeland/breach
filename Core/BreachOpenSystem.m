@@ -320,22 +320,28 @@ classdef BreachOpenSystem < BreachSystem
             idx = idx(status~=0);
         end
         
-        function PrintSignals(this)
+        function st = PrintSignals(this)
+            st = '';
             if isempty(this.SignalRanges)
-                disp( '---  SIGNALS  ---')
+                st =  sprintf('---  SIGNALS  ---\n');
                 for isig = 1:this.Sys.DimX
-                    fprintf('%s %s\n', this.P.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}));
+                    st = sprintf([st '%s %s\n'], this.P.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}));
                 end
             else
-                fprintf('---  SIGNALS  --- (%d traces)\n', numel(this.P.traj));
+                st = sprintf([st '---  SIGNALS  --- (%d traces)\n'], numel(this.P.traj));
                 for isig = 1:this.Sys.DimX
-                    fprintf('%s %s in  [%g, %g]\n', this.Sys.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}),this.SignalRanges(isig,1),this.SignalRanges(isig,2));
+                    st = sprintf([st '%s %s in  [%g, %g]\n'], this.Sys.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}),this.SignalRanges(isig,1),this.SignalRanges(isig,2));
                 end
             end
-            disp(' ');
+            st = sprintf([st ' \n']);
             if ~isempty(this.sigMap)
-                this.PrintAliases();
+                st = [st this.PrintAliases()];
             end
+            
+            if nargout==0
+                fprintf(st);
+            end
+            
         end
         
         function atts = get_signal_attributes(this, sig)

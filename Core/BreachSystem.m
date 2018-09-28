@@ -825,31 +825,38 @@ classdef BreachSystem < BreachSet
         end
         
         %% Printing
-        function PrintSpecs(this)
-            disp('--- SPECIFICATIONS ---')
+        function st = PrintSpecs(this)
+            st= printf('--- SPECIFICATIONS ---\n');
             keys = this.Specs.keys;
             for is = 1:numel(keys)
                 prop_name = keys{is};
-                fprintf('%s',prop_name);
+                st= sprintf([st '%s'],prop_name);
                 if isfield(this.P, 'props_names')
                     ip = strcmp(this.P.props_names, prop_name);
                     idx_prop = find(ip);
                     if idx_prop
                         val = cat(1, this.P.props_values(idx_prop,:).val);
-                        fprintf(': %d/%d satisfied.', numel(find(val>=0)),numel(val));
+                        st = sprintf([st ': %d/%d satisfied.'], numel(find(val>=0)),numel(val));
                     end
                 end
-                fprintf('\n');
+                st= sprintf([st '\n']);
             end
-            disp(' ');
+            st = sprintf([st ' \n']);
+            if nargout == 0
+                fprintf(st);
+            end
         end
         
-        function PrintAll(this)
+        function st = PrintAll(this)
             this.UpdateSignalRanges();
-            this.PrintSignals();
-            this.PrintParams();
+            st = this.PrintSignals();
+            st = sprintf([st  this.PrintParams()]);
             if ~isempty(this.Specs)
-                this.PrintSpecs();
+                st = [st this.PrintSpecs()];
+            end
+            
+            if nargout == 0
+                fprintf(st);
             end
         end
         
