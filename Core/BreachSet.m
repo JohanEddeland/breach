@@ -691,10 +691,11 @@ classdef BreachSet < BreachStatus
             
             X = cell(nb_traj,1);
             for i_traj = 1:numel(itrajs)
+                Xi = this.P.traj{itrajs(i_traj)}.X;
                 if (~exist('t','var'))
-                    X{i_traj} = this.P.traj{itrajs(i_traj)}.X(signals_idx,:);
+                    X{i_traj} = Xi(signals_idx,:);
                 else
-                    X{i_traj} = interp1(this.P.traj{itrajs(i_traj)}.time, this.P.traj{itrajs(i_traj)}.X(signals_idx,:)',t)';
+                    X{i_traj} = interp1(this.P.traj{itrajs(i_traj)}.time, Xi(signals_idx,:)',t)';
                     if numel(signals_idx)==1
                         X{i_traj} = X{i_traj}';
                     end
