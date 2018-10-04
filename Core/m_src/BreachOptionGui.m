@@ -10,6 +10,7 @@ classdef BreachOptionGui < handle
         gui_components
         font_name = 'Arial'
         font_size = 10
+        max_char = 80
         
         output
         choices
@@ -246,13 +247,13 @@ classdef BreachOptionGui < handle
                 'Callback', @ok_callback,...
                 'Position', sz(2,:));
             
+           
             function output = ok_callback(hobj, evt)
-                
                 set(hobj, 'String', 'Please wait...')
                 drawnow;
-                output = this.struct_cfg;
                 close(this.dlg);
             end
+    
             
             function output = cancel_callback(hobj, evt)
                 this.output=[];
@@ -263,7 +264,15 @@ classdef BreachOptionGui < handle
         
         
         %% Auxiliary functions
-       
+             
+        function txt =truncate_txt(this, txt)
+            if numel(txt)>this.max_char
+                txt = [txt(1:this.max_char) '...'];
+            end
+        end
+ 
+        
+        
          function make_room(this)
             n = size(this.gui_components, 1)+1;
             this.dlg_sz = this.dlg_sz+ [0 60];
@@ -288,8 +297,8 @@ classdef BreachOptionGui < handle
                     end
                 end
             else
-                this.button_sz =   [ 0.9   0.9];
-                this.button_pos = [ 0.05  0.05];
+                this.button_sz =   [ 0.92   0.92];
+                this.button_pos = [ 0.04  0.04];
             end
             
         end

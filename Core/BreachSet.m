@@ -301,6 +301,19 @@ classdef BreachSet < BreachStatus
             
         end
         
+        function SetParamCfg(this, cfg)
+        % SetParamCfg applies a cfg structure to set parameters. Struct
+        % must have *char* fields params and values
+        % 
+            this.Reset();
+            for ip = 1:numel(cfg.params)  % quick and dirty implementation, set parameters one by one using combine (grid) option
+               p = cfg.params{ip};
+               v = eval([ '[' cfg.values{ip} ']']);
+               this.SetParam(p, v, 'combine'); 
+            end
+        end
+        
+        
         function SetParamSpec(this, params, values, ignore_sys_param)
             % BreachSet.SetParamSpec
             ip = FindParam(this.P, params);

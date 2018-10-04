@@ -197,7 +197,11 @@ classdef BreachSignalGen < BreachSystem
                 for ia= 1:numel(args_name)
                     cfg.Args{end+1} = sg.(args_name{ia});
                 end
-                cfg.Args{end+1} = sg.p0';
+                if size(sg.p0,2)>1
+                    cfg.Args{end+1} = sg.p0;
+                else
+                    cfg.Args{end+1} = sg.p0';
+                end
                 strct_cfg.input_cfg{end+1} = cfg; 
             end
             
