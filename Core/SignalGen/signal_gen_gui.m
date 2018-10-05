@@ -81,6 +81,9 @@ elseif isstruct(varargin{1})||ischar(varargin{1})  % configuration struct
     handles.B = [];
     handles.IG = ReadInputGenCfg(varargin{1});
     signal_names = handles.IG.GetSignalList();
+    if isfield(varargin{1}, 'sim_time')
+        handles.time = eval(varargin{1}.sim_time);
+    end
 end
 set(handles.popupmenu_signal_name, 'String', signal_names);
 
@@ -127,7 +130,7 @@ end
 % Init time
 if ~isempty(handles.B)    
     handles.time = handles.B.GetTime();
-else
+elseif ~isfield(handles, 'time')
     handles.time = 0:.01:1;
 end
 set( handles.edit_time, 'String', get_time_string(handles.time));

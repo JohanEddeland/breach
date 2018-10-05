@@ -151,7 +151,7 @@ classdef BreachOpenSystem < BreachSystem
                         IG = BreachSignalGen({sg});
                 end
             elseif iscell(IG)
-                mm = methods(IG{1});
+        mm = methods(IG{1});
                 if any(strcmp(mm,'computeSignals'))
                     IG = BreachSignalGen(IG);
                 else

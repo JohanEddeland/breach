@@ -405,6 +405,7 @@ function edit1_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 var = handles.selected_var;
+ 
 if ~isempty(var)
     m = get(hObject, 'UserData');
     m(var)= get(hObject, 'String');
@@ -479,22 +480,25 @@ end
 
 function handles =update_custom_edits(handles)
 v= handles.selected_var;
+set(handles.edit1, 'String','');
+set(handles.edit2, 'String', '');
+set(handles.edit3, 'String', '');
 if ~isempty(v)
     m1 = get(handles.edit1,'UserData');
     if m1.isKey(v)
         set(handles.edit1, 'String', m1(v));
     end
-
+    
     m2 = get(handles.edit2,'UserData');
     if m2.isKey(v)
         set(handles.edit2, 'String', m2(v));
     end
-
+    
     m3 = get(handles.edit3,'UserData');
     if m3.isKey(v)
         set(handles.edit3, 'String', m3(v));
     end
-
+    
 end
 
 function handles = update_selected(handles)

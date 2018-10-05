@@ -248,14 +248,14 @@ classdef BreachOptionGui < handle
                 'Position', sz(2,:));
             
            
-            function output = ok_callback(hobj, evt)
+            function  ok_callback(hobj, evt)
                 set(hobj, 'String', 'Please wait...')
                 drawnow;
                 close(this.dlg);
             end
     
             
-            function output = cancel_callback(hobj, evt)
+            function  cancel_callback(hobj, evt)
                 this.output=[];
                 close(this.dlg);
             end
@@ -297,8 +297,8 @@ classdef BreachOptionGui < handle
                     end
                 end
             else
-                this.button_sz =   [ 0.92   0.92];
-                this.button_pos = [ 0.04  0.04];
+                this.button_sz =   [ 0.90   0.90];
+                this.button_pos = [ 0.05  0.05];
             end
             
         end
