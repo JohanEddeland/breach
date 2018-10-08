@@ -99,7 +99,7 @@ signal_types= {
  'exponential_signal_gen'...
  'sinusoid_signal_gen'...
  'spike_signal_gen'...  
-% 'from_file_signal_gen',...  % done from main gui now.
+ 'from_file_signal_gen',...  % done from main gui now.
  };
 set(handles.popupmenu_signal_gen_type, 'String', signal_types);
 
@@ -349,7 +349,6 @@ function update_config(handles)
 % update config parameters
 
 sg = get_current_sg(handles);
-
 handles.uitable_config= update_cfg_uitable(sg, handles.uitable_config);
 set(handles.uitable_config, 'ColumnWidth', {250 250});
 

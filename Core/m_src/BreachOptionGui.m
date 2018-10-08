@@ -58,27 +58,6 @@ classdef BreachOptionGui < handle
             end
             this.reset_fig();
         end
-        
-        function g = add_button(this, string, callback,tooltip)
-            this.make_room();
-            pos = [this.button_pos this.button_sz];
-            num_elements = size(this.gui_components,1);
-            
-            g=  uicontrol('Parent',this.dlg,...
-                'Style','pushbutton',...
-                'String', string,...
-                'TooltipString', tooltip,...
-                'Units', 'Normalized',...
-                'FontName', this.font_name,...
-                'FontSize', this.font_size,...
-                'Position', pos,...
-                'Callback', callback ...
-                );
-            
-            this.gui_components{num_elements+1,1} = g;
-            
-        end
-        
         function merge_options(this, opt_other, choices_other, tips_other)
             fn= fieldnames(opt_other);
             for ifn = 1:numel(fn)
@@ -178,19 +157,46 @@ classdef BreachOptionGui < handle
             end
             
         end
+              
+        function g = add_button(this, string, callback,tooltip)
+            this.make_room();
+            pos = [this.button_pos this.button_sz];
+            num_elements = size(this.gui_components,1);
+            g = this.create_button(string, callback, pos);
+            set(g,'TooltipString', tooltip)
+            this.gui_components{num_elements+1,1} = g;
+        end
+        
+        function g=  create_button(this,  string, callback, pos)
+  
+            g=  uicontrol('Parent',this.dlg,...
+                'Style','pushbutton',...
+                'String', string,...
+                'Units', 'Normalized',...
+                'FontName', this.font_name,...
+                'FontSize', this.font_size,...
+                'Position', pos,...
+                'Callback', callback ...
+                );
+            
+        end
         
         function g = add_check_box(this, string, tooltip)
             this.make_room();
+            g = this.create_check_box(string, [this.button_pos this.button_sz]);
+            set(g, 'TooltipString', tooltip);
+            this.gui_components{end+1,1} = g;
+        end
+        
+        function g  = create_check_box(string, pos)
+            
             g = uicontrol('Parent',this.dlg,...
                 'Style','checkbox',...
                 'String', [ 'Enable ' string ' option' ],...
-                'TooltipString', tooltip,...
                 'FontName', this.font_name,...
                 'FontSize', this.font_size,...
                 'Units', 'Normalized',...
-                'Position', [this.button_pos this.button_sz]);
-            this.gui_components{end+1,1} = g;
-            
+                'Position', pos);
         end
         
         function g = add_text_box(this, string)
@@ -199,7 +205,7 @@ classdef BreachOptionGui < handle
             num_elements = size(this.gui_components,1);
             ax = axes;
             set(ax, 'Position', pos, 'visible', 'off');
-            g = text(0.01,0.2, string,'Interpreter','none');
+            g = text(0.012,0.2, string,'Interpreter','none');
             set(g,'FontName', this.font_name,...
                 'FontSize', this.font_size);
             this.gui_components{num_elements+1,1} = ....
@@ -210,18 +216,22 @@ classdef BreachOptionGui < handle
             this.make_room();
             pos = [this.button_pos this.button_sz];
             num_elements = size(this.gui_components,1);
+            g = this.create_edit_box(this, pos);
+            set(g, 'String', string);
+            set(g, 'TooltipString', tooltip);
+            this.gui_components{num_elements+1,1} = g;
+        end
+        
+        function g = create_edit_box(this,  pos) 
             g=  uicontrol('Parent',this.dlg,...
                 'Style','edit',...
                 'String', string,...
-                'TooltipString', tooltip,...
                 'Units', 'Normalized',...
                 'FontName', this.font_name,...
                 'FontSize', this.font_size,...
                 'Position', pos);
-            this.gui_components{num_elements+1,1} = g;
-            
-            
-        end
+        end 
+        
         
         function add_ok_cancel_buttons(this)
             this.make_room();
