@@ -364,8 +364,10 @@ if  ~isempty(cfg_params)
     for ip = 1:numel(cfg_params)
         content{ip, 1} = cfg_params{ip};
         val = sg.(cfg_params{ip});
-        if iscell(val)
+        if iscell(val)&&~isempty(val)
             content{ip,2} = val{1} ;
+        elseif isempty(val)
+            content{ip,2} = '';
         else
             content{ip,2} = val;
         end
