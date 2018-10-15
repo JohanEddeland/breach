@@ -49,7 +49,7 @@ MyReq3.PlotDiag(phi3, verdict);
 % EXAMPLE 4 -----------------------
 
 % define the formula
-phi4 = STL_Formula('phi4', 'alw((a[t] >= 2) => ev_[1,2] (b[t] <= 1))');
+phi4 = STL_Formula('phi4', 'alw((a[t] >= 4) => ev_[1,2] (b[t] >= 6))');
 phi4 = set_out_signal_names(phi4, {'a', 'b'});
 
 % Set up the Breach requirement

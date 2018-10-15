@@ -211,7 +211,7 @@ classdef BreachDiagnostics
                 v1 = interp1(in1.times, in1.values, sample.time, 'previous');
                 v2 = interp1(in2.times, in2.values, sample.time, 'previous');
                 
-                if(sample.value == v1)
+                if(sample.value == -v1)
                     out1_implicant = out1_implicant.addSignificantSample(sample.time, v1);
                 else
                     out2_implicant = out2_implicant.addSignificantSample(sample.time, v2);
