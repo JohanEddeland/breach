@@ -448,13 +448,18 @@ classdef BreachRequirement < BreachTraceSystem
             keys = signal_names;
             for (i=1:nb_plots)
                 id = keys{i};
-                h = subplot(nb_plots, 1, i);
+                
+                
+                h = subplot(nb_plots, 4, [(i-1)*4 + 1,(i-1)*4 + 4]);
                 hold on;
                 grid on;
+                ax = gca;
+                ax.FontWeight = 'bold';
+                %ax.FontSize = 12;
                 formula_name = formula_names_map(id);
                 title(formula_name, 'Interpreter', 'none');
                 signal = robustness_map(id);  
-                stairs(signal.times, signal.values);
+                stairs(signal.times, signal.values, 'LineWidth', 2);
                 
                 
                 ylim = get(h, 'YLim');
@@ -472,15 +477,135 @@ classdef BreachRequirement < BreachTraceSystem
                     elseif (y > x)
                         p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color); 
                         alpha(p, 0.3);
-                        set(p,'EdgeColor','none');
+                        set(p,'EdgeColor','r','LineWidth',1);
                     end
                 end
                 samples = implicant.getSignificantSamples();
                 for (j=1:length(samples))
                     sample = samples(j);
-                    hold on;
-                    plot(sample.time, sample.value, 'x');
+                   
+                    plot(sample.time, sample.value, ...
+                        '-s', 'MarkerSize',8,...
+                        'MarkerEdgeColor','red',...
+                        'MarkerFaceColor','red');
                 end
+                hold off;
+                
+                
+            end
+            %a = axes;
+            %t1 = title(display(phi), 'Interpreter', 'none');
+            %a.Visible = 'off'; % set(a,'Visible','off');
+            %t1.Visible = 'on'; % set(t1,'Visible','on');
+            zoom xon;
+        end
+        
+        function PlotDiag_with_zoom(this, phi, verdict)
+            gca;
+            figure('Color', 'white');
+            if (verdict)
+                color = 'g';
+            else
+                color = 'r';
+            end
+            robustness_map = this.robustness_map;
+            diag_map = this.diag_map;
+            formula_names_map = this.formula_names_map;
+            signal_names = STL_ExtractSignals(phi);
+            nb_plots = length(signal_names);
+            
+            keys = signal_names;
+            
+                      
+            for (i=1:nb_plots)
+                id = keys{i};
+                
+                
+                h = subplot(nb_plots, 4, [(i-1)*4 + 1,(i-1)*4 + 3]);
+                hold on;
+                grid on;
+                ax = gca;
+                ax.FontWeight = 'bold';
+                %ax.FontSize = 12;
+                formula_name = formula_names_map(id);
+                title(formula_name, 'Interpreter', 'none');
+                signal = robustness_map(id);  
+                stairs(signal.times, signal.values, 'LineWidth', 2);
+                
+                
+                ylim = get(h, 'YLim');
+                ylim_bot = ylim(1);
+                ylim_top = ylim(2);
+                
+                implicant = diag_map(id);
+                size = implicant.getIntervalsSize();
+                for(j=1:size)
+                    interval = implicant.getInterval(j);
+                    x = interval.begin;
+                    y = interval.end;
+                    if (x == y)
+                        line([x x],[ylim_bot ylim_top],'Color',color);
+                    elseif (y > x)
+                        p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color); 
+                        alpha(p, 0.3);
+                        set(p,'EdgeColor','red','LineWidth',1);
+                    end
+                end
+                samples = implicant.getSignificantSamples();
+                for (j=1:length(samples))
+                    sample = samples(j);
+                   
+                    plot(sample.time, sample.value, ...
+                        '-s', 'MarkerSize',8,...
+                        'MarkerEdgeColor','red',...
+                        'MarkerFaceColor','red');
+                end
+                hold off;
+                
+                
+                % Now we plot the zoomed in version
+                
+                h = subplot(nb_plots, 4, i*4);
+                hold on;
+                grid on;
+                ax = gca;
+                ax.FontWeight = 'bold';
+                ax.XLim = [11,14];
+                %ax.FontSize = 12;
+                formula_name = formula_names_map(id);
+                %title(formula_name, 'Interpreter', 'none');
+                signal = robustness_map(id);  
+                stairs(signal.times, signal.values, 'LineWidth', 2);
+                
+                
+                ylim = get(h, 'YLim');
+                ylim_bot = ylim(1);
+                ylim_top = ylim(2);
+                
+                implicant = diag_map(id);
+                size = implicant.getIntervalsSize();
+                for(j=1:size)
+                    interval = implicant.getInterval(j);
+                    x = interval.begin;
+                    y = interval.end;
+                    if (x == y)
+                        line([x x],[ylim_bot ylim_top],'Color',color);
+                    elseif (y > x)
+                        p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color); 
+                        alpha(p, 0.3);
+                        set(p,'EdgeColor','red','LineWidth',1);
+                    end
+                end
+                samples = implicant.getSignificantSamples();
+                for (j=1:length(samples))
+                    sample = samples(j);
+                   
+                    plot(sample.time, sample.value, ...
+                        '-s', 'MarkerSize',8,...
+                        'MarkerEdgeColor','red',...
+                        'MarkerFaceColor','red');
+                end
+                hold off;
                 
                 
             end

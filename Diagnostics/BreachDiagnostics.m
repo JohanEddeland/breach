@@ -211,8 +211,11 @@ classdef BreachDiagnostics
                 v1 = interp1(in1.times, in1.values, sample.time, 'previous');
                 v2 = interp1(in2.times, in2.values, sample.time, 'previous');
                 
-                out1_implicant = out1_implicant.addSignificantSample(sample.time, v1);
-                out2_implicant = out2_implicant.addSignificantSample(sample.time, v2);
+                if(sample.value == v1)
+                    out1_implicant = out1_implicant.addSignificantSample(sample.time, v1);
+                else
+                    out2_implicant = out2_implicant.addSignificantSample(sample.time, v2);
+                end
             end
             
             error = 0;
@@ -585,9 +588,150 @@ classdef BreachDiagnostics
                     end
                 end
             end
-        end    
+        end   
         
         function [out1, out2] = diag_binary_plogic_update_implicants(oper, value, in1, in2, btime, etime, bidx, eidx, s1, s2, samples)
+            out1 = in1;
+            out2 = in2;
+            
+            switch(oper)
+                case BreachOperator.OR
+                    if (value == TwoBitValue.FT)
+                        out2 = out2.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
+                    elseif (value == TwoBitValue.TF)
+                        out1 = out1.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
+                    elseif (value == TwoBitValue.TT)
+                        flag1 = 0;
+                        flag2 = 0;
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                    flag1 = 1;
+                                end
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                    flag2 = 1;
+                                end
+                            end
+                        end
+                        if (flag1)
+                           out1 = out1.addInterval(btime, etime);
+                        end
+                        if (flag2)
+                           out2 = out2.addInterval(btime, etime);
+                        end
+                    end
+                
+                case BreachOperator.AND
+                    if (value == TwoBitValue.FT)
+                        out1 = in1.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
+                    elseif (value == TwoBitValue.FF)
+                        flag1 = 0;
+                        flag2 = 0;
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                    flag1 = 1;
+                                end
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                    flag2 = 1;
+                                end
+                            end
+                        end
+                        if (flag1)
+                           out1 = out1.addInterval(btime, etime);
+                        end
+                        if (flag2)
+                           out2 = out2.addInterval(btime, etime);
+                        end
+                    elseif (value == TwoBitValue.TF)
+                        out2 = in2.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
+                    end
+                case BreachOperator.IMPLIES
+                    if (value == TwoBitValue.TT)
+                        out2 = in2.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
+                    elseif (value == TwoBitValue.FT)
+                        flag1 = 0;
+                        flag2 = 0;
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == -sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                    flag1 = 1;
+                                end
+                                if (s2.values(i) == sample.value)
+                                    out2 = out2.addSignificantSample(sample.time, sample.value);
+                                    flag2 = 1;
+                                end
+                            end
+                        end
+                        if (flag1)
+                           out1 = out1.addInterval(btime, etime);
+                        end
+                        if (flag2)
+                           out2 = out2.addInterval(btime, etime);
+                        end
+                    elseif (value == TwoBitValue.FF)
+                        out1 = in1.addInterval(btime, etime);
+                        for(i=bidx:eidx)
+                            for(j=1:length(samples))
+                                sample = samples(j);
+                                if (s1.values(i) == -sample.value)
+                                    out1 = out1.addSignificantSample(sample.time, sample.value);
+                                end
+                            end
+                        end
+                    end
+            end
+        end
+        
+        function [out1, out2] = diag_binary_plogic_update_implicants_with_both_io(oper, value, in1, in2, btime, etime, bidx, eidx, s1, s2, samples)
             out1 = in1;
             out2 = in2;
             
