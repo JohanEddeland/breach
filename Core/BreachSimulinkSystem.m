@@ -462,7 +462,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             assignin('base','tspan',[0 eps]);
             assignin('base','t__',0);
             assignin('base','u__',zeros(1, numel(this.Sys.InputList)));
-            assignin('base','tspan',tspan);
             if this.SimInModelsDataFolder;
                 crd = pwd;
                 cd(breach_data_dir);
@@ -478,6 +477,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             if this.SimInModelsDataFolder;
                 cd(crd);
             end
+            assignin('base','tspan',tspan);
             
             %% find logged signals (including inputs and outputs)
             this.Sys.mdl= mdl_breach;
