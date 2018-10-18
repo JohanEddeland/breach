@@ -8,6 +8,8 @@ addpath('./ExampleBand-Pass')
 addpath('./ExampleLow-Pass')
 addpath('./periodic.signals')
 
+
+
 InitBreach
 BP2param
 
@@ -37,20 +39,22 @@ for sigId = 10:10
     
     
     %BrSD.SetTime([0 sim_time]);
-    phi = STL_Formula('saturation', 'alw_[0, sim_time] (Out1[t] < 0.1)');
-    phi = set_params(phi, {'sim_time'}, time(end));
+    %phi = STL_Formula('saturation', 'alw_[0, sim_time] (OutSat[t] < 0.1)');
+    %phi = set_params(phi, {'sim_time'}, time(end));
     
     BrSD_temp.Sim(time);
     %input('Press ENTER to continue');
+    BrSD_temp.PlotSignals({'In1', 'OutSat'});
     
-    rob = BrSD_temp.CheckSpec(phi);
-    if rob<0
-        disp('Falsified in StatFalsify');
-        new_fig = gcf;
-        BrSD_temp.PlotSignals({'In1', 'Out1'});
-        falsified = true;
-        return;
-    end
+    
+    %rob = BrSD_temp.CheckSpec(phi);
+%     if rob<0
+%         disp('Falsified in StatFalsify');
+%         new_fig = gcf;
+%         BrSD_temp.PlotSignals({'In1', 'OutSat'});
+%         falsified = true;
+%         return;
+%     end
     
 end
 
