@@ -4,15 +4,28 @@ classdef from_file_signal_gen < signal_gen
         file_name
         var_name
         time_var_name
+        params_from_file
         ignore_time = false   % if true, will ignore time given as parameter of Sim command and use time data instead
         data_fmt = 'timed_variables' % other could be 'timed_array', 'struct_with_time', etc
         pts  % stores possible values of parameters
     end
     methods
-        function this = from_file_signal_gen(signals, fname, varname,params)
+        function this = from_file_signal_gen(signals, fname, varname,params_from_file,p0)
             
             if ~exist('fname', 'var')
-                fname=  '*.mat';
+                [filenames, paths] = uigetfile( ...
+                    {  '*.mat','MAT-files (*.mat)'}, ...
+                    'Pick one or more files', ...
+                    'MultiSelect', 'on');
+                
+                if isequal(filenames,0) % cancel
+                    fname = {};
+                else
+                    if ~iscell(filenames)
+                        filenames= {filenames};
+                    end
+                    fname = cellfun( @(c)([ paths c  ] ), filenames,'UniformOutput',false);
+                end
             end
             if ~iscell(fname)
                 fname= {fname};
@@ -33,12 +46,18 @@ classdef from_file_signal_gen < signal_gen
                     this.file_list = [this.file_list dir_file_list];
                 end
             end
+            
             if isempty(this.file_list)
                 error('from_file_signal_gen:no_trace_file', 'No trace file.')
             end
             
             this.params = {'file_idx'};
-            this.p0 = 1;
+            if exist('p0', 'var')
+                this.p0 = p0;
+            else
+                this.p0 = 1;
+            end
+            
             this.params_domain = BreachDomain('enum', [],  [1:numel(this.file_list)]);
             this.pts = [1:numel(this.file_list)];
             
@@ -66,29 +85,29 @@ classdef from_file_signal_gen < signal_gen
             % Next is detecting all parameters- we're looking for
             % constant scalar parameters defined in all files - and all
             % signals - they have to be defined  in all files.
-            if exist('params','var')
-                if ischar(params)
-                    params = {params};
+            if exist('params_in_file','var')
+                if ischar(params_from_file)&&~strcmp(params_from_file,'all')
+                    params_from_file = {params_from_file};
                 end
             else
-                params= {}; 
+                params_from_file= {}; 
             end
-            
+            this.params_from_file = params_from_file;
             
             signals_all = {};
             for iv = 1:numel(vars)
                 v = vars{iv};
-                if isempty(params)||(ismember(v,params)) % if params is specified, make sure v is in
-                    if (iv ~= itime)&&isnumeric(st.(v))   % ignore time and everything not numeric
-                        if isscalar(st.(v)) % this is a pararmeter!
-                            this.params = [this.params v];
-                            this.p0(end+1) = st.(v);
-                        elseif length(st.(v))==length(time) % looks like  a signal
-                            signals_all = [signals_all  v];
-                        end
+                if (iv ~= itime)&&isnumeric(st.(v))   % ignore time and everything not numeric
+                    if isscalar(st.(v))&&(ismember(v,params_from_file)||(ischar(params_from_file)&&strcmp(params_from_file, 'all'))) % this is a parameter
+                        this.params = [this.params v];
+                        this.p0(end+1) = st.(v);
+                    elseif length(st.(v))==length(time) % looks like  a signal
+                        signals_all = [signals_all  v];
                     end
                 end
             end
+            
+            
             % go over all files to fetch values for the parameters and
             % create enum domains
             for ifile = 1:numel(this.file_list)
@@ -112,8 +131,7 @@ classdef from_file_signal_gen < signal_gen
                 signals = signals_all;
             end
             
-            this.signals = signals;
-            
+            this.signals = signals;          
             if ~exist('varname', 'var')||isempty(varname)
                 varname = signals{1};
             end
@@ -128,7 +146,6 @@ classdef from_file_signal_gen < signal_gen
         end
         
         function [X, time] = computeSignals(this, p, time) % returns a p in pts
-            
             
             fname = this.file_list(p(1)).name;
             
@@ -190,13 +207,10 @@ classdef from_file_signal_gen < signal_gen
                 end
             end
         end
-        
                
         function args = getSignalGenArgs(this)
-            args = {'file_name','var_name'};
+            args = {'file_name','var_name', 'params_from_file'};
         end
-        
-        
         
     end
 end
