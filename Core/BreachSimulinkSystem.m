@@ -36,7 +36,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
         SimCmdArgs = {}       % argument list passed to sim command
         InputSrc                     % for each input, we match an input port or base workspace (0)
         MdlVars                      % List of variables used by the model
-        SimInputsOnly=false % if true, will not run Simulink model
+        SimInputsOnly= true %Thao %false % if true, will not run Simulink model
         SimInModelsDataFolder=false
         StopAtSimulinkError=false
         mdl
@@ -449,7 +449,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             params = [params U.params];
             
             %% Test run model on 0 time and collect simout 
-            tspan = evalin('base', 'tspan;');
+            tspan = 1e-8 %Thao %evalin('base', 'tspan;')
             assignin('base','tspan',[0 eps]);
             assignin('base','t__',0);
             assignin('base','u__',zeros(1, numel(this.Sys.InputList)));
@@ -460,6 +460,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             end
             try
                 simout = sim(mdl_breach, this.SimCmdArgs{:});
+                
             catch MException
                 if this.SimInModelsDataFolder;
                     cd(crd);
