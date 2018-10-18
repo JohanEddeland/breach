@@ -75,10 +75,15 @@ handles.select_cells = [];
 % get signal names
 if isa(varargin{1}, 'BreachOpenSystem')
   handles.B = varargin{1};
+  handles.IG = handles.B.InputGenerator.copy();
   signal_names = handles.B.Sys.InputList; 
-else
+elseif isstruct(varargin{1})||ischar(varargin{1})  % configuration struct
     handles.B = [];
-    signal_names = varargin{1};
+    handles.IG = ReadInputGenCfg(varargin{1});
+    signal_names = handles.IG.GetSignalList();
+    if isfield(varargin{1}, 'sim_time')
+        handles.time = eval(varargin{1}.sim_time);
+    end
 end
 set(handles.popupmenu_signal_name, 'String', signal_names);
 
@@ -94,7 +99,7 @@ signal_types= {
  'exponential_signal_gen'...
  'sinusoid_signal_gen'...
  'spike_signal_gen'...  
-% 'from_file_signal_gen',...  % done from main gui now.
+ 'from_file_signal_gen',...  % done from main gui now.
  };
 set(handles.popupmenu_signal_gen_type, 'String', signal_types);
 
@@ -105,11 +110,10 @@ for isig= 1:numel(signal_names)
 
     % try to import from B - works when one sg for one signal (TODO: generalize) 
     try 
-        sg = handles.B.InputGenerator.GetSignalGenFromSignalName(c);
+        sg = handles.IG.GetSignalGenFromSignalName(c);
         if numel(sg.signals)==1
             handles.signal_gen_map(c)=sg;
             sg_class = class(sg);
-            classes = get(handles.popupmenu_signal_gen_type, 'String');
             idx = find(strcmp(signal_types, sg_class));
             if isig == 1
                 set(handles.popupmenu_signal_gen_type,'Value', idx);
@@ -124,7 +128,11 @@ for isig= 1:numel(signal_names)
 end
 
 % Init time
-handles.time = handles.B.GetTime();
+if ~isempty(handles.B)    
+    handles.time = handles.B.GetTime();
+elseif ~isfield(handles, 'time')
+    handles.time = 0:.01:1;
+end
 set( handles.edit_time, 'String', get_time_string(handles.time));
 % Choose default command line output for signal_gen_gui
 signal_gens= handles.signal_gen_map.values;
@@ -163,7 +171,7 @@ function varargout = signal_gen_gui_OutputFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-varargout{1} = handles.main;
+varargout{1} = handles;
 
 
 % --- Executes on selection change in popupmenu_signal_gen_type.
@@ -179,7 +187,9 @@ sig_name = get_current_signal(handles);
 idx = get(hObject,'Value');
 classes = get(hObject,'String');
 class_name = classes{idx};
-handles.signal_gen_map(sig_name) = eval([class_name '({ sig_name });']);
+try 
+    handles.signal_gen_map(sig_name) = eval([class_name '({ sig_name });']);
+end
 
 % update config and params
 update_config(handles);
@@ -330,7 +340,7 @@ sg_name = class(sg);
     niou_sg.p0 = sg.p0;
  end
  
- handles.signal_gen_map(sig_name)= niou_sg;
+handles.signal_gen_map(sig_name)= niou_sg;
  
 update_config(handles);
 update_plot(handles);
@@ -341,7 +351,6 @@ function update_config(handles)
 % update config parameters
 
 sg = get_current_sg(handles);
-
 handles.uitable_config= update_cfg_uitable(sg, handles.uitable_config);
 set(handles.uitable_config, 'ColumnWidth', {250 250});
 
@@ -357,8 +366,10 @@ if  ~isempty(cfg_params)
     for ip = 1:numel(cfg_params)
         content{ip, 1} = cfg_params{ip};
         val = sg.(cfg_params{ip});
-        if iscell(val)
+        if iscell(val)&&~isempty(val)
             content{ip,2} = val{1} ;
+        elseif isempty(val)
+            content{ip,2} = '';
         else
             content{ip,2} = val;
         end

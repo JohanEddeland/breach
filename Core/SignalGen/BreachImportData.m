@@ -35,7 +35,7 @@ classdef BreachImportData < BreachSignalGen
                 if exist('params', 'var')
                     ff_ingen = from_file_signal_gen(signals, fname,{}, params);
                 else
-                    ff_ingen = from_file_signal_gen(signals, fname);
+                    ff_ingen = from_file_signal_gen(signals, fname, {}, 'all');
                 end
                 ff_ingen.ignore_time = true;
             else

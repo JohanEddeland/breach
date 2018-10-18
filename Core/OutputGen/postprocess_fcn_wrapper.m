@@ -21,7 +21,6 @@ classdef postprocess_fcn_wrapper < output_gen
                 eval_st  = [ eval_st 'X(' num2str(ia) ',:),'];
             end
             eval_st = [eval_st 'X(' num2str( numel(this.signals)) ',:)] = this.fun(time,' ];
-            %    eval_st = [eval_st 'X(' num2str( numel(this.signals)) ',:)] = this.fun(' ];
             
             for ia = 1:numel(this.signals_in)-1
                 eval_st  = [ eval_st 'Xin(' num2str(ia) ',:),'];

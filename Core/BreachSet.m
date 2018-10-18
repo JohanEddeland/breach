@@ -34,6 +34,7 @@ classdef BreachSet < BreachStatus
     
     properties
         Domains = BreachDomain('double', [])
+        ParamGens % optional classes performing parameter value transformation after a SetParam
         SignalRanges % ranges of values taken by each signal variable
         AppendWhenSample=false % when true, sampling appends new param vectors, otherwise replace.
         log_folder
@@ -291,12 +292,27 @@ classdef BreachSet < BreachStatus
                 end
             end
             
+            this.ApplyParamGens(params);
+            
             % restore traj if needed
             if saved_traj
                 this.P = Pfix_traj_ref(this.P, P0);
             end
             
         end
+        
+        function SetParamCfg(this, cfg)
+        % SetParamCfg applies a cfg structure to set parameters. Struct
+        % must have *char* fields params and values
+        % 
+            this.Reset();
+            for ip = 1:numel(cfg.params)  % quick and dirty implementation, set parameters one by one using combine (grid) option
+               p = cfg.params{ip};
+               v = eval([ '[' cfg.values{ip} ']']);
+               this.SetParam(p, v, 'combine'); 
+            end
+        end
+        
         
         function SetParamSpec(this, params, values, ignore_sys_param)
             % BreachSet.SetParamSpec
@@ -311,6 +327,41 @@ classdef BreachSet < BreachStatus
                 end
             elseif ~exist('ignore_sys_param', 'var')||ignore_sys_param==false
                 error('Attempt to modify a system parameter - use SetParam instead.');
+            end
+           this.ApplyParamGens(params);
+            
+        end
+ 
+        function SetParamGen(this, pg)
+            this.ParamGens{end+1} = pg;
+            this.SetParam(pg.params, pg.p0, true);
+            this.ApplyParamGens();
+        end
+        
+        function ApplyParamGens(this, params)
+            if ~isempty(this.ParamGens)
+                if nargin==1
+                    params = this.GetParamList(); 
+                end
+                
+                % ensures params are names and ip are indices
+                if ~isnumeric(params)
+                    ip = FindParam(this.P, params);
+                else
+                    ip = params;
+                    params = this.P.ParamList{ip};
+                end
+                for ig = 1:numel(this.ParamGens)
+                    pg = this.ParamGens{ig};
+                    params_in= pg.params;
+                    if ~isempty(intersect(params, params_in))
+                       p_in = this.GetParam(params_in);
+                       p_out = pg.computeParams(p_in);
+                       ip_out = FindParam(this.P, pg.params_out);
+                       this.P.pts(ip_out,:) = p_out; 
+                    end
+                
+                end
             end
         end
         
@@ -396,13 +447,8 @@ classdef BreachSet < BreachStatus
             params = this.P.ParamList(this.P.DimX+1:end);
         end
         
-        function sys_params = GetSysParamList(this)
-            % GetSysParamList returns system parameter names
-            sys_params = this.P.ParamList(this.P.DimX+1:this.P.DimP);
-        end
-        
-        function [params, idx] = GetParamsSysList(this)
-            % GetParamsSysList ahem, consider merging with GetSysParamList...
+        function [params, idx] = GetSysParamList(this)
+            % GetSysParamList 
             idx = this.P.DimX+1:this.P.DimP;
             params = this.P.ParamList(idx);
         end
@@ -658,10 +704,11 @@ classdef BreachSet < BreachStatus
             
             X = cell(nb_traj,1);
             for i_traj = 1:numel(itrajs)
+                Xi = this.P.traj{itrajs(i_traj)}.X;
                 if (~exist('t','var'))
-                    X{i_traj} = this.P.traj{itrajs(i_traj)}.X(signals_idx,:);
+                    X{i_traj} = Xi(signals_idx,:);
                 else
-                    X{i_traj} = interp1(this.P.traj{itrajs(i_traj)}.time, this.P.traj{itrajs(i_traj)}.X(signals_idx,:)',t)';
+                    X{i_traj} = interp1(this.P.traj{itrajs(i_traj)}.time, Xi(signals_idx,:)',t)';
                     if numel(signals_idx)==1
                         X{i_traj} = X{i_traj}';
                     end
@@ -725,7 +772,7 @@ classdef BreachSet < BreachStatus
                 error(['Couldn''t create folder'  folder '. mkdir returned error: ' msg]);
             end
             
-            [sys_param_list, sys_param_idx] = this.GetParamsSysList();
+            [sys_param_list, sys_param_idx] = this.GetSysParamList();
             for ip = 1:numel(i_trajs)
                 fname = [folder filesep name num2str(ip) '.mat'];
                 time = this.P.traj{ip}.time';
@@ -1707,18 +1754,23 @@ classdef BreachSet < BreachStatus
             end
         end
         
-        function PrintSignals(this)
-            disp( '---- SIGNALS ----')
-                for isig = 1:this.P.DimX
-                    fprintf('%s %s\n', this.P.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}));
-                end
-                fprintf('\n')
-            this.PrintAliases();
+        function st = PrintSignals(this)
+            st = sprintf('---- SIGNALS ----\n');
+            for isig = 1:this.P.DimX
+                st = sprintf([st '%s %s\n'], this.P.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}));
+            end
+            st = sprintf([st '\n']);
+            st = [st this.PrintAliases()];
+            if nargout==0
+                fprintf(st);
+            end
+            
         end
         
-        function PrintAliases(this)
+        function st = PrintAliases(this)
+            st = '';
             if ~isempty(this.sigMap)
-                disp( '---- ALIASES ----')
+                st = sprintf('---- ALIASES ----\n');
                 keys = union(this.sigMap.keys(), this.sigMapInv.keys());
                 printed = {};
                 for ik = 1:numel(keys)
@@ -1741,11 +1793,15 @@ classdef BreachSet < BreachStatus
                          al_st = [al_st(1:end-2) ' (not linked to data)' ];
                      end
                      if ~ismember(sig, printed)
-                        fprintf('%s <--> %s\n', sig, al_st )
+                        st = sprintf([st '%s <--> %s\n'], sig, al_st );
                         printed = [printed {sig} aliases];
                     end
                  end
-                fprintf('\n')
+                st = sprintf([st '\n']);
+                if nargout==0
+                    fprintf(st);
+                end
+            
             end
         end
         
@@ -1763,22 +1819,26 @@ classdef BreachSet < BreachStatus
             end
         end
         
-        function PrintParams(this)
+        function st = PrintParams(this)
+            st = '';
             nb_pts= this.GetNbParamVectors();
             if (nb_pts<=1)
-                disp('-- PARAMETERS --')
+                st = sprintf('-- PARAMETERS --\n');
                 for ip = this.P.DimX+1:numel(this.P.ParamList)
-                    fprintf('%s=%g       %s',this.P.ParamList{ip},this.P.pts(ip,1), this.Domains(ip).short_disp(1));
-                    fprintf('\n');
+                    st = sprintf([st '%s=%g       %s\n'],this.P.ParamList{ip},this.P.pts(ip,1), this.Domains(ip).short_disp(1));
                 end
             else
-                fprintf('-- PARAMETERS -- (%d vectors):\n',nb_pts);
+                st = sprintf([st '-- PARAMETERS -- (%d vectors):\n'],nb_pts);
                 for ip = this.P.DimX+1:numel(this.P.ParamList)
-                    fprintf('%s     %s\n',this.P.ParamList{ip}, this.Domains(ip).short_disp(1));
+                    st = sprintf([st '%s     %s\n'],this.P.ParamList{ip}, this.Domains(ip).short_disp(1));
                 end
             end
             
-            disp(' ')
+            st = sprintf([st ' \n']);
+            
+            if nargout==0
+                fprintf(st);
+            end
         end
         
         %% Misc
