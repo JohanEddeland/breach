@@ -19,6 +19,10 @@ classdef BreachOptionGui < handle
      
     end
     
+    properties
+       error_msg 
+    end
+    
     methods
         function this = BreachOptionGui(title, options, choices, tips,varargin)
            if ~exist('title', 'var')||isempty(title)

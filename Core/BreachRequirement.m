@@ -502,7 +502,7 @@ classdef BreachRequirement < BreachTraceSystem
             if ~isempty(this.postprocess_signal_gens)
                 for iog = 1:numel(this.postprocess_signal_gens)
                     if iog==1
-                        st = [st '--- POSTPROCESSING ---\n']; 
+                        st = sprintf([st '--- POSTPROCESSING ---\n']); 
                     end
                     signals_in_st = cell2mat(cellfun(@(c) (['''' c ''', ']), this.postprocess_signal_gens{iog}.signals_in, 'UniformOutput', false));
                     signals_in_st = ['{' signals_in_st(1:end-2) '}'];
@@ -510,7 +510,7 @@ classdef BreachRequirement < BreachTraceSystem
                     signals_out_st = ['{' signals_out_st(1:end-2) '}'];
                     st =  [st sprintf('%s --> %s\n',signals_in_st, signals_out_st)];
                 end
-                st = [ st '\n'];
+                st = sprintf([ st '\n']);
             end
             if ~isempty(this.sigMap)
                 st = [st this.PrintAliases() '\n'];

@@ -360,7 +360,6 @@ classdef BreachSet < BreachStatus
                        ip_out = FindParam(this.P, pg.params_out);
                        this.P.pts(ip_out,:) = p_out; 
                     end
-                
                 end
             end
         end

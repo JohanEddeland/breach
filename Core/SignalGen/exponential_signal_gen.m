@@ -44,7 +44,6 @@ classdef exponential_signal_gen < signal_gen
                end
            end
            
-           
            this.params_domain = repmat(BreachDomain(), 1, numel(this.params));
            this.signals_domain = repmat(BreachDomain(), 1, numel(this.signals));     
         end
