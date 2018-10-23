@@ -892,7 +892,7 @@ classdef BreachRequirement < BreachTraceSystem
             end  
             
             % We got B, checks whether it contains necessary signals
-            absent_signals_in = setdiff(this.signals_in, B.GetSignalList());
+            absent_signals_in = setdiff(this.signals_in, B.GetAllSignalsList());
             if ~isempty(absent_signals_in)
                 error('BreachRequirement:Eval', 'Signal %s is not provided by data or model',absent_signals_in{1});
             end
