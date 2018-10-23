@@ -731,7 +731,7 @@ classdef BreachRequirement < BreachTraceSystem
         
         function st = PrintAliases(this)
             if ~isempty(this.sigMap)
-                st = '---- ALIASES ----\n';
+                st = sprintf('---- ALIASES ----\n');
                 keys = union(this.sigMap.keys(), this.sigMapInv.keys());
                 printed ={};
                 for ik = 1:numel(keys)
@@ -758,11 +758,11 @@ classdef BreachRequirement < BreachTraceSystem
                         al_st = [al_st(1:end-2) ' (not linked to data)' ];
                     end
                     if ~ismember(sig, printed)
-                        st = [st sprintf('%s <--> %s\n', sig, al_st )];
+                        st = sprintf([st sprintf('%s <--> %s\n', sig, al_st )]);
                         printed = [printed {sig} aliases];
                     end
                 end
-                fprintf('\n')
+                st = sprintf([st '\n']);
             end
             
             if nargout==0
