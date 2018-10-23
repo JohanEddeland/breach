@@ -668,6 +668,11 @@ classdef BreachSet < BreachStatus
             idx = 1:this.P.DimX;
         end
         
+        function SigNames = GetAllSignalsList(this)
+        % GetAllSignalsList returns all signals names including aliases    
+            SigNames = this.expand_signal_name('.*');
+        end
+            
         function X = GetSignalValues(this, signals, itrajs, t)
             % BreachSet.GetSignalValues(signals, idx_traces, time) - in case of several trajectories, return cell array
             if (~isfield(this.P,'traj'))
