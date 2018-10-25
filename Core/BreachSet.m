@@ -333,8 +333,18 @@ classdef BreachSet < BreachStatus
         end
  
         function SetParamGen(this, pg)
+            if iscell(pg) 
+                cellfun(@this.SetParamGenItem, pg);
+            else 
+                this.SetParamGenItem(pg);
+            end
+            
+        end
+        
+        function SetParamGenItem(this, pg)
             this.ParamGens{end+1} = pg;
             this.SetParam(pg.params, pg.p0, true);
+            this.SetDomain(pg.params, pg.domain);
             this.ApplyParamGens();
         end
         
