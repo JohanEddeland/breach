@@ -892,13 +892,14 @@ classdef BreachRequirement < BreachTraceSystem
             end  
             
             % We got B, checks whether it contains necessary signals
-            absent_signals_in = setdiff(this.signals_in, B.GetAllSignalsList());
-            if ~isempty(absent_signals_in)
-                error('BreachRequirement:Eval', 'Signal %s is not provided by data or model',absent_signals_in{1});
+            this.BrSet = B; 
+            [ifound, ~, ifoundB, ~ ] = this.FindSignalsIdx(this.signals_in);
+            if ~all(ifound|ifoundB)
+               idx_not_found = find((~ifound)&(~ifoundB),1) ;
+               error('BreachRequirement:Eval', 'Signal %s is not provided by data or model',this.signals_in{idx_not_found});
             end
             
-            
-            % checksi parameters in B and in Req
+            % checks parameters in B and in Req
             this.BrSet = B;
             paramB = this.BrSet.GetParamList();
             idxR_paramR = this.P.DimX+2:this.P.DimP;

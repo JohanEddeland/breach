@@ -5,6 +5,9 @@ classdef postprocess_fcn_wrapper < output_gen
     
     methods
         function this = postprocess_fcn_wrapper(fn_handle,  sigs_in, sigs_out, params, p0)
+            if ischar(fn_handle)
+              fn_handle = eval(['@' fn_handle]); 
+            end
             this.fun = fn_handle;
             this.signals_in = sigs_in;
             this.signals = sigs_out;
