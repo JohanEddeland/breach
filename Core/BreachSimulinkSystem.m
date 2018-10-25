@@ -621,7 +621,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             %   Ex: [vars vals] = filter_vars( 'model', '[A-Z]') will exclude all
             %   variable with capitalized letters in them
             %
-            %
+            
             
             load_system(mdl);
             
