@@ -407,7 +407,10 @@ var = handles.selected_var;
  
 if ~isempty(var)
     m = get(hObject, 'UserData');
-    m(var)= get(hObject, 'String');
+    st=  get(hObject, 'String');
+    if ~isempty(st)
+        m(var)= strtrim(st);
+    end
 else
     set(hObject, 'String', '');
 end
@@ -434,7 +437,10 @@ function edit2_Callback(hObject, eventdata, handles)
 var = handles.selected_var;
 if ~isempty(var)
     m = get(hObject, 'UserData');
-    m(var)= get(hObject, 'String');
+    st=  get(hObject, 'String');
+    if ~isempty(st)
+        m(var)= strtrim(st);
+    end
 else
     set(hObject, 'String', '');
 end
