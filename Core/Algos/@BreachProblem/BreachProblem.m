@@ -562,7 +562,7 @@ classdef BreachProblem < BreachStatus
                 idx_param = [enum_param, '_enum_idx'];
                 if ~isempty(this.BrSys.GetParam(idx_param))
                     % replace the paramlist to the idx param
-                    this.params{enum_idx(ii)} = idx_param;
+                    % this.params{enum_idx(ii)} = idx_param;
                     domain = this.BrSys.GetDomain(idx_param);
                     problem.intcon = [problem.intcon enum_idx(ii)];
                     problem.lb(enum_idx(ii)) = domain.enum(1);
@@ -770,17 +770,15 @@ classdef BreachProblem < BreachStatus
             
             for ip = 1:numel(this.params)
                 % check the enum_idx variable and restore the params
-                if contains(this.params{ip}, '_enum_idx')      
-                    idx = strfind(this.params{ip}, '_enum_idx');
-                    param = extractBefore(this.params{ip}, idx);
+                domain = this.BrSys.GetDomain(this.params{ip});
+                value = param_values(ip);
+                if this.setup_mixed_integer_optim == 1 && strcmp(domain.type, 'enum')      
+                    param = [this.params{ip},'_enum_idx'];
                     SysCopy = this.BrSys.copy();
-                    SysCopy.SetParam(this.params{ip}, param_values(ip), true);
-                    value = SysCopy.GetParam(param);
-                    fprintf( '        %s = %g\n', param,value)
-                else
-                    fprintf( '        %s = %g\n', this.params{ip},param_values(ip))
+                    SysCopy.SetParam(param, param_values(ip), true);
+                    value = SysCopy.GetParam(this.params{ip});
                 end
-                
+                fprintf( '        %s = %g\n', this.params{ip},value)
             end
             fprintf('\n');
         end

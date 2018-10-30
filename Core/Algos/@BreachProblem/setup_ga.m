@@ -8,7 +8,7 @@ this.display = 'off'; % use ga display by default
 solver_opt = gaoptimset('TimeLimit',this.max_time,... 
     'Display', 'iter');
 
-if numel(this.params) <=5 
+if numel(this.params) <= 5 
     pop_size = 50;
 else
     pop_size = 200;
@@ -36,6 +36,11 @@ end
 
 % for multi-objective
 % https://www.mathworks.com/help/gads/gamultiobj.html
+
+% for 2018 version matlab using OPTIMOPTIONS and 
+% set 'MaxGenerations' to 100 * length(this.params));
+
+solver_opt = gaoptimset(solver_opt, 'Generations', 100 * length(this.params));
 
 this.solver_options = solver_opt;
 
