@@ -523,8 +523,8 @@ classdef BreachRequirement < BreachTraceSystem
         
         function st = PrintAll(this)
             st =this.PrintFormula();
-            st = [st this.PrintSignals()];
-            st = [st this.PrintParams()];
+            st = sprintf([st this.PrintSignals()]);
+            st = sprintf([st this.PrintParams()]);
             if nargout==0
                 fprintf(st);
             end
