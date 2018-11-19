@@ -60,7 +60,7 @@ classdef BreachProblem < BreachStatus
         x0
         solver= 'global_nelder_mead'   % default solver name
         solver_options    % solver options
-        Spec
+        Spec              % BreachRequirement object reset to R0 for each objective evaluation
         T_Spec=0
         
         constraints_fn    % constraints function
@@ -70,11 +70,12 @@ classdef BreachProblem < BreachStatus
     % properties related to the function to minimize
     properties
         BrSet
-        BrSys
-        BrSet_Best
+        BrSys         % BreachSystem reset for each objective evaluation
+        BrSet_Best   
         BrSet_Logged
-        R0
-        R_log
+        R0            % BreachRequirement object initial 
+        R_log    % BreachRequirement object logging requirement evaluations during solving 
+        
         params
         domains
         lb
