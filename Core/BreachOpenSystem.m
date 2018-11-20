@@ -332,7 +332,7 @@ classdef BreachOpenSystem < BreachSystem
         
         function st = PrintSignals(this)
             st = '';
-            if isempty(this.SignalRanges)
+            if (~this.hasTraj())
                 st =  sprintf('---  SIGNALS  ---\n');
                 for isig = 1:this.Sys.DimX
                     st = sprintf([st '%s %s\n'], this.P.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}));

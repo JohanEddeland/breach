@@ -55,8 +55,10 @@ classdef from_file_signal_gen < signal_gen
             this.params = {'file_idx'};
             if exist('p0', 'var')
                 this.p0 = p0;
+                read_p0 = false;
             else
                 this.p0 = 1;
+                read_p0 = true;
             end
             
             this.params_domain = BreachDomain('enum', [],  [1:numel(this.file_list)]);
@@ -71,8 +73,8 @@ classdef from_file_signal_gen < signal_gen
             % with.
             
             itime =find(strcmpi(vars, 'time'), 1);
-             if isempty(itime) 
-                itime = find(strcmpi(vars, 'ecutime'),1); 
+            if isempty(itime)
+                itime = find(strcmpi(vars, 'ecutime'),1);
                 if isempty(itime)
                     error('The file must contain a 1D array named ''time'' (case insensitive) with properly ordered time samples.');
                 end
@@ -91,21 +93,25 @@ classdef from_file_signal_gen < signal_gen
                     params_from_file = {params_from_file};
                 end
             else
-                params_from_file= {}; 
+                params_from_file= {};
             end
             this.params_from_file = params_from_file;
             
             signals_all = {};
+            
+            
             for iv = 1:numel(vars)
                 v = vars{iv};
                 if (iv ~= itime)&&isnumeric(st.(v))   % ignore time and everything not numeric
                     if isscalar(st.(v))&&...
-                       (ischar(params_from_file)&&strcmp(params_from_file, 'all'))||...
-                       isequal(v,params_from_file)||...
-                       iscell(params_from_file)&&ismember(v, params_from_file) % this is a parameter
-                       
+                            (ischar(params_from_file)&&strcmp(params_from_file, 'all'))||...
+                            isequal(v,params_from_file)||...
+                            iscell(params_from_file)&&ismember(v, params_from_file) % this is a parameter
+                        
                         this.params = [this.params v];
-                        this.p0(end+1) = st.(v);
+                        if read_p0
+                            this.p0(end+1) = st.(v);
+                        end
                     elseif length(st.(v))==length(time) % looks like  a signal
                         signals_all = [signals_all  v];
                     end
@@ -122,10 +128,8 @@ classdef from_file_signal_gen < signal_gen
                     this.pts(ip, ifile) = st.(this.params{ip});   % TODO some try catch for parameter defined in first file, but not in other(s)
                 end
             end
-            if numel(this.file_list)>1
-                for ip = 2:numel(this.params)
-                    this.params_domain(ip)= BreachDomain('enum', [], this.pts(ip, :));
-                end
+            for ip = 2:numel(this.params)
+                this.params_domain(ip)= BreachDomain('enum', [], this.pts(ip, :));
             end
             
             if nargin==0||isempty(signals)
@@ -136,7 +140,7 @@ classdef from_file_signal_gen < signal_gen
                 signals = {signals};
             end
             
-            this.signals = signals;          
+            this.signals = signals;
             if ~exist('varname', 'var')||isempty(varname)
                 varname = signals{1};
             end
@@ -180,7 +184,6 @@ classdef from_file_signal_gen < signal_gen
             else
                 X = zeros(numel(this.signals), numel(time));
             end
-
             
             % fetch signals data
             for isig = 1:numel(this.signals)
@@ -213,7 +216,7 @@ classdef from_file_signal_gen < signal_gen
                 end
             end
         end
-               
+        
         function args = getSignalGenArgs(this)
             args = {'file_name','var_name', 'params_from_file', 'sg_name'};
         end
