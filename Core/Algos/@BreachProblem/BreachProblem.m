@@ -194,7 +194,20 @@ classdef BreachProblem < BreachStatus
             this.Reset_x0();
             
             % robustness
-            this.BrSys = this.BrSet.copy(); 
+            this.BrSys = this.BrSet.copy();
+
+            % if one evaluation of variable x corresponds to several traces,
+            % we need to make sure BrSys is used for only one x
+            % this is necessary for 'init' solver in particular, where
+            % BrSet contains multiple x0 values. 
+          
+            this.BrSys.SetParam(this.params, this.x0(:,1), 'spec');
+            [~, ia] = unique( this.BrSys.P.pts','rows');
+            if numel(ia)<size(this.BrSys.P.pts,2)
+                this.BrSys = this.BrSys.ExtractSubset(ia);
+            end
+            
+            
             this.robust_fn = @(x) (this.Spec.Eval(this.BrSys, this.params, x));
             
             this.BrSys.Sys.Verbose=0;
@@ -225,7 +238,7 @@ classdef BreachProblem < BreachStatus
             end
             
             this.BrSet.SetParam(this.params, x0__,'spec');  % not sure this is useful anymore, if ever
-            this.x0 = unique(x0__', 'rows')';
+            this.x0 = unique(x0__', 'rows')';% remove duplicates, I guess. 
             
         end
         
@@ -608,11 +621,6 @@ classdef BreachProblem < BreachStatus
                             idx=[];
                         end
                         if ~isempty(idx)
-%                            if  ~isempty(this.BrSet_Logged)
-%                                this.BrSys.P =
-%                                Sselect(this.BrSet_Logged.P,idx);  
-%                                this.Spec.P = Sselect(this.R_log.P,idx); 
-%                            end
                             fval(:,iter) = this.obj_log(:,idx);
                         else
                             % calling actual objective function
