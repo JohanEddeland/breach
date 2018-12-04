@@ -30,6 +30,7 @@ classdef BreachSystem < BreachSet
         use_parallel = 0     % the flag to indicate the usage of parallel computing
         ParallelTempRoot = ''   % the default temporary folder for parallel computing
         InitFn = ''             % Initialization function
+        UseDiskCaching=false   %  set by SetupDiskCaching
     end
     
     methods

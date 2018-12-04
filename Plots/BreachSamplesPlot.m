@@ -14,7 +14,7 @@ classdef BreachSamplesPlot < handle
     properties (Access=protected)
         x_axis = 'idx'
         y_axis = 'auto'
-        z_axis
+        z_axis = 'none (2D plot)'
         idx_tipped
         pos_plot
         neg_plot
@@ -33,18 +33,22 @@ classdef BreachSamplesPlot < handle
             this.BrSet = BrSet;
             this.Fig = figure;
             
-            if exist('params','var')
-                if ischar(params)
-                    this.params = {params};
-                else
-                    this.params =params;
-                end
-            else
-                this.params = {};
-            end
        
              this.summary = BrSet.GetSummary(); 
              this.signature = this.summary.signature;
+                          
+             this.update_data();    
+             if exist('params','var')
+                 if ischar(params)
+                     this.params = {params};
+                 else
+                     this.params =params;
+                 end
+             else
+                 this.params = {};
+             end
+             
+             
              this.update_plot();
         
         end
@@ -103,12 +107,6 @@ classdef BreachSamplesPlot < handle
             
             this.update_data();
             
-            if isa(this.BrSet, 'BreachRequirement')
-                B = this.BrSet.BrSet;
-            else
-                B = this.BrSet;
-            end       
-            
             figure(this.Fig);
             if isempty(this.ax)
                 this.ax = axes();
@@ -117,7 +115,154 @@ classdef BreachSamplesPlot < handle
             end
             cla;
             grid on;
-    
+            
+            if isa(this.BrSet, 'BreachRequirement')
+                this.update_req_plot();
+            else
+                this.update_brset_plot();
+            end       
+                
+        end
+        
+        function update_brset_plot(this)
+            B = this.BrSet;
+            idx = this.data.pos_pts.idx;
+            
+            % xdata
+            switch this.x_axis
+                case 'idx'
+                    xdata = idx;
+                    x_label = 'idx sample';
+                otherwise  % assumes x_axis is a parameter name
+                    xdata = B.GetParam(this.x_axis, idx);
+                    x_label = this.x_axis;
+            end
+            
+            % ydata
+            switch this.y_axis
+                case 'idx'
+                    ydata = idx;
+                    y_label = 'idx sample';
+                case 'auto'
+                    if isempty(this.data.variables)
+                        y_label = B.P.ParamList(B.P.DimX+1);
+                    else
+                        y_label = this.data.variables{1};
+                    end
+                        ydata = B.GetParam(y_label,idx);
+                otherwise  % assumes y_axis is a parameter name
+                    ydata = B.GetParam(this.y_axis, idx);
+                    y_label = this.y_axis;
+            end
+            
+            % zdata 
+            none_z = 'none (2D plot)';
+            switch this.z_axis
+                case none_z
+                    this.pos_plot = plot(xdata,ydata,'om', 'MarkerSize', 5);
+                    hold on;
+                    grid on;
+                    xlabel(x_label, 'Interpreter', 'None');
+                    ylabel(y_label, 'Interpreter', 'None');
+                otherwise  % 3d plot - assumes z_axis is a parameter name
+                    zdata = B.GetParam(this.z_axis, idx);
+                    this.pos_plot = plot3(xdata,ydata,zdata,'om', 'MarkerSize', 5);
+                    hold on;
+                    grid on;
+                    xlabel(x_label, 'Interpreter', 'None');
+                    ylabel(y_label, 'Interpreter', 'None');
+                    zlabel(y_label, 'Interpreter', 'None');
+            end
+            
+            
+            %% Datacursor mode customization
+            cursor_h = datacursormode(this.Fig);
+            cursor_h.UpdateFcn = @myupdatefcn;
+            cursor_h.SnapToDataVertex = 'on';
+            
+            function [txt] = myupdatefcn(obj,event_obj)
+                pos = event_obj.Position;
+                ipos = find(event_obj.Target.XData==pos(1)&event_obj.Target.YData==pos(2),1); 
+                i_pts = idx(ipos);
+                
+                this.idx_tipped = i_pts;
+                txt{1} = ['Sample idx:' num2str(i_pts)] ;
+                
+                if isfield(this.signature, 'variables_idx')
+                    txt{end+1} = '--------------';
+                    for irr = 1:numel(this.signature.variables_idx)
+                        var_name = this.signature.params{this.signature.variables_idx(irr)};
+                        var_value =B.GetParam(var_name, i_pts);
+                        txt{end+1} = [var_name ': ' num2str(var_value)];
+                    end
+                end
+            end
+            
+            %% Context menu
+
+            cm_proj = uicontextmenu;
+            
+            top_x = uimenu(cm_proj, 'Label', ['Change x-axis']);
+            uimenu(top_x, 'Label', 'idx','Callback',@(o,e)(this.set_x_axis('idx')));
+            for ip = 1:numel(this.data.variables)
+                uimenu(top_x, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_x_axis(this.data.variables{ip})));
+            end
+            
+            top_y = uimenu(cm_proj, 'Label', ['Change y-axis']);
+            uimenu(top_y, 'Label', 'idx','Callback',@(o,e)(this.set_y_axis('idx')));
+            for ip = 1:numel(this.data.variables)
+                uimenu(top_y, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_y_axis(this.data.variables{ip})));
+            end
+            
+            top_z = uimenu(cm_proj, 'Label', ['Change z-axis']);
+            uimenu(top_z, 'Label', none_z,'Callback',@(o,e)(this.set_z_axis(none_z)));
+            for ip = 1:numel(this.data.variables)
+                uimenu(top_z, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_z_axis(this.data.variables{ip})));
+            end
+            set(this.ax, 'UIContextMenu', cm_proj);
+            set(this.Fig, 'UIContextMenu', cm_proj);
+
+            cm = uicontextmenu;            
+            uimenu(cm, 'Label', 'Open signals plot','Callback', @ctxtfn_signals_plot)
+            set(cursor_h, 'UIContextMenu', cm);
+                     
+            function ctxtfn_signals_plot(o,e)
+                if isempty(this.idx_tipped)
+                    it = 1;
+                else
+                    it = this.idx_tipped(1);
+                end
+                sig = this.signature.signals{1};
+                F = BreachSignalsPlot(this.BrSet,sig, it);
+                set(F.Fig,'Name', ['Trace idx= ' num2str(it)]);
+            end
+
+            top_x = uimenu(cm, 'Label', ['Change x-axis']);
+            uimenu(top_x, 'Label', 'idx','Callback',@(o,e)(this.set_x_axis('idx')));
+            for ip = 1:numel(this.data.variables)
+                uimenu(top_x, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_x_axis(this.data.variables{ip})));
+            end
+         
+            top_y = uimenu(cm, 'Label', ['Change y-axis']);
+            uimenu(top_y, 'Label', 'idx','Callback',@(o,e)(this.set_y_axis('idx')));
+            for ip = 1:numel(this.data.variables)
+                uimenu(top_y, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_y_axis(this.data.variables{ip})));
+            end
+            
+            top_z = uimenu(cm, 'Label', ['Change z-axis']);
+            uimenu(top_z, 'Label', none_z,'Callback',@(o,e)(this.set_z_axis(none_z)));
+            for ip = 1:numel(this.data.variables)
+                uimenu(top_z, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_z_axis(this.data.variables{ip})));
+            end
+            
+            
+        end
+
+        
+        function update_req_plot(this)
+            
+            B = this.BrSet.BrSet;
+            
             has_pos = isfield(this.data, 'pos_pts');
             has_neg = isfield(this.data, 'neg_pts');
             if has_pos
@@ -319,7 +464,7 @@ classdef BreachSamplesPlot < handle
             end
             
         end
-  
+                           
         function set_x_axis(this, param)
             current_axis = this.x_axis;
             try
@@ -343,6 +488,18 @@ classdef BreachSamplesPlot < handle
                 this.set_y_axis(current_axis)
             end
         
+        end
+        
+        function set_z_axis(this, param)
+            current_axis = this.z_axis;
+            try
+                this.z_axis = param;
+                cla(this.ax,'reset');
+                this.update_plot();
+            catch ME
+                warning('BreachSamplesPlot:set_axis_fail', 'set_z_axis failed with error %s',   ME.message );
+                this.set_z_axis(current_axis)
+            end
         end
         
     end

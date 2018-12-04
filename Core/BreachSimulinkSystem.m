@@ -41,7 +41,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
         StopAtSimulinkError=false
         mdl
         DiskCachingRoot 
-        UseDiskCaching=false   %  set by SetupDiskCaching
     end
     
     
