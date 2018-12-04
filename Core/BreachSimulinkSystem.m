@@ -233,7 +233,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             cs.set_param('ReturnWorkspaceOutputs', 'on');   % Save simulation output as single object
             
             %%  Solver pane - times
-            t_end= str2num(cs.get_param('StopTime'));
+            t_end= evalin('base',cs.get_param('StopTime'));
             if isinf(t_end)
                 warning('BreachSimulinkSystem:t_end_inf', 'stop time is inf, setting to 1 instead. Use SetTime method to specify another simulation end time.');
                 t_end= 1;
