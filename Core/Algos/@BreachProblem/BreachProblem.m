@@ -194,7 +194,20 @@ classdef BreachProblem < BreachStatus
             this.Reset_x0();
             
             % robustness
-            this.BrSys = this.BrSet.copy(); 
+            this.BrSys = this.BrSet.copy();
+
+            % if one evaluation of variable x corresponds to several traces,
+            % we need to make sure BrSys is used for only one x
+            % this is necessary for 'init' solver in particular, where
+            % BrSet contains multiple x0 values. 
+          
+            this.BrSys.SetParam(this.params, this.x0(:,1), 'spec');
+            [~, ia] = unique( this.BrSys.P.pts','rows');
+            if numel(ia)<size(this.BrSys.P.pts,2)
+                this.BrSys = this.BrSys.ExtractSubset(ia);
+            end
+            
+            
             this.robust_fn = @(x) (this.Spec.Eval(this.BrSys, this.params, x));
             
             this.BrSys.Sys.Verbose=0;
@@ -225,7 +238,7 @@ classdef BreachProblem < BreachStatus
             end
             
             this.BrSet.SetParam(this.params, x0__,'spec');  % not sure this is useful anymore, if ever
-            this.x0 = unique(x0__', 'rows')';
+            this.x0 = unique(x0__', 'rows')';% remove duplicates, I guess. 
             
         end
         
@@ -487,11 +500,12 @@ classdef BreachProblem < BreachStatus
             BrQ.ResetParamSet();
             BrQ.SetParamRanges(this.params, [this.lb this.ub])
             BrC = BrQ.copy();
+            nb_corners = this.solver_options.nb_max_corners;
             nb_samples = this.solver_options.nb_new_trials;
             step = this.solver_options.start_at_trial;
             
             BrC.P = CreateParamSet(BrC.Sys,this.params,[this.lb this.ub]);
-            BrC.CornerSample(nb_samples);
+            BrC.CornerSample(nb_corners);
             XC = BrC.GetParam(this.params);
             nb_corners= size(XC, 2);
             qstep = step-nb_corners;
@@ -514,7 +528,7 @@ classdef BreachProblem < BreachStatus
         end
         
         function x0 = generate_new_x0(this)
-            x0 = (this.ub-this.lb).*rand(3,1) + this.lb;
+            x0 = (this.ub-this.lb).*rand(numel(this.params),1) + this.lb;
         end
         
         function problem = get_problem(this)
@@ -608,11 +622,6 @@ classdef BreachProblem < BreachStatus
                             idx=[];
                         end
                         if ~isempty(idx)
-%                            if  ~isempty(this.BrSet_Logged)
-%                                this.BrSys.P =
-%                                Sselect(this.BrSet_Logged.P,idx);  
-%                                this.Spec.P = Sselect(this.R_log.P,idx); 
-%                            end
                             fval(:,iter) = this.obj_log(:,idx);
                         else
                             % calling actual objective function
@@ -790,10 +799,10 @@ classdef BreachProblem < BreachStatus
         
         function display_status_header(this)
             if ~isempty(this.Spec.precond_monitors)
-                hd_st = sprintf(  '#calls (max:%5d)        time spent (max: %g)       [current obj]   (current best)   [constraint]\n',...
+                hd_st = sprintf(  '#calls (max:%5d)        time spent (max: %g)     [current  obj]     (current best)   [constraint]\n',...
                     this.max_obj_eval, this.max_time);
             else
-                hd_st = sprintf(  '#calls (max:%5d)        time spent (max: %g)       [current obj]   (current best) \n',...
+                hd_st = sprintf(  '#calls (max:%5d)        time spent (max: %g)     [current  obj]     (current best) \n',...
                     this.max_obj_eval, this.max_time);
             end
        %     l = numel(hd_st);
