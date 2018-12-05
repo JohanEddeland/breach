@@ -102,6 +102,8 @@ classdef BreachProblem < BreachStatus
         time_spent = 0
         nb_obj_eval = 0
         max_obj_eval = 100
+        setup_mixed_integer_optim = 0
+        mixed_integer_optim_solvers = {'ga'};
     end
     
     %% Static Methods
@@ -386,7 +388,14 @@ classdef BreachProblem < BreachStatus
             
             % create problem structure
             problem = this.get_problem();
-                        
+            
+            % check the MIP options for suppoted solvers 
+            % and change the this.params
+            if this.setup_mixed_integer_optim == 1  && ...
+                    any(strcmp(this.mixed_integer_optim_solvers, this.solver))
+                problem = this.update_MIP_problem(problem);
+            end
+            
             switch this.solver
                 case 'init'
                     this.display_status_header();
@@ -528,11 +537,11 @@ classdef BreachProblem < BreachStatus
         end
         
         function x0 = generate_new_x0(this)
-            x0 = (this.ub-this.lb).*rand(numel(this.params),1) + this.lb;
+            x0 = (this.ub-this.lb).*rand(length(this.ub),1) + this.lb;
         end
         
         function problem = get_problem(this)
-            problem =struct('objective', this.objective, ...
+            problem = struct('objective', this.objective, ...
                 'fitnessfcn', this.objective, ... % for ga
                 'x0', this.x0, ...   
                 'nvars', size(this.x0, 1),... % for ga
@@ -551,11 +560,40 @@ classdef BreachProblem < BreachStatus
             % Checks whether some variables are integer
             for ip = 1:numel(this.params)
                 dom = this.BrSys.GetDomain(this.params{ip});
-                if strcmp(dom.type, 'int')
+                if strcmp(dom.type, 'int')  
                     problem.intcon = [problem.intcon ip];
                 end
             end
             
+        end
+        
+        % check the MIP options for suppoted solvers and change the this.params
+        function problem = update_MIP_problem(this, problem_in)
+            
+            problem = problem_in;
+            % check all the enum variables
+            enum_idx = find(this.params_type_idx('enum'));
+            % check the existance of the corresponding "enum_idx" 
+            % update the problem structure
+            for ii = 1:length(enum_idx)
+                enum_param = this.params{enum_idx(ii)};
+                idx_param = [enum_param, '_enum_idx'];
+                if ~isempty(this.BrSys.GetParam(idx_param))
+                    % replace the paramlist to the idx param
+                    % this.params{enum_idx(ii)} = idx_param;
+                    domain = this.BrSys.GetDomain(idx_param);
+                    problem.intcon = [problem.intcon enum_idx(ii)];
+                    problem.lb(enum_idx(ii)) = domain.enum(1);
+                    problem.ub(enum_idx(ii)) = domain.enum(end);
+                end
+            end
+            problem.intcon = sort(problem.intcon);
+        end
+        
+        function idx = params_type_idx(this, ptype)
+            domains = this.BrSys.GetDomain(this.params);
+            idx = cell2mat(arrayfun(@(x) strcmp(x.type, ptype), ...
+                domains, 'UniformOutput', false));
         end
        
         function add_constraint(this, phi)
@@ -750,7 +788,16 @@ classdef BreachProblem < BreachStatus
             fprintf('\n ---- Best value %g found with\n', min(best_fval));
             
             for ip = 1:numel(this.params)
-                fprintf( '        %s = %g\n', this.params{ip},param_values(ip))
+                % check the enum_idx variable and restore the params
+                domain = this.BrSys.GetDomain(this.params{ip});
+                value = param_values(ip);
+                if this.setup_mixed_integer_optim == 1 && strcmp(domain.type, 'enum')      
+                    param = [this.params{ip},'_enum_idx'];
+                    SysCopy = this.BrSys.copy();
+                    SysCopy.SetParam(param, param_values(ip), true);
+                    value = SysCopy.GetParam(this.params{ip});
+                end
+                fprintf( '        %s = %g\n', this.params{ip},value)
             end
             fprintf('\n');
         end
