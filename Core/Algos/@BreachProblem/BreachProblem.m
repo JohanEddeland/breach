@@ -102,7 +102,7 @@ classdef BreachProblem < BreachStatus
         time_spent = 0
         nb_obj_eval = 0
         max_obj_eval = 100
-        setup_mixed_integer_optim = 0
+        mixed_integer_optim = 0
         mixed_integer_optim_solvers = {'ga'};
     end
     
@@ -391,7 +391,7 @@ classdef BreachProblem < BreachStatus
             
             % check the MIP options for suppoted solvers 
             % and change the this.params
-            if this.setup_mixed_integer_optim == 1  && ...
+            if this.mixed_integer_optim == 1  && ...
                     any(strcmp(this.mixed_integer_optim_solvers, this.solver))
                 problem = this.update_MIP_problem(problem);
             end
@@ -568,6 +568,18 @@ classdef BreachProblem < BreachStatus
         end
         
         % check the MIP options for suppoted solvers and change the this.params
+        function setup_mixed_integer_optim(this)
+            this.mixed_integer_optim = 1;
+            enum_idx = find(this.params_type_idx('enum'));
+            for ii = 1:length(enum_idx)
+                enum_param = this.params{enum_idx(ii)};
+                enum_domain = this.BrSet.GetDomain(enum_param);
+                enum_br_domain = BreachDomain('enum', enum_domain.enum);
+                pg_param = enum_idx_param_gen(enum_param, enum_br_domain);
+                this.BrSet.SetParamGen({pg_param});
+            end
+        end
+        
         function problem = update_MIP_problem(this, problem_in)
             
             problem = problem_in;
@@ -791,7 +803,7 @@ classdef BreachProblem < BreachStatus
                 % check the enum_idx variable and restore the params
                 domain = this.BrSys.GetDomain(this.params{ip});
                 value = param_values(ip);
-                if this.setup_mixed_integer_optim == 1 && strcmp(domain.type, 'enum')      
+                if this.mixed_integer_optim == 1 && strcmp(domain.type, 'enum')      
                     param = [this.params{ip},'_enum_idx'];
                     SysCopy = this.BrSys.copy();
                     SysCopy.SetParam(param, param_values(ip), true);
