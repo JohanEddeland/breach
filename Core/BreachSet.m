@@ -301,15 +301,36 @@ classdef BreachSet < BreachStatus
             
         end
         
-        function SetParamCfg(this, cfg)
-        % SetParamCfg applies a cfg structure to set parameters. Struct
-        % must have *char* fields params and values
-        % 
+        function SetParamCfg(this, list_cfg)
+            % SetParamCfg applies a cfg structure to set parameters. Struct
+            % must have *char* fields params and values
+            %
+            if ~iscell(list_cfg)
+                list_cfg = {list_cfg};
+            end
+            
             this.Reset();
-            for ip = 1:numel(cfg.params)  % quick and dirty implementation, set parameters one by one using combine (grid) option
-               p = cfg.params{ip};
-               v = eval([ '[' cfg.values{ip} ']']);
-               this.SetParam(p, v, 'combine'); 
+            B0 = this.copy();
+            % first operation
+            cfg = list_cfg{1};
+            B = B0.copy();
+            for ip = 1:numel(cfg.params) % quick and dirty implementation, set parameters one by one using combine (grid) option
+                p = cfg.params{ip};
+                v = eval([ '[' cfg.values{ip} ']']);
+                B.SetParam(p, v, 'combine');
+            end
+            
+            % subsequent operations
+            this.P= B.P;
+            for ic = 2:numel(list_cfg)
+                cfg = list_cfg{ic};
+                B = B0.copy();
+                for ip = 1:numel(cfg.params) % quick and dirty implementation, set parameters one by one using combine (grid) option
+                    p = cfg.params{ip};
+                    v = eval([ '[' cfg.values{ip} ']']);
+                    B.SetParam(p, v, 'combine');
+                end
+                this.Concat(B);
             end
         end
         
