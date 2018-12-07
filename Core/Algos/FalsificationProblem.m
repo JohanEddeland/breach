@@ -32,34 +32,55 @@ classdef FalsificationProblem < BreachProblem
     methods
         
         % Constructor calls parent constructor
-        function this = FalsificationProblem(BrSys, phi, params, ranges)
+        function this = FalsificationProblem(BrSys, phi, varargin)
            
             Br = BrSys.copy();
-            switch nargin
-                case 2
-                    params = Br.GetSysVariables();
-                    req_params = Br.GetReqVariables();
-                    if ~isempty(req_params)
-                      Br.ResetDomain(req_params);
-                    end
-                    super_args{1} = Br;
-                    super_args{2} = phi;
-                    if isempty(params)
-                        error('FalsificationProblem:invalid_system_variables', 'No valid system or input variables.');
-                    end
-                    super_args{3} = params;
-                    
-                case 3
-                    super_args{1} = Br;
-                    super_args{2} = phi;
-                    super_args{3} = params;
-
-                case 4
-                    super_args{1} = Br;
-                    super_args{2} = phi;
-                    super_args{3} = params;
-                    super_args{4} = ranges;
+            super_args{1} = Br;
+            super_args{2} = phi;
+            params = Br.GetSysVariables();
+            req_params = Br.GetReqVariables();
+            if ~isempty(req_params)
+                Br.ResetDomain(req_params);
             end
+            
+            if isempty(params)
+                error('FalsificationProblem:invalid_system_variables', 'No valid system or input variables.');
+            end
+
+            
+            % check the enumerate_enum flag
+            if length(varargin) > 0 
+                flags = strcmp(varargin, 'enumerate_enum');
+                if any(flags)
+                    idx = find(flags);
+                    varargin(idx) = [];
+                    % seperate the enum params
+                    domains = Br.GetDomain(params);
+                    enum_idx = cell2mat(arrayfun(@(x) strcmp(x.type, 'enum'), ...
+                        domains, 'UniformOutput', false));
+                    enum_params = params(enum_idx);
+                    params(enum_idx) = []; % delete the enum params
+                    % check whether overwrite the sampled variables
+                    if Br.GetNbParamVectors > 0 
+                        warning('The flag of enumerate_enum will overwrite the sammpled domain');
+                    end
+                    Br.SampleDomain(enum_params, 'all');
+                    % check whether user specified params
+                    if length(varargin) > 0 
+                        params = varargin{1};
+                        varargin(1) = [];
+                    end
+                    super_args{3} = params;
+                else 
+                    if length(varargin) > 2
+                        error('Unknown flags, please check the spelling');
+                    end
+                end
+            end
+            % appending the remaining varargin if necessary
+            super_args = [super_args varargin];
+                     
+            % call the constructor of the superclass
             this = this@BreachProblem(super_args{:});
             this.obj_best=inf;
         end
