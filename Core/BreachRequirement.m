@@ -393,6 +393,10 @@ classdef BreachRequirement < BreachTraceSystem
             if all(ifound)
                 X = GetSignalValues@BreachTraceSystem(this,idxR, varargin{2:end});
             else
+                if any(~ifound&~ifoundB)
+                   absent =  find(~ifound&~ifoundB,1);
+                   warning('GetSignalsValues:not_found', 'Signal %s not found', signals{absent});
+                end
                 if any(ifound)
                     idxR = idxR(ifound==1);
                     values_req = this.GetSignalValues@BreachTraceSystem(idxR, varargin{2:end});
@@ -418,8 +422,9 @@ classdef BreachRequirement < BreachTraceSystem
                         nb_traj =numel(values_data);
                     else
                         nb_traj =1;
-                    end
+                    end                    
                 end
+                
                 if nb_traj>1
                     X = cell(nb_traj,1);
                     for iv = 1:nb_traj
