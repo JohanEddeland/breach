@@ -570,10 +570,10 @@ classdef BreachProblem < BreachStatus
                         enum_param = this.params{enum_idx(ii)};
                         enum_domain = this.BrSet.GetDomain(enum_param);
                         enum_br_domain = BreachDomain('enum', enum_domain.enum);
-                        pg_param = enum_idx_param_gen(enum_param, enum_br_domain);
-                        this.BrSet.SetParamGen({pg_param});
-                        this.params{enum_idx(ii)} = pg_param.params{1};
-                        fprintf('Mapped %s to %s\n', pg.params{1}, pg.params_out{1});
+                        pg = enum_idx_param_gen(enum_param, enum_br_domain);
+                        this.BrSet.SetParamGen({pg});
+                        this.params{enum_idx(ii)} = pg.params{1};
+                        fprintf('Mapped %s to %s\n', pg.params_out{1}, pg.params{1} );
                     end
                     this.ResetObjective();
                 case 'exhaustive'
