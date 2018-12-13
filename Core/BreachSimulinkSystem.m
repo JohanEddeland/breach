@@ -490,7 +490,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 found = ismember(signals, sig_log);
                 
                 if ~all(found)
-                    not_found = find(~all(found));
+                    not_found = find(~found);
                     warning('BreachSimulinkSystem:signal_not_found',['Signal ' signals{not_found} ' not found in model.']);
                 end
             end

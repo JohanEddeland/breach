@@ -845,7 +845,7 @@ classdef BreachSystem < BreachSet
         
         %% Printing
         function st = PrintSpecs(this)
-            st= printf('--- SPECIFICATIONS ---\n');
+            st= sprintf('--- SPECIFICATIONS ---\n');
             keys = this.Specs.keys;
             for is = 1:numel(keys)
                 prop_name = keys{is};

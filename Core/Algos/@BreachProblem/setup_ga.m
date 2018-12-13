@@ -15,7 +15,7 @@ else
 end
 
 if this.max_obj_eval<inf
-    solver_opt = gaoptimset(solver_opt, 'Generations', ceil(this.max_obj_eval/pop_size)); % check that 50 is default population size..
+    solver_opt = gaoptimset(solver_opt, 'Generations', ceil(this.max_obj_eval/pop_size), 'PopulationSize', pop_size); 
 end
 
 if isa(this, 'FalsificationProblem')
