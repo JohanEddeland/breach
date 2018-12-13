@@ -102,7 +102,6 @@ classdef BreachProblem < BreachStatus
         time_spent = 0
         nb_obj_eval = 0
         max_obj_eval = 100
-        mixed_integer_optim = 0
         mixed_integer_optim_solvers = {'ga'};
     end
     
@@ -163,60 +162,15 @@ classdef BreachProblem < BreachStatus
             
             this.R0 = phi.copy(); 
             this.Spec = phi;
-            this.BrSet = BrSet.copy();
-            this.BrSet.Sys.Verbose=0;
-                  
-            % Parameter ranges
-            if ~exist('params','var')
-                params = this.BrSet.GetBoundedDomains();
-            else
-                if ischar(params)
-                    params = {params};
-                end
+            
+            switch nargin 
+                case 2
+                    this.ResetObjective(BrSet);
+                case 3
+                    this.ResetObjective(BrSet, params);
+                case 4
+                    this.ResetObjective(BrSet, params, ranges);
             end
-            this.params= params;
-            this.domains = BrSet.GetDomain(params);
-            
-            if ~exist('ranges', 'var')
-                ranges = BrSet.GetParamRanges(params);
-                lb__ = ranges(:,1);
-                ub__ = ranges(:,2);
-            else
-                lb__ = ranges(:,1);
-                ub__ = ranges(:,2);
-                this.BrSet.SetParam(params, 0.5*(ranges(:,2)-ranges(:,1)), true); % adds parameters if they don't exist 
-                this.BrSet.ResetDomains();
-                this.BrSet.SetDomain(params, 'double', ranges);
-            end
-           
-            this.lb = lb__;
-            this.ub = ub__;
-            
-            % Initial value
-            this.Reset_x0();
-            
-            % robustness
-            this.BrSys = this.BrSet.copy();
-
-            % if one evaluation of variable x corresponds to several traces,
-            % we need to make sure BrSys is used for only one x
-            % this is necessary for 'init' solver in particular, where
-            % BrSet contains multiple x0 values. 
-          
-            this.BrSys.SetParam(this.params, this.x0(:,1), 'spec');
-            [~, ia] = unique( this.BrSys.P.pts','rows');
-            if numel(ia)<size(this.BrSys.P.pts,2)
-                this.BrSys = this.BrSys.ExtractSubset(ia);
-            end
-            
-            
-            this.robust_fn = @(x) (this.Spec.Eval(this.BrSys, this.params, x));
-            
-            this.BrSys.Sys.Verbose=0;
-             
-            % objective function
-            this.objective = @(x) (objective_wrapper(this,x));
-      
             % setup default solver
             this.setup_solver();
             
@@ -244,10 +198,40 @@ classdef BreachProblem < BreachStatus
             
         end
         
-        function ResetObjective(this, BrSet)
+        function ResetObjective(this, BrSet, params, ranges)
             if nargin == 1
                 BrSet = this.BrSet;
+            else
+                this.BrSet = BrSet.copy();
             end
+            
+            this.BrSet.Sys.Verbose=0;
+                  
+            % Parameter ranges
+            if ~exist('params','var')
+                params = this.BrSet.GetBoundedDomains();
+            else
+                if ischar(params)
+                    params = {params};
+                end
+            end
+            this.params= params;
+            this.domains = BrSet.GetDomain(params);
+            
+            if ~exist('ranges', 'var')
+                ranges = BrSet.GetParamRanges(params);
+                lb__ = ranges(:,1);
+                ub__ = ranges(:,2);
+            else
+                lb__ = ranges(:,1);
+                ub__ = ranges(:,2);
+                this.BrSet.SetParam(params, 0.5*(ranges(:,2)-ranges(:,1)), true); % adds parameters if they don't exist 
+                this.BrSet.ResetDomains();
+                this.BrSet.SetDomain(params, 'double', ranges);
+            end
+           
+            this.lb = lb__;
+            this.ub = ub__;            
             
             this.Reset_x0;
             
@@ -255,8 +239,20 @@ classdef BreachProblem < BreachStatus
             rfprintf_reset();
             
             % robustness
-            this.BrSys = BrSet.copy(); 
+            this.BrSys = BrSet.copy();
+            
+            this.BrSys.SetParam(this.params, this.x0(:,1), 'spec');
+            [~, ia] = unique( this.BrSys.P.pts','rows');
+            if numel(ia)<size(this.BrSys.P.pts,2)
+                this.BrSys = this.BrSys.ExtractSubset(ia);
+            end
+
+            this.BrSys.Sys.Verbose=0;
+            
             this.robust_fn = @(x) (this.Spec.Eval(this.BrSys, this.params, x));
+            
+            % objective function
+            this.objective = @(x) (objective_wrapper(this,x));      
             
             this.BrSet_Best = [];
             this.BrSet_Logged = [];
@@ -388,13 +384,6 @@ classdef BreachProblem < BreachStatus
             
             % create problem structure
             problem = this.get_problem();
-            
-            % check the MIP options for suppoted solvers 
-            % and change the this.params
-            if this.mixed_integer_optim == 1  && ...
-                    any(strcmp(this.mixed_integer_optim_solvers, this.solver))
-                problem = this.update_MIP_problem(problem);
-            end
             
             switch this.solver
                 case 'init'
@@ -568,40 +557,35 @@ classdef BreachProblem < BreachStatus
         end
         
         % check the MIP options for suppoted solvers and change the this.params
-        function setup_mixed_integer_optim(this)
-            this.mixed_integer_optim = 1;
-            enum_idx = find(this.params_type_idx('enum'));
-            for ii = 1:length(enum_idx)
-                enum_param = this.params{enum_idx(ii)};
-                enum_domain = this.BrSet.GetDomain(enum_param);
-                enum_br_domain = BreachDomain('enum', enum_domain.enum);
-                pg_param = enum_idx_param_gen(enum_param, enum_br_domain);
-                this.BrSet.SetParamGen({pg_param});
+        function setup_mixed_int_optim(this, method)
+            if ~exist('method')||isempty(method)
+                method = 'map_enum_to_int';
             end
-        end
-        
-        function problem = update_MIP_problem(this, problem_in)
+           
+            switch method
+                case 'map_enum_to_int'
+                    
+                    enum_idx = find(this.params_type_idx('enum'));
+                    for ii = 1:length(enum_idx)
+                        enum_param = this.params{enum_idx(ii)};
+                        enum_domain = this.BrSet.GetDomain(enum_param);
+                        enum_br_domain = BreachDomain('enum', enum_domain.enum);
+                        pg_param = enum_idx_param_gen(enum_param, enum_br_domain);
+                        this.BrSet.SetParamGen({pg_param});
+                        this.params{enum_idx(ii)} = pg_param.params{1};
+                        fprintf('Mapped %s to %s\n', pg.params{1}, pg.params_out{1});
+                    end
+                    this.ResetObjective();
+                case 'exhaustive'
+                    idx = union(find(this.params_type_idx('enum')),find(this.params_type_idx('int')));
+                    BrSet = this.BrSet.copy();
+                    BrSet.SampleDomain(this.params(idx), 'all');
+                    this.ResetObjective(BrSet, this.params(setdiff(1:numel(this.params), idx)));
+                    fprintf('Sampled enum and int domains exhaustively, resulting in %g values for each objective evaluation.\n', BrSet.GetNbParamVectors());
+            end
             
-            problem = problem_in;
-            % check all the enum variables
-            enum_idx = find(this.params_type_idx('enum'));
-            % check the existance of the corresponding "enum_idx" 
-            % update the problem structure
-            for ii = 1:length(enum_idx)
-                enum_param = this.params{enum_idx(ii)};
-                idx_param = [enum_param, '_enum_idx'];
-                if ~isempty(this.BrSys.GetParam(idx_param))
-                    % replace the paramlist to the idx param
-                    % this.params{enum_idx(ii)} = idx_param;
-                    domain = this.BrSys.GetDomain(idx_param);
-                    problem.intcon = [problem.intcon enum_idx(ii)];
-                    problem.lb(enum_idx(ii)) = domain.enum(1);
-                    problem.ub(enum_idx(ii)) = domain.enum(end);
-                end
-            end
-            problem.intcon = sort(problem.intcon);
         end
-        
+                
         function idx = params_type_idx(this, ptype)
             domains = this.BrSys.GetDomain(this.params);
             idx = cell2mat(arrayfun(@(x) strcmp(x.type, ptype), ...
@@ -721,8 +705,8 @@ classdef BreachProblem < BreachStatus
         end
         
         function b = stopping(this)
-            b =  (this.time_spent > this.max_time) ||...
-                    (this.nb_obj_eval> this.max_obj_eval);
+            b =  (this.time_spent >= this.max_time) ||...
+                    (this.nb_obj_eval>= this.max_obj_eval);
         end
               
         %% Misc methods
@@ -801,14 +785,7 @@ classdef BreachProblem < BreachStatus
             
             for ip = 1:numel(this.params)
                 % check the enum_idx variable and restore the params
-                domain = this.BrSys.GetDomain(this.params{ip});
                 value = param_values(ip);
-                if this.mixed_integer_optim == 1 && strcmp(domain.type, 'enum')      
-                    param = [this.params{ip},'_enum_idx'];
-                    SysCopy = this.BrSys.copy();
-                    SysCopy.SetParam(param, param_values(ip), true);
-                    value = SysCopy.GetParam(this.params{ip});
-                end
                 fprintf( '        %s = %g\n', this.params{ip},value)
             end
             fprintf('\n');
@@ -864,8 +841,6 @@ classdef BreachProblem < BreachStatus
                 hd_st = sprintf(  '#calls (max:%5d)        time spent (max: %g)     [current  obj]     (current best) \n',...
                     this.max_obj_eval, this.max_time);
             end
-       %     l = numel(hd_st);
-       %     hd_st = [hd_st repmat('-',1,l) '\n'];
             fprintf(hd_st);
         end
         
@@ -921,36 +896,7 @@ classdef BreachProblem < BreachStatus
                 BrOut.Eval(B);
             end
         end
-        
-        function [cmp, cmpSet, cmpSys, cmpBest, cmpLogged] = compare(this, other)
-            % FIXME broken as per changes in BreachStatus
-            cmp = BreachStatus();
-            cmpSet = BreachStatus();
-            cmpSys = BreachStatus();
-            cmpBest = BreachStatus();
-            cmpLogged= BreachStatus();
-            
-            if ~isequal(this,other)
-                cmp.addstatus(-1, 'Something is different.')
-                cmpSet = this.BrSet.compare(other.BrSet);
-                if (cmpSet.status~=0)
-                    cmp.addStatus(-1, 'Fields BrSet are different.');
-                end
-                cmpSys = this.BrSys.compare(other.BrSys);
-                if (cmpSys.status~=0)
-                    cmp.addStatus(-1, 'Fields BrSys are different.');
-                end
-                cmpBest   = this.BrSet_Best.compare(other.BrSet_Best);
-                if (cmpBest.status~=0)
-                    cmp.addStatus(-1, 'Fields BrSet_Best are different.');
-                end
-                cmpLogged = this.BrSet_Logged.compare(other.BrSet_Logged);
-                if (cmpLogged.status~=0)
-                    cmp.addStatus(-1, 'Fields BrSet_Logged are different.');
-                end
-            end
-        end
-        
+                
         
     end
     
