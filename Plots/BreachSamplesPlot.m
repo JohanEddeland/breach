@@ -195,19 +195,19 @@ classdef BreachSamplesPlot < handle
             none_z = 'none (2D plot)';
             switch this.z_axis
                 case none_z
-                    this.pos_plot = plot(xdata,ydata,'om', 'MarkerSize', 5);
+                    this.pos_plot = plot(xdata,ydata,'.b', 'MarkerSize', 20);
                     hold on;
                     grid on;
                     xlabel(x_label, 'Interpreter', 'None');
                     ylabel(y_label, 'Interpreter', 'None');
                 otherwise  % 3d plot - assumes z_axis is a parameter name
                     zdata = B.GetParam(this.z_axis, idx);
-                    this.pos_plot = plot3(xdata,ydata,zdata,'om', 'MarkerSize', 5);
+                    this.pos_plot = plot3(xdata,ydata,zdata,'.b', 'MarkerSize', 20);
                     hold on;
                     grid on;
                     xlabel(x_label, 'Interpreter', 'None');
                     ylabel(y_label, 'Interpreter', 'None');
-                    zlabel(y_label, 'Interpreter', 'None');
+                    zlabel(this.z_axis, 'Interpreter', 'None');
             end
             
             
