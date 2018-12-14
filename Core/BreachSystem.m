@@ -137,9 +137,6 @@ classdef BreachSystem < BreachSet
                     pause(0.2*attempt)
                 end
             end
-            if status == 0
-                warning('Warning failed to clean up the temp folder for parallelism');
-            end
             this.Sys.use_parallel = 0;
             cd(cwd)
         end
@@ -190,7 +187,7 @@ classdef BreachSystem < BreachSet
         function SetTime(this,tspan)
             if ischar(tspan)  % if time is an expression, test it in base
                 try
-                    tspan = evalin('base', tspan);
+                    T= evalin('base', tspan);
                     this.Sys.tspan = tspan;
                 catch
                     error('BreachSystem:SetTime:undef', 'Cannot evaluate time.expression %s', tspan);

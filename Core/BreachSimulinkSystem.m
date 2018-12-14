@@ -754,6 +754,17 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 bparam.setValue(pval); % set value in the appropriate workspace
             end
             
+            if ischar(tspan)
+                tspan = evalin('base', tspan);
+            end
+            
+            if isfield(Sys,'init_u')
+                U = Sys.init_u(Sys.InputOpt, pts, tspan);
+                assignin('base','t__',U.t);
+                assignin('base', 'u__',U.u);
+            end
+
+            
             %
             % TODO: fix support for signal builder using a proper
             % BreachParam
@@ -767,9 +778,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             %end
             %
 
-            if ischar(tspan)
-               tspan = evalin('base', 'tspan');
-            end
             
             assignin('base','tspan',tspan);
             if numel(tspan)>2
