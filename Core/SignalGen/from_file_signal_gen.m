@@ -31,6 +31,14 @@ classdef from_file_signal_gen < signal_gen
                 fname= {fname};
             end
             
+            % checks files and tries to recover them 
+            for i= 1:numel(fname)
+                if ~exist(fname{i}, 'file') 
+                    error('from_file_signal_gen:file_not_found','Input file %s not found', fname{i});
+                end
+            end
+            
+            
             % First thing is detecting files
             for ifn=1:numel(fname)
                 dir_file_list = dir(fname{ifn});
