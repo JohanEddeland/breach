@@ -87,7 +87,6 @@ classdef BreachSet < BreachStatus
             else
                 
                 params = check_arg_is_cell(params);
-                
                 idxs = zeros(1, numel(params));
                 for ip = 1:numel(params)
                     param = params{ip};
@@ -103,7 +102,15 @@ classdef BreachSet < BreachStatus
             switch nargin
                 case 3
                     % is type a BreachDomain already?
-                    if isa(type,'BreachDomain')
+                    if isa(type,'BreachDomain')||(iscell(type)&&~isempty(type)&&isa(type{1}, 'BreachDomain'))
+                        if iscell(type)  % FIXME: this mess should be avoided by using cell everywhere for domains..
+                            cell_type = type;   
+                            type = BreachDomain;
+                            for ic = 1:numel(cell_type) % converts cell of domains into array...
+                                type(ic)= cell_type{ic};
+                            end
+                        end
+                        
                         if numel(type)==1
                             type = repmat(type,1, numel(params));
                         end
@@ -364,8 +371,19 @@ classdef BreachSet < BreachStatus
         
         function SetParamGenItem(this, pg)
             this.ParamGens{end+1} = pg;
+            
+            % create/update domain of input parameters
             this.SetParam(pg.params, pg.p0, true);
             this.SetDomain(pg.params, pg.domain);
+            
+            % update domain of output parameters
+            if ~isempty(pg.domain_out)
+               for ip =1:numel(pg.params_out)
+                   this.SetDomain(pg.params_out{ip}, pg.domain_out{ip});                   
+               end
+            end
+                
+            
             this.ApplyParamGens();
         end
         

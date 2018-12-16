@@ -6,16 +6,20 @@ classdef enum_idx_param_gen < param_gen
     end
     
     methods
-        function this = enum_idx_param_gen(param, domain_out)
+        function this = enum_idx_param_gen(param, domain)
+            if isnumeric(domain)
+               domain = BreachDomain('enum', domain) ;
+            end
             this.params = {[param '_enum_idx']};
-            this.domain = BreachDomain('enum', 1:length(domain_out.enum));
-            this.domain_out = domain_out;
+            this.domain = {BreachDomain('int', [1 length(domain.enum)])};
+            this.domain_out = {domain};
+            this.domain_out{1}.domain = []; 
             this.params_out = {param};
             this.p0 = 1;
         end
         
         function p_out = computeParams(this, p_in)
-            p_out = this.domain_out.enum(p_in); 
+            p_out = this.domain_out{1}.enum(p_in); 
         end
     end
      

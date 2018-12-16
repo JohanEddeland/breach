@@ -82,7 +82,7 @@ elseif isstruct(varargin{1})||ischar(varargin{1})  % configuration struct
     handles.IG = ReadInputGenCfg(varargin{1});
     signal_names = handles.IG.GetSignalList();
     if isfield(varargin{1}, 'sim_time')
-        handles.time = eval(varargin{1}.sim_time);
+        handles.time = varargin{1}.sim_time;
     end
 end
 set(handles.popupmenu_signal_name, 'String', signal_names);
@@ -128,11 +128,14 @@ for isig= 1:numel(signal_names)
 end
 
 % Init time
-if ~isempty(handles.B)    
-    handles.time = handles.B.GetTime();
-elseif ~isfield(handles, 'time')
-    handles.time = 0:.01:1;
+if ~isfield(handles, 'time')
+    if ~isempty(handles.B)
+        handles.time = get_time_string(handles.B.GetTime());
+    else
+        handles.time = 0:.01:1;
+    end
 end
+
 set( handles.edit_time, 'String', get_time_string(handles.time));
 % Choose default command line output for signal_gen_gui
 signal_gens= handles.signal_gen_map.values;
@@ -150,20 +153,23 @@ guidata(hObject, handles);
 %uiwait(handles.main);
 
 function st = dbl2str(x)
-    st = num2str(x, '%0.5g');
+st = num2str(x, '%0.5g');
 
 function time_string = get_time_string(time)
-
-   if isscalar(time)
+if ischar(time)
+    time_string = time;
+elseif isnumeric()
+    if isscalar(time)
         time_string = ['[0 ' dbl2str(time) ']'];
     elseif numel(time)==2
         time_string = ['[' dbl2str(time(1)) ' ' dbl2str(time(2)) ']'];
-   elseif max(diff(diff(time)))<100*eps
-       time_string = ['0:' dbl2str(time(2)-time(1)) ':' dbl2str(time(end))];
-   else
-       time_string = num2str(time);
-   end
-   
+    elseif max(diff(diff(time)))<100*eps
+        time_string = ['0:' dbl2str(time(2)-time(1)) ':' dbl2str(time(end))];
+    else
+        time_string = num2str(time);
+    end
+end
+
 % --- Outputs from this function are returned to the command line.
 function varargout = signal_gen_gui_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
@@ -259,9 +265,15 @@ function edit_time_Callback(hObject, eventdata, handles)
 % hObject    handle to edit_time (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+try 
+    time_st=get(hObject, 'String');
+    time = evalin('base', time_st); 
+    handles.time = time_st; 
+    update_plot(handles);
+catch
+    set(hObject, 'String',handles.time);
+end
 
-handles.time = str2num(get(hObject,'String'));
-update_plot(handles);
 guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -312,6 +324,8 @@ function uitable_config_CellEditCallback(hObject, eventdata, handles)
 % hObject    handle to uitable_config (see GCBO)
 % eventdata  structure with the following fields (see MATLAB.UI.CONTROL.TABLE)
 
+try 
+
 sg = get_current_sg(handles);
 content = get(hObject, 'Data');
 
@@ -340,11 +354,18 @@ sg_name = class(sg);
     niou_sg.p0 = sg.p0;
  end
  
-handles.signal_gen_map(sig_name)= niou_sg;
+ handles.signal_gen_map(sig_name)= niou_sg;
  
-update_config(handles);
-update_plot(handles);
-guidata(hObject, handles);
+ update_config(handles);
+ update_plot(handles);
+ guidata(hObject, handles);
+
+catch
+    update_config(handles);
+    update_plot(handles);
+    guidata(hObject, handles);
+    
+end
 
 %% update functions
 function update_config(handles)
@@ -364,7 +385,8 @@ content = {'',''};
 if  ~isempty(cfg_params)
     content = cell(1,1);
     for ip = 1:numel(cfg_params)
-        content{ip, 1} = cfg_params{ip};
+        par = cfg_params{ip};
+        content{ip, 1} = par;
         val = sg.(cfg_params{ip});
         if iscell(val)&&~isempty(val)
             content{ip,2} = val{1} ;
@@ -372,9 +394,10 @@ if  ~isempty(cfg_params)
             content{ip,2} = '';
         else
             content{ip,2} = val;
-        end
+        end        
     end
 end
+
 set(h_uitable, 'Data', content);
 
 
@@ -393,7 +416,8 @@ sig_name = sig_names{popup_sel_index};
 sg = handles.signal_gen_map(sig_name);
 
 % compute and plot signal
-sg.plot(handles.time);
+time = evalin('base',handles.time);
+sg.plot(time);
 
 title(sig_name, 'Interpreter', 'None');    
 grid on;
