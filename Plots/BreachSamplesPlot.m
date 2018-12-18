@@ -113,6 +113,14 @@ classdef BreachSamplesPlot < handle
                     idx_pos = num_vals_pos >0;
                     idx_neg = num_vals_neg >0;
                     
+                    this.data.(name).pos_pts.idx= [];
+                    this.data.(name).pos_pts.idx_traj = [];
+                    this.data.(name).pos_pts.rob = [];
+                    
+                    this.data.(name).neg_pts.idx= [];
+                    this.data.(name).neg_pts.idx_traj = [];
+                    this.data.(name).neg_pts.rob = [];
+                    
                     if any(idx_pos)
                         this.data.(name).pos_pts.idx= all_pts(idx_pos);
                         this.data.(name).pos_pts.idx_traj = this.BrSet.P.traj_ref(this.data.(name).pos_pts.idx);
@@ -470,11 +478,11 @@ classdef BreachSamplesPlot < handle
             plot_this();
             
             function plot_param()
-                if has_pos
+                if has_pos&&~isempty(xdata_pos)
                     this.pos_plot = plot(xdata_pos,ydata_pos,'.g', 'MarkerSize', 20);
                 end
                 hold on;
-                if has_neg
+                if has_neg&&~isempty(xdata_neg)
                     this.neg_plot = plot(xdata_neg,ydata_neg,'.r', 'MarkerSize', 20);
                 end
                 grid on;
@@ -483,11 +491,11 @@ classdef BreachSamplesPlot < handle
             end
             
             function plot3_param()
-                if has_pos
+                if has_pos&&~isempty(xdata_pos)
                     this.pos_plot = plot3(xdata_pos,ydata_pos,zdata_pos, '.g', 'MarkerSize', 20);
                 end
                 hold on;
-                if has_neg
+                if has_neg&&~isempty(xdata_neg)
                     this.neg_plot = plot3(xdata_neg,ydata_neg,zdata_neg,'.r', 'MarkerSize', 20);
                 end
                 grid on;
@@ -498,11 +506,11 @@ classdef BreachSamplesPlot < handle
             
             
             function plot_sum()
-                if has_pos
+                if has_pos&&~isempty(xdata_pos)
                     this.pos_plot = plot(xdata_pos,ydata_pos,'.g', 'MarkerSize', 20);
                 end
                 hold on;
-                if has_neg
+                if has_neg&&~isempty(xdata_neg)
                     this.neg_plot = plot(xdata_neg,ydata_neg,'.r', 'MarkerSize', 20);
                 end
                 grid on;
@@ -511,11 +519,11 @@ classdef BreachSamplesPlot < handle
             end
             
             function plot3_sum()
-                if has_pos
+                if has_pos&&~isempty(xdata_pos)
                     this.pos_plot = plot3(xdata_pos,ydata_pos,zdata_pos, '.g', 'MarkerSize', 20);
                 end
                 hold on;
-                if has_neg
+                if has_neg&&~isempty(xdata_neg)
                     this.neg_plot = plot3(xdata_neg,ydata_neg,zdata_neg,'.r', 'MarkerSize', 20);
                 end
                 grid on;
@@ -526,13 +534,13 @@ classdef BreachSamplesPlot < handle
             
             
             function plot_num()
-                if has_pos
+                if has_pos&&~isempty(xdata_pos)
                     ydata_pos = this.data.pos_pts.v_num_pos;
                     this.pos_plot = bar(xdata_pos, ydata_pos ,0.5,'g');
                 end
                 hold on;
                 grid on;
-                if has_neg
+                if has_neg&&~isempty(xdata_neg)
                     ydata_neg = this.data.neg_pts.v_num_neg;
                     this.neg_plot = bar(xdata_neg, ydata_neg ,0.5,'r');
                     %set(gca, 'YLim', [min(ydata_neg)-.1, max(ydata_pos)+.1],  'Ytick', ceil(min(ydata_neg)-.1):1:floor(max(ydata_pos)+.1));
