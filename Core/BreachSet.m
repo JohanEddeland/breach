@@ -518,10 +518,18 @@ classdef BreachSet < BreachStatus
         
         function [params, ipr] = GetVariables(this)
             [params, ipr] = GetBoundedDomains(this);
+            if this.GetNbParamVectors()>1
+                x = this.P.pts(this.P.DimX+1:end,:);
+                ipr2 = find(sum(diff(x,1,2)~=0, 2)~=0)'+this.P.DimX;
+                if ~isempty(ipr2)
+                    ipr = union(ipr, ipr2, 'stable');
+                    params = this.P.ParamList(ipr);
+                end
+            end
         end
         
         function [params, ipr] = GetSysVariables(this)
-            [params, ipr] = GetBoundedDomains(this);
+            [params, ipr] = GetVariables(this);
             if ~isempty(params)
                 req_params = this.GetPropParamList();
                 [params, i_diff] = setdiff(params, req_params);
@@ -530,7 +538,7 @@ classdef BreachSet < BreachStatus
         end
         
         function [params, ipr] = GetReqVariables(this)
-            [params, ipr] = GetBoundedDomains(this);
+            [params, ipr] = GetVariables(this);
             if ~isempty(params)
                 req_params = this.GetPropParamList();
                 [params, i_intersect] = intersect(params, req_params);
@@ -541,6 +549,7 @@ classdef BreachSet < BreachStatus
         function [ params, ipr]  = GetBoundedDomains(this)
             % GetNonEmptyDomains
             ipr = cellfun(@(c)(~isempty(c)), {this.Domains.domain});
+            ipr = find(ipr);
             params =   this.P.ParamList(ipr);
         end
                 
@@ -1372,6 +1381,8 @@ classdef BreachSet < BreachStatus
         
         %% Printing/Exporting
         function [success, msg, msg_id] = SaveResults(this, folder_name, varargin)
+            % FIXME does not support attributes? 
+            
             % Additional options
             if ~exist('folder_name', 'var')
                 folder_name = '';
@@ -1429,8 +1440,7 @@ classdef BreachSet < BreachStatus
                 this.ExportToExcel(options.ExcelFileName);
             end
         end
-        
-        
+                
         function [summary, traces] = ExportTracesToStruct(this,i_traces, varargin)
             % BreachSet.ExportTracesToStruct
             
@@ -1504,6 +1514,57 @@ classdef BreachSet < BreachStatus
                 end
             end
             
+        end
+
+        function traces = ExportTraces(this, signals, params, varargin)
+            
+            if ~exist('signals','var')
+                signals = {}; % means all
+            end
+            if ~exist('params','var')||isempty(params)
+                params = {}; % means all
+            end
+            
+            % Options
+            options = struct('WriteToFolder','');
+            options = varargin2struct(options, varargin{:});
+            
+            if ~isempty(options.WriteToFolder)
+                if ~exist(options.WriteToFolder,'dir' )
+                    [success, err_msg] = mkdir(options.WriteToFolder);
+                    if ~success
+                        error('Folder creation failed with error:\n %s', err_msg);
+                    end
+                end
+                dir_traces = options.WriteToFolder;
+            else
+                dir_traces = '';
+            end
+            
+            [signature,~, params] = this.GetSignature(signals, params);
+            num_traces = numel(this.P.traj);
+            signals = signature.signals_reps; % signal representants, assuming there are aliases
+            param_values = this.GetParam(params);
+            for it = 1:num_traces
+                traj = this.P.traj{it};
+                X = this.GetSignalValues(signals, it);
+                
+                if ~isempty(dir_traces)
+                    traces{it} = matfile([dir_traces filesep num2str(it) '.mat'], 'Writable',true);
+                end
+                
+                if isfield(traj, 'status')
+                    traces{it}.status = traj.status;
+                end
+                traces{it}.signature = signature;
+                traces{it}.param = [zeros(1,numel(signals)) param_values(:,it)'];
+                traces{it}.time = traj.time;
+                traces{it}.X = X;
+                
+                if ~isempty(dir_traces)
+                    traces{it}.Properties.Writable= false;
+                end
+            end
         end
         
         function [signature, signals, params] = GetSignature(this, signal_list, param_list)
@@ -1621,56 +1682,6 @@ classdef BreachSet < BreachStatus
             end
         end
         
-        function traces = ExportTraces(this, signals, params, varargin)
-            
-            if ~exist('signals','var')
-                signals = {}; % means all
-            end
-            if ~exist('params','var')||isempty(params)
-                params = {}; % means all
-            end
-            
-            % Options
-            options = struct('WriteToFolder','');
-            options = varargin2struct(options, varargin{:});
-            
-            if ~isempty(options.WriteToFolder)
-                if ~exist(options.WriteToFolder,'dir' )
-                    [success, err_msg] = mkdir(options.WriteToFolder);
-                    if ~success
-                        error('Folder creation failed with error:\n %s', err_msg);
-                    end
-                end
-                dir_traces = options.WriteToFolder;
-            else
-                dir_traces = '';
-            end
-                
-            [signature,~, params] = this.GetSignature(signals, params);
-            num_traces = numel(this.P.traj);
-            signals = signature.signals_reps;
-            param_values = this.GetParam(params);
-            for it = 1:num_traces
-                traj = this.P.traj{it};
-                X = this.GetSignalValues(signals, it);
-                
-                if ~isempty(dir_traces)
-                    traces{it} = matfile([dir_traces filesep num2str(it) '.mat'], 'Writable',true);
-                end
-                
-                if isfield(traj, 'status')
-                    traces{it}.status = traj.status;
-                end
-                traces{it}.signature = signature;
-                traces{it}.param = [zeros(1,numel(signals)) param_values(:,it)'];
-                traces{it}.time = traj.time;
-                traces{it}.X = X;
-                  
-                if ~isempty(dir_traces)
-                   traces{it}.Properties.Writable= false; 
-                end
-            end
-        end
         
         function summary = GetSummary(this)
             
