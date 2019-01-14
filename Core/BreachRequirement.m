@@ -313,6 +313,11 @@ classdef BreachRequirement < BreachTraceSystem
             else
                 summary.statement = [summary.statement '.'];
             end
+            if isa(this.BrSet, 'BreachImportData')
+                summary.file_names = this.BrSet.signalGenerators{1}.file_list;
+            end
+            
+            
         end
         
         function values = GetParam(this, params, ip)
