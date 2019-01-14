@@ -33,7 +33,11 @@ classdef from_file_signal_gen < signal_gen
             end
             
             if exist('init_data_script', 'var')
-                this.init_data_script = init_data_script;
+                if isnumeric(init_data_script)&&~exist('p0','var') % Backward compatibility trick..
+                    p0 = init_data_script;
+                else
+                    this.init_data_script = init_data_script;
+                end
             end
                 
             % First thing is detecting files
@@ -44,9 +48,9 @@ classdef from_file_signal_gen < signal_gen
                     pathstr = fileparts(fname{ifn}); % dir does not keep the path...
                     for id = 1:numel(dir_file_list)
                         if ~isempty(pathstr)
-                            files_list{id} = [pathstr filesep dir_file_list{id}.name];
+                            files_list{id} = [pathstr filesep dir_file_list(id).name];
                         elseif isdir(fname{ifn})
-                            files_list{id} = [fname{ifn} filesep dir_file_list{id}.name];
+                            files_list{id} = [fname{ifn} filesep dir_file_list(id).name];
                         else
                             files_list{id} = fname{ifn};
                         end
