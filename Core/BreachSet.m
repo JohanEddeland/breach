@@ -1577,7 +1577,7 @@ classdef BreachSet < BreachStatus
             
             [signals, unknown] = this.expand_signal_name(signal_list);
             if ~isempty(unknown)
-                error('GetSignature:signal_unknown', 'Signal %s unknown.', unknown{1});
+                warning('GetSignature:signal_unknown', 'Signal or attribute %s not found.', unknown{1});
             end
             signature = this.GetSignalSignature(signals);
             
@@ -1588,7 +1588,7 @@ classdef BreachSet < BreachStatus
 
             [params, unknown] = this.expand_param_name(param_list);
             if ~isempty(unknown)
-                error('GetSignature:param_unknown', 'Parameter %s unknown.', unknown{1});
+                warning('GetSignature:param_unknown', 'Parameter %s unknown.', unknown{1});
             end
             sigp = this.GetParamSignature(params);
             
@@ -1626,7 +1626,7 @@ classdef BreachSet < BreachStatus
                 end
                 
                 if idx==inf
-                    error('BreachSet:GetSignalSignature:not_found', 'Signal or alias %s not found.', sig);
+                    warning('BreachSet:GetSignalSignature:not_found', 'Signal or alias %s not found.', sig);
                 end
                 
                 sigs.signals_map_idx(is) = idx; 

@@ -557,6 +557,9 @@ classdef BreachRequirement < BreachTraceSystem
             if foundB
                 sig = this.BrSet.P.ParamList{idxB};
                 atts = union(atts, this.BrSet.get_signal_attributes(sig));
+                if ~this.is_a_data_in(sig)
+                    atts =union(atts, {'data_other'});
+                end
             elseif found
                 sig = this.P.ParamList{idx};
                 
@@ -638,6 +641,9 @@ classdef BreachRequirement < BreachTraceSystem
                 if ~success
                     error('Failed to create folder %s, received error id [%s], with message ''%s''', folder_name,msg_id, msg);
                 end
+            end
+            if isempty(folder_name)
+                folder_name = pwd;
             end
             options = struct('FolderName', folder_name, 'ExportToExcel', false, 'ExcelFileName', 'Results.xlsx', ...
                 'IncludeSignals', [],  'IncludeParams', []);

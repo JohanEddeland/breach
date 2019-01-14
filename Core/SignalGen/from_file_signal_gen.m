@@ -32,30 +32,39 @@ classdef from_file_signal_gen < signal_gen
                 fname= {fname};
             end
             
-            % checks files and tries to recover them
-            for i= 1:numel(fname)
-                if ~exist(fname{i}, 'file')
-                    error('from_file_signal_gen:file_not_found','Input file %s not found', fname{i});
-                end
-            end
-            
             if exist('init_data_script', 'var')
                 this.init_data_script = init_data_script;
             end
                 
             % First thing is detecting files
             for ifn=1:numel(fname)
-                dir_file_list = dir(fname{ifn});
-                pathstr = fileparts(fname{ifn}); % dir does not keep the path...
-                for ifnl = 1:numel(dir_file_list)
-                    if ~isempty(pathstr)
-                        dir_file_list(ifnl).name = [pathstr filesep dir_file_list(ifnl).name];
+                files_list = {};
+                dir_file_list = dir(fname{ifn});   % try using dir (if directory or wildcard like *.mat)
+                if ~isempty(dir_file_list)  
+                    pathstr = fileparts(fname{ifn}); % dir does not keep the path...
+                    for id = 1:numel(dir_file_list)
+                        if ~isempty(pathstr)
+                            files_list{id} = [pathstr filesep dir_file_list{id}.name];
+                        elseif isdir(fname{ifn})
+                            files_list{id} = [fname{ifn} filesep dir_file_list{id}.name];
+                        else
+                            files_list{id} = fname{ifn};
+                        end
+                    end
+                else % try finding file in the path 
+                    pfe = which(fname{ifn});
+                    if ~isempty(pfe)
+                        files_list = {pfe};
+                    else
+                        files_list = {};
                     end
                 end
+                
+                
                 if isempty(this.file_list)
-                    this.file_list = dir_file_list;
+                    this.file_list = files_list;
                 else
-                    this.file_list = [this.file_list dir_file_list];
+                    this.file_list = [this.file_list files_list];
                 end
             end
             
@@ -77,7 +86,7 @@ classdef from_file_signal_gen < signal_gen
             this.pts = [1:numel(this.file_list)];
             
             % open first file
-            fname = this.file_list(1).name;
+            fname = this.file_list{1};
             st = this.load_data(fname);
             vars = fieldnames(st);
             
@@ -133,7 +142,7 @@ classdef from_file_signal_gen < signal_gen
             % go over all files to fetch values for the parameters and
             % create enum domains
             for ifile = 1:numel(this.file_list)
-                fname = this.file_list(ifile).name;
+                fname = this.file_list{ifile};
                 st = this.load_data(fname);
                 vars = fieldnames(st);
                 for ip = 2:numel(this.params)
@@ -191,7 +200,7 @@ classdef from_file_signal_gen < signal_gen
         
         function [X, time] = computeSignals(this, p, time) % returns a p in pts
             
-            fname = this.file_list(p(1)).name;
+            fname = this.file_list{p(1)};
             X = nan(numel(this.signals), length(time));
             
             try

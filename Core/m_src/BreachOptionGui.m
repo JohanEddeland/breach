@@ -223,7 +223,7 @@ classdef BreachOptionGui < handle
             num_elements = size(this.gui_components,1);
             ax = axes;
             set(ax, 'Position', pos, 'visible', 'off');
-            g = text(0.012,0.2, string,'Interpreter','none', 'FontWeight', 'bold');
+            g = text(0.0,0.3, string,'Interpreter','none', 'FontWeight', 'bold');
             set(g,'FontName', this.font_name,...
                 'FontSize', this.font_size);
             this.gui_components{num_elements+1,1} = ....
