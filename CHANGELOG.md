@@ -6,7 +6,7 @@
 
 ## Bugfixes
 - fixed bug in SetInputGenGui 
-- fixed bug whereas time was not set properly with SetTime
+- fixed bug whereas time was sometimes not set properly with SetTime
 - fixed crash when minimum step size is bigger than eps, used for
   detecting logged signals when creating interface
 - fixed bug causing BreachSimulinkSystem to fail when a logged object
