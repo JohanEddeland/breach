@@ -23,25 +23,26 @@ classdef BreachRequirement < BreachTraceSystem
         function this = BreachRequirement(req_monitors, postprocess_signal_gens, precond_monitors)
             
             this = this@BreachTraceSystem({}, [], {'data_trace_idx_'});
-            
-            % Adds requirement monitors, at least one
-            this.req_monitors = {};
-            this.AddReq(req_monitors);
-            
-            % Add output gens
-            this.postprocess_signal_gens={};
-            if exist('postprocess_signal_gens', 'var')&&~isempty(postprocess_signal_gens)
-                this.AddPostProcess(postprocess_signal_gens);
+            if nargin>0
+                % Adds requirement monitors, at least one
+                this.req_monitors = {};
+                this.AddReq(req_monitors);
+                
+                % Add output gens
+                this.postprocess_signal_gens={};
+                if exist('postprocess_signal_gens', 'var')&&~isempty(postprocess_signal_gens)
+                    this.AddPostProcess(postprocess_signal_gens);
+                end
+                
+                % precondition requirements
+                this.precond_monitors = {};
+                if  exist('precond_monitors', 'var')&&~isempty(precond_monitors)
+                    this.AddPreCond(precond_monitors);
+                end
+                
+                % Reset signal map and figure out what signals are required input signals
+                this.ResetSigMap();
             end
-            
-            % precondition requirements
-            this.precond_monitors = {};
-            if  exist('precond_monitors', 'var')&&~isempty(precond_monitors)
-                this.AddPreCond(precond_monitors);
-            end
-            
-            % Reset signal map and figure out what signals are required input signals
-            this.ResetSigMap();
             
         end
         

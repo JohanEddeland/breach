@@ -33,11 +33,16 @@ classdef FalsificationProblem < BreachProblem
         
         % Constructor calls parent constructor
         function this = FalsificationProblem(BrSys, phi, params, ranges)
-           
-            Br = BrSys.copy();
+         
+            if nargin>=1
+                Br = BrSys.copy();
+            end
             switch nargin
+                case 0
+                    super_args = {};
                 case 2
-                    params = Br.GetSysVariables();
+                    [params, ipr] = Br.GetSysVariables();
+                    params = params(ipr>Br.P.DimX);
                     req_params = Br.GetReqVariables();
                     if ~isempty(req_params)
                       Br.ResetDomain(req_params);
@@ -62,6 +67,7 @@ classdef FalsificationProblem < BreachProblem
             end
             this = this@BreachProblem(super_args{:});
             this.obj_best=inf;
+        
         end
         
         function ResetObjective(this, varargin)
@@ -100,7 +106,15 @@ classdef FalsificationProblem < BreachProblem
         function SaveInCache(this)
             if this.BrSys.UseDiskCaching
                 FileSave = [this.BrSys.DiskCachingRoot filesep 'FalsificationProblem_Runs.mat'];
-                evalin('base', ['save(''' FileSave ''',''' this.whoamI ''');']);
+                varname = this.whoamI;
+                if ~evalin('base', ['exist(''' varname ''', ''var'')'])
+                    assignin('base', varname,this);
+                    evalin('base', ['save(''' FileSave ''',''' varname ''');']);
+                    evalin('base', ['clear ' varname ';']);
+                else
+                    evalin('base', ['save(''' FileSave ''',''' varname ''');']);
+                end
+                
             end
         end
         
@@ -153,14 +167,17 @@ classdef FalsificationProblem < BreachProblem
         end
         
         function DispResultMsg(this)
-            this.DispResultMsg@BreachProblem();
-            %if this.use_parallel && min(this.obj_best) < 0
-            %    this.X_false = this.x_best;
-            %end
-            if ~isempty(this.X_false)
-                fprintf('Falsified with obj = %g\n', min(this.obj_best(:,end)));
-            else
-                fprintf('No falsifying trace found.\n');
+            if ~strcmp(this.display, 'off')
+                
+                this.DispResultMsg@BreachProblem();
+                %if this.use_parallel && min(this.obj_best) < 0
+                %    this.X_false = this.x_best;
+                %end
+                if ~isempty(this.X_false)
+                    fprintf('Falsified with obj = %g\n', min(this.obj_best(:,end)));
+                else
+                    fprintf('No falsifying trace found.\n');
+                end
             end
         end
         

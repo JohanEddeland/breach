@@ -340,8 +340,7 @@ classdef BreachSet < BreachStatus
                 this.Concat(B);
             end
         end
-        
-        
+                
         function SetParamSpec(this, params, values, ignore_sys_param)
             % BreachSet.SetParamSpec
             ip = FindParam(this.P, params);
@@ -514,8 +513,7 @@ classdef BreachSet < BreachStatus
                 nb_pts= size(this.P.pts,2);
             end
         end
-        
-        
+               
         function [params, ipr] = GetVariables(this)
             [params, ipr] = GetBoundedDomains(this);
             if this.GetNbParamVectors()>1
@@ -553,8 +551,7 @@ classdef BreachSet < BreachStatus
             params =   this.P.ParamList(ipr);
         end
                 
-        %% Signals
-        
+        %% Signals       
         function  this =  SetSignalMap(this, varargin)
             % SetSignalMap defines aliases for signals - used by GetSignalValues 
             %
