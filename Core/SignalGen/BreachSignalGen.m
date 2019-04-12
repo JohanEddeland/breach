@@ -117,7 +117,7 @@ classdef BreachSignalGen < BreachSystem
                X(cur_is:cur_is+ns-1, :) = sg.computeSignals(p_isg, tspan);
                cur_is = cur_is+ ns;
             end
-                
+            
         end
         
         function SetParam(this, params, values, varargin)

@@ -54,7 +54,7 @@ classdef stl_monitor < req_monitor
             % compute predicate values
             if ~isempty(this.predicates)
                 for ip = 1:numel(this.predicates)
-                    [time, Xout(ip,:)] = this.get_standard_rob(this.predicates{ip}, time);
+                    [~, Xout(ip,:)] = this.get_standard_rob(this.predicates{ip}, time);
                 end
             end
             
