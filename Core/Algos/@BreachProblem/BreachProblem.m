@@ -29,8 +29,9 @@ classdef BreachProblem < BreachStatus
     %                     help to know available options (E.g., for matlab solvers, this is
     %                     often set using the optimset command).
     %   max_time       -  maximum wall-time budget allocated to optimization
-    %   max_obj_eval   -  maximum number of objective function evaluation (
-    %   often translates into number of simulations of system under test)
+    %   max_obj_eval   -  maximum number of objective function evaluation 
+    %                     (often translates into number of simulations of 
+    %                      system under test)
     %   log_traces     -  (default=true) logs all traces computed during optimization                 
     %   T_spec         -  time 
     % 
@@ -48,11 +49,12 @@ classdef BreachProblem < BreachStatus
     %                     and returns these options.
     %   solve           - calls the solver 
     %   GetLog          - returns a BreachRequirement object with logged
-    %   traces
+    %                     traces
     %   GetBest         - returns a BreachRequirement object with the best
-    %   trace (worst satisfaction in case of falsification) 
+    %                     trace (worst satisfaction in case of falsification) 
     %
     % See also FalsificationProblem, ParamSynthProblem, ReqMiningProblem
+    %
     
     %% Properties 
     properties
@@ -156,27 +158,28 @@ classdef BreachProblem < BreachStatus
         %% Constructor
         function this = BreachProblem(BrSet, phi, params, ranges)
             
-            if ~isa(phi, 'BreachRequirement')
-                phi = BreachRequirement(phi);
+            if nargin>0
+                if ~isa(phi, 'BreachRequirement')
+                    phi = BreachRequirement(phi);
+                end
+                
+                this.R0 = phi.copy();
+                this.Spec = phi;
+                
+                switch nargin
+                    case 2
+                        this.ResetObjective(BrSet);
+                    case 3
+                        this.ResetObjective(BrSet, params);
+                    case 4
+                        this.ResetObjective(BrSet, params, ranges);
+                end
+                % setup default solver
+                this.setup_solver();
+                
+                % reset display
+                rfprintf_reset();
             end
-            
-            this.R0 = phi.copy(); 
-            this.Spec = phi;
-            
-            switch nargin 
-                case 2
-                    this.ResetObjective(BrSet);
-                case 3
-                    this.ResetObjective(BrSet, params);
-                case 4
-                    this.ResetObjective(BrSet, params, ranges);
-            end
-            % setup default solver
-            this.setup_solver();
-            
-            % reset display
-            rfprintf_reset();
-            
         end
         
         function Reset_x0(this)
@@ -209,7 +212,8 @@ classdef BreachProblem < BreachStatus
                   
             % Parameter ranges
             if ~exist('params','var')
-                params = this.BrSet.GetBoundedDomains();
+                [params, ipr] = this.BrSet.GetBoundedDomains();
+                params = params(ipr>this.BrSet.P.DimX);
             else
                 if ischar(params)
                     params = {params};
@@ -499,6 +503,7 @@ classdef BreachProblem < BreachStatus
             BrQ.SetParamRanges(this.params, [this.lb this.ub])
             BrC = BrQ.copy();
             nb_corners = this.solver_options.nb_max_corners;
+            qseed = this.solver_options.quasi_rand_seed;
             nb_samples = this.solver_options.nb_new_trials;
             step = this.solver_options.start_at_trial;
             
@@ -514,7 +519,7 @@ classdef BreachProblem < BreachStatus
             else
                 qnb_samples = nb_samples+qstep;
                 if qnb_samples>0  % needs to finish corners plus some
-                    BrQ.QuasiRandomSample(qnb_samples);
+                    BrQ.QuasiRandomSample(qnb_samples, qseed);
                     XQ = BrQ.GetParam(this.params);
                     X0 = [XC(:,step+1:end) XQ];
                 else % more corners than samples anyway
@@ -748,7 +753,7 @@ classdef BreachProblem < BreachStatus
         end
         
         function DispResultMsg(this)
-       
+       if ~strcmp(this.display, 'off')
             % display status of last eval if not already done
             if rem(this.nb_obj_eval,this.freq_update)
                 this.display_status();
@@ -777,7 +782,7 @@ classdef BreachProblem < BreachStatus
             end
 
             this.Display_Best_Results(this.obj_best, this.x_best);
-            
+       end
         end
         
         function Display_Best_Results(this, best_fval, param_values)
