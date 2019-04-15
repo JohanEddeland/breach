@@ -1011,12 +1011,16 @@ classdef BreachSet < BreachStatus
             if nargin ==1
                 max_num_samples = inf;
             end
+            
             bnd_params = this.GetBoundedDomains();
             if this.AppendWhenSample
                 this.SampleDomain(bnd_params, 2, 'corners', 'append', max_num_samples);
             else
                 this.SampleDomain(bnd_params,2, 'corners', 'replace', max_num_samples);
             end
+            
+            
+            
         end
         
         function QuasiRandomSample(this, nb_sample, step)
@@ -1042,8 +1046,11 @@ classdef BreachSet < BreachStatus
         end
                 
         %% Concatenation, ExtractSubset - needs some additional compatibility checks...
-        function Concat(this, other)
-            this.P = SConcat(this.P, other.P);
+        function Concat(this, other, fast)
+            if nargin<=2
+               fast = false; 
+            end
+            this.P = SConcat(this.P, other.P, fast);
         end
         
         function other  = ExtractSubset(this, idx)

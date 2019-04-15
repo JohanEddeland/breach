@@ -1,0 +1,19 @@
+function opt = setup_meta(this, varargin)
+
+this.solver = 'meta';
+dim_pb = numel(this.params);
+opt = struct( ...
+    'num_corners', min(2^dim_pb, 10*dim_pb),...
+    'num_quasi_rand_samples', 10*dim_pb, ...
+    'quasi_rand_seed', 1, ...
+    'nb_local_iter',  50, ...
+    'nelder_mead_options', optimset('Display', 'off') ...
+    );
+
+if nargin > 2
+    opt = varargin2struct(opt, varargin{:});
+end
+
+this.solver_options = opt;
+
+end

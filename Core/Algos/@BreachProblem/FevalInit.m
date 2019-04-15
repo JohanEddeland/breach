@@ -6,7 +6,6 @@ if ~exist('X0', 'var')
 end
 fval = this.objective(X0); 
 res = struct('x',this.x_best,'f', this.obj_best, 'fval', fval);
-this.res = res;
 
 end
 
