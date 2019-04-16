@@ -800,7 +800,7 @@ classdef BreachProblem < BreachStatus
             end
             
             if this.nb_obj_eval > this.max_obj_eval
-                fprintf('\n Stopped after max_obj_eval was reached (maximum number of objective function evaluation.\n' );
+                fprintf('\n Stopped after max_obj_eval was reached (maximum number of objective function evaluations).\n' );
             end
             
             if numel(this.res) > 1 && this.use_parallel

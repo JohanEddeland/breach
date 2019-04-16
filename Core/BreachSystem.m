@@ -385,24 +385,24 @@ classdef BreachSystem < BreachSet
             
         end
         
-        function [rob, tau] = GetIORobustSat(this, phi, params, values, t_phi, inout, relabs)
+        function [rob, tau] = GetIORobustSat(this, inout, relabs, phi, params, values, t_phi)
             % Monitor spec on trajectories - run simulations if not done before
-            
-            if nargin < 5
+           
+            if nargin < 7
                 t_phi = 0;
             end
-            if nargin==1
+            if nargin==3
                 phi = this.spec;
                 params = {};
                 values = [];
             end
-            
-            if nargin==2
+           
+            if nargin==4
                 params = {};
                 values = [];
             end
-            
-            if nargin==3
+           
+            if nargin==5
                 t_phi = params;
                 params = {};
                 values = [];

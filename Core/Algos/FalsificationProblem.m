@@ -18,6 +18,9 @@ classdef FalsificationProblem < BreachProblem
         X_false
         obj_false
         StopAtFalse=true
+        Rio_Mode
+        Rio_Mode_log=[]
+        val_max=inf
     end
     
     methods (Static)
@@ -89,20 +92,66 @@ classdef FalsificationProblem < BreachProblem
                     end
                 end
             end
-            
             NaN_idx = isnan(robs); % if rob is undefined, make it inf to ignore it
             robs(NaN_idx) = inf;
             obj = min(robs,[],1)';
             
         end     
         
+        function set_IO_robustness_mode(this, mode, cap)
+            switch mode
+                case 'default'
+                    this.robust_fn = @(x) (this.Spec.Eval(this.BrSys, this.params, x));
+                    this.constraints_fn = [];
+                case 'random'
+                    this.robust_fn = @(x) this.boolean_verdict(x);
+                    this.constraints_fn = [];
+                case 'in'
+                    this.robust_fn = @(x) (this.Spec.Eval_IO('in', 'rel', this.BrSys, this.params, x));
+                    if exist('cap','var')
+                        this.val_max = cap;
+                    end
+                    this.constraints_fn = [];
+                case 'out'
+                    this.robust_fn = @(x) (this.Spec.Eval_IO('out', 'rel', this.BrSys, this.params, x));
+                    if exist('cap','var')
+                        this.val_max = cap;
+                    end
+                    this.constraints_fn = [];
+                case 'constrained'
+                    this.robust_fn = @(x) (this.Spec.Eval_IO('out', 'rel', this.BrSys, this.params, x));
+                    if exist('cap','var')
+                        this.val_max = cap;
+                    end
+                    this.constraints_fn = @(x) (this.Spec.Eval_IO('in', 'abs', this.BrSys, this.params, x));
+                case 'combined'
+                    this.robust_fn = @(x) (this.combined_IO_robustness(x));
+                    this.constraints_fn = [];
+            end
+        end
+        
+        function ert = boolean_verdict(this, x)
+            rob = this.Spec.Eval(this.BrSys, this.params, x);
+            if rob >= 0
+                ert = 0.5;
+            else
+                ert = -0.5;
+            end
+        end 
+
+        function rio = combined_IO_robustness(this, x)
+            ri = this.Spec.Eval_IO('in', 'abs', this.BrSys, this.params, x);
+            ro = this.Spec.Eval_IO('out','rel', this.BrSys, this.params, x);
+            rio = atan(ri) + atan(ro);
+        end        
+   
         % Nothing fancy - calls parent solve then returns falsifying params
         % if found.
         function [Xfalse, res] = solve(this)
             res = solve@BreachProblem(this);
             Xfalse = this.X_false;
         end
-        
+       
         function SaveInCache(this)
             if this.BrSys.UseDiskCaching
                 FileSave = [this.BrSys.DiskCachingRoot filesep 'FalsificationProblem_Runs.mat'];
@@ -121,7 +170,11 @@ classdef FalsificationProblem < BreachProblem
         
         % Logging
         function LogX(this, x, fval)
-            %   LogX  log variable parameter value tested by optimizers
+        % LogX  log variable parameter value tested by optimizers
+       
+            % Logging default stuff
+            this.LogX@BreachProblem(x, fval);
+            % this.Rio_Mode_log = [ this.Rio_Mode_log this.Rio_Mode ];  % not sure what this is useful for
             
             %  Logging falsifying parameters found
             [~, i_false] = find(min(fval)<0);

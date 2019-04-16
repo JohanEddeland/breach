@@ -1,8 +1,8 @@
-function [val, tau] = STL_Eval_IO(Sys, phi, P, trajs, inout, relabs, taus)
-%STL_EVAL_IO computes the satisfaction function of a property for one or
+function [val, tau] = STL_Eval_Gen(Sys, phi, P, trajs, partition, relabs, taus)
+%STL_EVAL_Gen computes the satisfaction function of a property for one or
 % many traces.
 % 
-% Synopsis: [val, tau] = STL_Eval_IO(Sys, phi, P, trajs[, taus])
+% Synopsis: [val, tau] = STL_Eval_Gen(Sys, phi, P, partition, relabs, trajs[, taus])
 % 
 % Inputs:
 %  - Sys    : the system
@@ -12,11 +12,10 @@ function [val, tau] = STL_Eval_IO(Sys, phi, P, trajs, inout, relabs, taus)
 %  - trajs  : is a structure with fields X and time. It may contains many
 %             trajectories. In this case, all will be checked wrt the
 %             property parameter described in P.
-%  - inout  : is a string indicating which variables are interpreted in
-%             a quantitative fashion: 'in' or 'out'.
+%  - partition  : is the partition of signals given as an array of strings:
+%             the robustness is computed in the signals of the partition.
 %  - relabs : is a string indicating how to treat variables that are 
-%             interpreted qualitatively: 'rel' for -inf/+inf or 'abs' for
-%             +0/-0.
+%             not in the partition: 'rel' for -inf/+inf or 'abs' for 0.
 %  - taus   : (Optional, default=traj.time for each traj in trajs) is the
 %             time, possibly an array, when to eval the satisfaction of the
 %             property. All time points not belonging to traj.time will be
@@ -38,18 +37,9 @@ function [val, tau] = STL_Eval_IO(Sys, phi, P, trajs, inout, relabs, taus)
 %See also SEvalProp STL_Formula
 %
 
-
-
 %% formula is given directly as a string
 if ischar(phi)
     STL_Formula('phi_tmp__', phi);
-    partition = [];
-    if (strcmp(inout, 'in'))
-        partition = get_in_signal_names(phi);
-    elseif (strcmp(inout, 'out'))
-        partition = get_out_signal_names(phi);
-    end
-    
     switch nargin
         case 6
             [val, tau] = STL_EvalThom_Gen(Sys, phi_tmp__, P, trajs, partition, relabs);
@@ -74,13 +64,6 @@ if isfield(phi.params,'default_params')
             end
         end
     end
-end
-
-partition = [];
-if (strcmp(inout, 'in'))
-    partition = get_in_signal_names(phi);
-elseif (strcmp(inout, 'out'))
-    partition = get_out_signal_names(phi);
 end
 
 switch nargin

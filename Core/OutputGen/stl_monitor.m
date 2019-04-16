@@ -7,10 +7,14 @@ classdef stl_monitor < req_monitor
         formula
         predicates
         formula_id
+        inout  % input output mode
+        relabs % relative absolute mode
     end
     
     methods
         function this = stl_monitor(formula)
+            this.inout = '';
+            this.relabs = '';
             if ischar(formula)
                 this.formula= STL_Formula(STL_NewID('phi'), formula);
             elseif isa(formula,'STL_Formula')
@@ -45,6 +49,26 @@ classdef stl_monitor < req_monitor
             
             this.init_P();
             
+        end
+        
+        function [] = set_mode(this, flag1, flag2)
+            switch flag1
+                case {'in','out'}
+                    this.inout = flag1;
+                otherwise
+                    this.inout = '';
+            end
+            switch flag2
+                case {'rel','abs'}
+                    this.relabs = flag2;
+                otherwise
+                    this.relabs = '';
+            end
+        end
+
+        function [flag1,flag2] = get_mode(this)
+            flag1 = this.inout;
+            flag2 = this.relabs;
         end
         
         function [time, Xout] = computeSignals(this, time, X, p)
@@ -90,7 +114,17 @@ classdef stl_monitor < req_monitor
         end
         
         function [time, rob] = get_standard_rob(this, phi, time)
-            [rob, time] = STL_Eval(this.Sys, phi, this.P0,this.P.traj{1},time);
+            switch this.inout
+                case {'in','out'}
+                    switch this.relabs
+                        case {'rel','abs'}
+                            [rob, time] = STL_Eval_IO(this.Sys, phi, this.P0, this.P.traj{1}, this.inout, this.relabs, time);
+                        otherwise
+                            [rob, time] = STL_Eval_IO(this.Sys, phi, this.P0, this.P.traj{1}, this.inout, 'rel', time);
+                    end
+                otherwise
+                    [rob, time] = STL_Eval(this.Sys, phi, this.P0,this.P.traj{1},time);
+            end                    
         end
         
         function st = disp(this)

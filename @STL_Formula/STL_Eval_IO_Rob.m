@@ -1,4 +1,4 @@
-function [val, tau] = STL_Eval_IO(Sys, phi, P, trajs, inout, relabs, taus)
+function [val, tau, robustness_map] = STL_Eval_IO_Rob(Sys, phi, P, trajs, inout, relabs, robustness_map, taus)
 %STL_EVAL_IO computes the satisfaction function of a property for one or
 % many traces.
 % 
@@ -51,10 +51,10 @@ if ischar(phi)
     end
     
     switch nargin
-        case 6
-            [val, tau] = STL_EvalThom_Gen(Sys, phi_tmp__, P, trajs, partition, relabs);
         case 7
-            [val, tau] = STL_EvalThom_Gen(Sys, phi_tmp__, P, trajs, partition, relabs, taus);
+            [val, tau, robustness_map] = STL_EvalThom_Gen_Rob(Sys, phi_tmp__, P, trajs, partition, robustness_map, relabs);
+        case 8
+            [val, tau, robustness_map] = STL_EvalThom_Gen_Rob(Sys, phi_tmp__, P, trajs, partition, relabs, robustness_map, taus);
     end
     evalin('base', 'clear phi_tmp__');
     return
@@ -84,10 +84,10 @@ elseif (strcmp(inout, 'out'))
 end
 
 switch nargin
-    case 6
-        [val, tau] = STL_EvalThom_Gen(Sys, phi, P, trajs, partition, relabs);
     case 7
-        [val, tau] = STL_EvalThom_Gen(Sys, phi, P, trajs, partition, relabs, taus);
+        [val, tau, robustness_map] = STL_EvalThom_Gen_Rob(Sys, phi, P, trajs, partition, relabs, robustness_map);
+    case 8
+        [val, tau, robustness_map] = STL_EvalThom_Gen_Rob(Sys, phi, P, trajs, partition, relabs, robustness_map, taus);
 end
 
 end
