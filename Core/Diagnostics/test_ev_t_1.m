@@ -25,9 +25,7 @@ target = 2;
 
 %target_value = 2;
 
-
 %t2 = [1.5, 2.5];
-
 
 %implicant = BreachImplicant;
 %implicant = implicant.addInterval(3,2);

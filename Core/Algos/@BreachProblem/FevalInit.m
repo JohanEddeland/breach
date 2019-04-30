@@ -4,8 +4,9 @@ function res = FevalInit(this,X0)
 if ~exist('X0', 'var')
     X0 = this.BrSet.GetParam(this.params);
 end
-fval = this.objective(X0); 
-res = struct('x',this.x_best,'f', this.obj_best, 'fval', fval);
+fval = this.objective(X0);
+[fbest, ibest] = min(fval);
+res = struct('BrSys', this.BrSys,'X0',X0,'x',X0(:,ibest),'f', fbest, 'fval', fval);
 
 end
 

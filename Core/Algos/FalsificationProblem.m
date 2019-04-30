@@ -189,8 +189,6 @@ classdef FalsificationProblem < BreachProblem
                     end
                 end
             end
-            % Logging default stuff
-            this.LogX@BreachProblem(x, fval);
             
         end
         

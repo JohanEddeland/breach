@@ -13,7 +13,9 @@ s2.values = v2;
 interval.begin = 0;
 interval.end = 2;
 
-bound.begin = 
+bound.begin = 1;
+bound.end = 2;
+
 
 implicant = BreachImplicant;
 implicant = implicant.addInterval(interval.begin, interval.end);

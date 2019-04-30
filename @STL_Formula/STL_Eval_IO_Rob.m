@@ -35,7 +35,7 @@ function [val, tau, robustness_map] = STL_Eval_IO_Rob(Sys, phi, P, trajs, inout,
 %          (this avoid a useless cell array), and thus becomes a line
 %          array.
 % 
-%See also SEvalProp STL_Formula
+% See also SEvalProp STL_Formula
 %
 
 
@@ -52,7 +52,7 @@ if ischar(phi)
     
     switch nargin
         case 7
-            [val, tau, robustness_map] = STL_EvalThom_Gen_Rob(Sys, phi_tmp__, P, trajs, partition, robustness_map, relabs);
+            [val, tau, robustness_map] = STL_EvalThom_Gen_Rob(Sys, phi_tmp__, P, trajs, partition, relabs, robustness_map);
         case 8
             [val, tau, robustness_map] = STL_EvalThom_Gen_Rob(Sys, phi_tmp__, P, trajs, partition, relabs, robustness_map, taus);
     end

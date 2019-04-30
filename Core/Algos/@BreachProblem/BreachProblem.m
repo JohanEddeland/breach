@@ -97,13 +97,13 @@ classdef BreachProblem < BreachStatus
     % misc options
     properties
         display = 'on'
-        freq_update = 10 
+        freq_update = 2 
         use_parallel = 0
         max_time = inf
         time_start = tic
         time_spent = 0
         nb_obj_eval = 0
-        max_obj_eval = 100
+        max_obj_eval = 1000
         mixed_integer_optim_solvers = {'ga'};
     end
     
@@ -297,24 +297,17 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt;
         end
         
-        function solver_opt = setup_quasi_random(this)
+        function solver_opt = setup_quasi_random(this, varargin)
             solver_opt = struct('method', 'halton',...
-                'seed', 1,...
-                'num_samples', 100 ...   % arbitrary - should be dim-dependant?  
+                'quasi_rand_seed', 1,...
+                'num_quasi_rand_samples', 100 ...   % arbitrary - should be dim-dependant?  
             );
+            solver_opt= varargin2struct(solver_opt, varargin{:});
+        
             this.solver = 'quasi_random';
             this.solver_options = solver_opt; 
         end
- 
-        function solver_opt = setup_nelder_mead(this)
-            solver_opt = optimset(); 
-            solver_opt = optimset(solver_opt, 'Display', 'off');
-            this.x0 = (this.ub-this.lb)/2;
-            this.solver = 'nelder_mead';
-            this.solver_options = solver_opt;
-        end
-        
-        
+         
         function solver_opt = setup_corners(this)
             solver_opt = struct('num_corners', 100 ...   % arbitrary - should  be dim-dependant?  
             );
@@ -448,6 +441,8 @@ classdef BreachProblem < BreachStatus
                     [x, fval, counteval, stopflag, out, bestever] = cmaes(this.objective, this.x0', [], this.solver_options);
                     res = struct('x',x, 'fval',fval, 'counteval', counteval,  'stopflag', stopflag, 'out', out, 'bestever', bestever);
                     
+                case 'meta'
+                    res = this.solve_meta();                
                 case 'ga'
                     res = solve_ga(this, problem);
                     
