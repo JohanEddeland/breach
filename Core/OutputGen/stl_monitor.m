@@ -99,9 +99,9 @@ classdef stl_monitor < req_monitor
             end
             
             rob_map = containers.Map;
-            %this.getBrSet(B);
             phi = this.formula;
-            [val, tau, rob_map] = STL_Eval_IO_Rob(this.Sys, phi, this.P, this.P.traj{1}, 'out', 'rel', rob_map);
+
+            [~,~,rob_map] = STL_Eval_IO_Rob(this.Sys, phi, this.P, this.P.traj{1}, 'out', 'rel', rob_map);
             diag_map = containers.Map;
             
             formula_names_map = containers.Map;
@@ -143,16 +143,19 @@ classdef stl_monitor < req_monitor
             else
                 color = 'r';
             end
+            
+            traj = this.P.traj{1}; 
+            t0 = traj.time;
             for i=1:nb_plots
                 id = keys{i};
                 h = F.AddAxes();
                 axis(h);
-                hold on;
-                grid on;
-                formula_name = formula_names_map(id);
-                title(formula_name, 'Interpreter', 'none');
                 signal = rob_map(id);
                 stairs(signal.times, signal.values);
+                
+                grid on;               
+                formula_name = formula_names_map(id);
+                title(formula_name, 'Interpreter', 'none');
                 
                 ylim = get(h, 'YLim');
                 ylim_bot = ylim(1);
@@ -178,6 +181,8 @@ classdef stl_monitor < req_monitor
                     hold on;
                     plot(sample.time, sample.value, 'x');
                 end
+                
+                set(h, 'XLim', [0 t0(end)]);
             end
             
         end
@@ -253,18 +258,18 @@ classdef stl_monitor < req_monitor
             switch(get_type(phi))
                 case 'predicate'
                     signal_names = STL_ExtractSignals(phi);
-                    for(i=1:length(signal_names))
+                    for i=1:length(signal_names)
                         signal_name = signal_names{i};
                         signal = rob(signal_name);
                         if(~diag_map.isKey(signal_name))
                             out_implicant = BreachImplicant;
                             intervals = in_implicant.getIntervals();
-                            for(j=1:length(intervals))
+                            for j=1:length(intervals)
                                 interval = intervals(j);
                                 out_implicant = out_implicant.addInterval(interval.begin, interval.end);
                             end
                             samples = in_implicant.getSignificantSamples();
-                            for(j=1:length(samples))
+                            for j=1:length(samples)
                                 sample = samples(j);
                                 value = interp1(signal.times, signal.values, sample.time, 'previous');
                                 out_implicant = out_implicant.addSignificantSample(sample.time, value);
@@ -320,7 +325,7 @@ classdef stl_monitor < req_monitor
                     [psis{2}, diag_map] = this.diag(psis{2}, rob, diag_map, flag);
                 case 'always'
                     signal = rob(get_id(psis{1}));
-                    I = eval(get_interval(phi));
+                    I = this.get_interval();
                     bound.begin = I(1);
                     bound.end = min(I(2),max(signal.times));
                     if(flag)
@@ -333,7 +338,7 @@ classdef stl_monitor < req_monitor
                     [psis{1}, diag_map] = this.diag(psis{1}, rob, diag_map, flag);
                 case 'eventually'
                     signal = rob(get_id(psis{1}));
-                    I = eval(get_interval(phi));
+                    I = this.get_interval();
                     bound.begin = I(1);
                     bound.end = min(I(2),max(signal.times));
                     if(flag)
@@ -347,17 +352,20 @@ classdef stl_monitor < req_monitor
         end
         
         function assign_params(this, p)
+            if nargin==1
+               p = GetParam(this.P, this.params);
+            end
             % assign_params fetch parameters and assign them in the current context
             for ip = 1:numel(this.params)
                 assignin('caller', this.params{ip},p(ip));
             end
         end
         
-        function get_horizon(this__)
-            this.assign_params();
-            get_interval(this__.formula);
+        function I = get_interval(this__)
+            this__.assign_params();            
+            I = eval(get_interval(this__.formula));                
         end
-        
+                
         function init_P(this)
             % init_P construct legacy structure from signals and
             % parameters names

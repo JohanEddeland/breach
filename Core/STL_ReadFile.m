@@ -197,7 +197,6 @@ catch err
     rethrow(err);
 end
 
-
 end
 
 function phi = wrap_up(current_id, current_formula, new_params, in_signal_names, out_signal_names)

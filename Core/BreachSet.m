@@ -379,7 +379,23 @@ classdef BreachSet < BreachStatus
                 this.Concat(B);
             end
         end
-                
+              
+        function SetDomainCfg(this, cfg)
+           for ip = 1:numel(cfg.params) 
+              typ = cfg.types{ip};
+              dom = cfg.domains{ip};
+              if isempty(dom)
+                  dom = [];
+              else
+                  dom = str2num(dom); %#ok<ST2NM>
+              end
+              
+              this.SetDomain(cfg.params{ip},typ,dom); 
+              
+           end
+            
+        end
+        
         function SetParamSpec(this, params, values, ignore_sys_param)
             % BreachSet.SetParamSpec
             ip = FindParam(this.P, params);
@@ -1358,6 +1374,21 @@ classdef BreachSet < BreachStatus
             end
         end
         
+        function cfg=  GetDomainCfg(this)
+            params = this.GetParamList();
+            cfg.params = params;
+            for ip = 1:numel(params)
+                dom = this.GetDomain(params{ip});
+                cfg.types{ip} = dom.type;
+                if strcmp(dom.type, 'enum')
+                    cfg.domains{ip}=dom.enum;
+                else
+                    cfg.domains{ip}=dom.domain;
+                end
+            end                       
+        end
+        
+        
         %% Coverage
         function [cnt, grd1, grd2] = GetSignalCoverage(this,sigs, delta1,delta2)
             % 1d or 2d
@@ -1724,8 +1755,7 @@ classdef BreachSet < BreachStatus
                 
             end
         end
-        
-        
+           
         function summary = GetSummary(this)
             
             if this.hasTraj()
@@ -1917,8 +1947,7 @@ classdef BreachSet < BreachStatus
             
             end
         end
-        
-        
+                
         function st = get_signal_attributes_string(this, sig) 
             atts = this.get_signal_attributes(sig);
             if isempty(atts)
@@ -2151,6 +2180,7 @@ classdef BreachSet < BreachStatus
                 lower_left_corner = [lower_left_corner; this.Domains(ip).domain(1)];
             end
         end
+        
         function upper_right_corner = UpperRightCorner(this)
             % Identify the "upper, right" corner of the parameter set
             varying_parameter_indices = this.VaryingParamList;
@@ -2353,7 +2383,6 @@ classdef BreachSet < BreachStatus
         
     end
 
-    
     
     
     

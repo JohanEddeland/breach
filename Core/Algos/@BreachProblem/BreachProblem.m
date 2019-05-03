@@ -60,7 +60,8 @@ classdef BreachProblem < BreachStatus
     properties
         objective
         x0
-        solver= 'global_nelder_mead'   % default solver name
+        %solver= 'global_nelder_mead'   % default solver name
+        solver= 'meta'   % default solver name
         solver_options    % solver options
         Spec              % BreachRequirement object reset to R0 for each objective evaluation
         T_Spec=0
@@ -440,7 +441,8 @@ classdef BreachProblem < BreachStatus
                     
                     [x, fval, counteval, stopflag, out, bestever] = cmaes(this.objective, this.x0', [], this.solver_options);
                     res = struct('x',x, 'fval',fval, 'counteval', counteval,  'stopflag', stopflag, 'out', out, 'bestever', bestever);
-                    
+                    this.add_res(res);
+
                 case 'meta'
                     res = this.solve_meta();                
                 case 'ga'
@@ -454,7 +456,7 @@ classdef BreachProblem < BreachStatus
                             problem.x0 = this.generate_new_x0;
                         end
                     end
-                    
+                    this.add_res(res);                    
                 case 'fminsearch'
                     while ~this.stopping
                         if this.use_parallel
@@ -477,6 +479,8 @@ classdef BreachProblem < BreachStatus
                             end
                         end
                     end
+                    this.add_res(res);
+    
                 case 'simulannealbnd'
                     if this.use_parallel
                         num_works = this.BrSys.Sys.Parallel;
@@ -491,9 +495,9 @@ classdef BreachProblem < BreachStatus
                         end
                     else
                         [x,fval,exitflag,output] = feval(this.solver, problem);
-                        res = struct('x',x,'fval',fval, 'exitflag', exitflag, 'output', output);
+                        res = struct('x',x,'fval',fval, 'exitflag', exitflag, 'output', output);                        
                     end
-                    
+                    this.add_res(res);
                 case 'optimtool'
                     problem.solver = 'fmincon';
                     optimtool(problem);
@@ -502,12 +506,13 @@ classdef BreachProblem < BreachStatus
 
                 case 'binsearch'
                     res = solve_binsearch(this);
+                    this.add_res(res);
 
                 otherwise
                     res = feval(this.solver, problem);
+                    this.add_res(res);
                     
             end
-            this.res = res;
             this.DispResultMsg(); 
         
             %% Saving run in cache folder

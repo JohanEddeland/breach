@@ -193,7 +193,7 @@ switch(phi.type)
         % Here, we need to store the robustness signals for every
         % subformula, which is not done by default
         signal_names = STL_ExtractSignals(phi);
-        for(i=1:length(signal_names))
+        for i=1:length(signal_names)
             signal_name = signal_names{i};
             index = FindParam(Sys, signal_name);
             signal.times = P.traj{1}.time;
@@ -305,6 +305,11 @@ if ~isempty(find(ibof, 1))
     time_ok = time_values(~ibof);
     valarray = interp1(time_ok, val_ok, time_values, 'nearest');
 end
+
+% Additional functionality as compared to STL_EvalThom_Gen
+% which is only needed for the Diangostic feature
+% Here, we need to store the robustness signals for every
+% subformula, which is not done by default
 
 val.times = time_values;
 val.values = valarray;
