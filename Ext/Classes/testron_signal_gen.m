@@ -223,6 +223,14 @@ classdef testron_signal_gen < signal_gen
                         this.p0(end+1) = 0;
                     end
                 
+                elseif strcmp(signal_type{ku},'discrete_enumeration_fixed_start_period')
+                    this_arg = this.args{ku};
+                    n_intervals = this_arg(end);
+                    for k = 1:n_intervals
+                        this.params= {this.params{:} [signals{ku} '_u' num2str(k-1)]};
+                        this.p0(end+1) = 0;
+                    end
+                    
                 else
                     disp(['Warning! Cannot handle signal type ' signal_type]);
                 end
@@ -666,6 +674,37 @@ classdef testron_signal_gen < signal_gen
                             x(end) = interval_values(end);
                             x = x';
                         end
+                        X(i_ni,:) = x';
+                        
+                    case 'discrete_enumeration_fixed_start_period'
+                        this_arg = this.args{i_ni};
+                        start_value = this_arg(end-2);
+                        start_period_time = this_arg(end-1);
+                        n_intervals = this_arg(end);
+                        interval_values = pts_x(1:n_intervals);
+                        pts_x = pts_x(n_intervals+1:end);
+                        interval_values = floor(interval_values);
+                        for k = 1:n_intervals
+                            if interval_values(k) == length(this_arg)
+                                interval_values(k) = interval_values(k) - 1;
+                            end
+                            interval_values(k) = this_arg(interval_values(k));
+                        end
+                        t_cp = linspace(time(1), time(end), n_intervals+1)';
+                        if numel(t_cp)==1
+                            x = interval_values(1)*ones(numel(time),1);
+                        else
+                            x = zeros(size(time));
+                            for tmp = 1:length(time)-1
+                                interval_index = find(t_cp > time(tmp),1) - 1;
+                                x(tmp) = interval_values(interval_index);
+                            end
+                            x(end) = interval_values(end);
+                            x = x';
+                        end
+                        
+                        start_period_end_index = find(time > start_period_time, 1);
+                        x(1:start_period_end_index) = start_value;
                         X(i_ni,:) = x';
                         
                         
