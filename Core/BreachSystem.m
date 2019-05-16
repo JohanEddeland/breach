@@ -150,6 +150,7 @@ classdef BreachSystem < BreachSet
             if ~isempty(sig_not_found)
                 disp('sig_not_found: ');
                 disp(sig_not_found);
+                disp(sig(sig_not_found));
                 error('Some signals in specification are not part of the system.')
             end
             
