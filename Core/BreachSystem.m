@@ -244,6 +244,8 @@ classdef BreachSystem < BreachSet
                 i_sig = FindParam(this.Sys, sig);
                 sig_not_found = find(i_sig>this.Sys.DimP, 1);
                 if ~isempty(sig_not_found)
+                    disp('sig_not_found: ');
+                    disp(sig(sig_not_found));
                     error('Some signals in specification are not part of the system.')
                 end
                 % Add property params
