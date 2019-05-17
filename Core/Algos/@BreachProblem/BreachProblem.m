@@ -501,7 +501,7 @@ classdef BreachProblem < BreachStatus
             end
             this.res = res;
             this.DispResultMsg(); 
-        
+            
             %% Saving run in cache folder
             this.SaveInCache();
             
@@ -744,13 +744,6 @@ classdef BreachProblem < BreachStatus
                             cancel(par_f);
                             break
                         end
-                    end
-                elseif journalPaperExperimentUseRandomObj == 2
-                    % We want a constant objective function
-                    if fval < 0
-                        fval = -100;
-                    else
-                        fval = 100;
                     end
                 end
             else
