@@ -131,6 +131,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             options.MaxNumTabParam = 10;
             options.InitFn = '';
             options = varargin2struct_breach(options, varargin{:});
+            options.DiskCachingRoot = '';
             
             this.UseDiskCaching = options.UseDiskCaching;
             this.DiskCachingRoot = options.DiskCachingRoot;
