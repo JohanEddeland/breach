@@ -539,64 +539,78 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             
         end
         
-%         function sig_log = FindLoggedSignals(this)
-%             %
-%             % converts a simulink output to a data structure Breach can handle
-%             %
-%             
-%             %Run the model for time 0 to check proper initialization and collect signal names
-%             tspan = evalin('base', 'tspan;');
-%             assignin('base','tspan',[0 eps]);
-%             assignin('base','t__',0);
-%             assignin('base','u__',zeros(1, numel(this.Sys.InputList)));
-%             
-%             simout = sim(this.Sys.mdl);
-%             assignin('base','tspan',tspan);
-%             
-%             %% Outputs and scopes
-%             Vars = simout.who;
-%             lenVars = numel(Vars);
-%             sig_log = {};
-%             
-%             for iV = 1:lenVars
-%                 Y = get(simout,Vars{iV});
-%                 if ~isempty(Y)
-%                     
-%                     if ~strcmp(Vars{iV}, 'tout')&&~strcmp(Vars{iV},'logsout')&&(isstruct(Y))
-%                         for iS=1:numel(Y.signals)
-%                             signame = Y.signals(iS).label;
-%                             if ~ismember(signame,sig_log)
-%                                 
-%                                 nbdim = size(double(Y.signals(iS).values),2);
-%                                 if (nbdim==1)
-%                                     sig_log = {sig_log{:} signame };
-%                                 else
-%                                     for idim = 1:nbdim
-%                                         signamei = [signame '_' num2str(idim)  '_'];
-%                                         sig_log = {sig_log{:} signamei};
-%                                     end
-%                                 end
-%                             end
-%                         end
-%                     end
-%                 end
-%             end
-%             
-%             logs = simout.get('logsout');
-%             
-%             if ~isempty(logs)
-%                 logs_names = logs.getElementNames();
-%                 
-%                 %% logs
-%                 for ilg = 1:numel(logs_names)
-%                     if ~(ismember(logs_names{ilg}, sig_log))
-%                         signame = logs_names{ilg};
-%                         if ~ismember(signame,sig_log)
-%                             
-%                             sig = logs.getElement(signame);
-%                             nbdim = size(sig.Values.Data,2);
-%                             
-%                             % naming multidimensional signal= name_signal_i_
+        function sig_log = FindLoggedSignals(this, simout)
+            %
+            % converts a simulink output to a data structure Breach can handle
+            %
+            
+            %% Outputs and scopes
+            Vars = simout.who;
+            lenVars = numel(Vars);
+            sig_log = {};
+            
+            for iV = 1:lenVars
+                Y = get(simout,Vars{iV});
+                if ~isempty(Y)
+                    
+                    if ~strcmp(Vars{iV}, 'tout')&&~strcmp(Vars{iV},'logsout')&&(isstruct(Y))
+                        for iS=1:numel(Y.signals)
+                            signame = Y.signals(iS).label;
+                            if ~ismember(signame,sig_log)
+                                
+                                nbdim = size(double(Y.signals(iS).values),2);
+                                if (nbdim==1)
+                                    sig_log = {sig_log{:} signame };
+                                else
+                                    for idim = 1:nbdim
+                                        signamei = [signame '_' num2str(idim)  '_'];
+                                        sig_log = {sig_log{:} signamei};
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            
+            logs = simout.get('logsout');
+            
+            if ~isempty(logs)
+                logs_names = logs.getElementNames();
+                
+                %% logs
+                for ilg = 1:numel(logs_names)
+                    if ~(ismember(logs_names{ilg}, sig_log))
+                        signame = logs_names{ilg};
+                        if ~ismember(signame,sig_log)
+                            
+                            sig = logs.getElement(signame);
+                            % JOHAN CHANGE
+                            try
+                                if sig.numElements > 1
+                                    sig = get(sig,1);
+                                end
+                            catch
+                                % Do nothing
+                            end
+                            
+                            try
+                                nbdim = size(sig.Values.Data,2);
+                            catch 
+                                % Sometimes, this doesn't work
+                                nbdim = length(fieldnames(sig.Values));
+                            end
+                            
+                            % NOTE!
+                            % Do we want to split multidimensional signals
+                            % or not?
+                            % For logged signals, currently we do NOT!
+                            sig_log = {sig_log{:} signame};
+                            
+                            % Alternatively, if we WANT to split them, use
+                            % the code below INSTEAD:
+                            
+                            % naming multidimensional signal= name_signal_i_
 %                             if nbdim==1
 %                                 sig_log = {sig_log{:} signame};
 %                             else
@@ -605,12 +619,12 @@ classdef BreachSimulinkSystem < BreachOpenSystem
 %                                     sig_log = {sig_log{:} signamei};
 %                                 end
 %                             end
-%                             
-%                         end
-%                     end
-%                 end
-%             end
-%         end
+                            % END JOHAN CHANGE
+                        end
+                    end
+                end
+            end
+        end
         
         function [vars, vals, ParamSrc] =  filter_vars(this, mdl, exclude)
             % FILTER_VAR filter variables found in Simulink models : exclude capitalized
@@ -1061,105 +1075,105 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             end
         end
 
-        function sig_log = FindLoggedSignals(this)
-            %
-            % converts a simulink output to a data structure Breach can handle
-            %
-            
-            %Run the model for time 0 to check proper initialization and collect signal names
-            tspan = evalin('base', 'tspan;');
-            assignin('base','tspan',[0 eps]);
-            assignin('base','t__',0);
-            assignin('base','u__',zeros(1, numel(this.Sys.InputList)));
-            
-            simout = sim(this.Sys.mdl);
-            assignin('base','tspan',tspan);
-            
-            %% Outputs and scopes
-            Vars = simout.who;
-            lenVars = numel(Vars);
-            sig_log = {};
-            
-            for iV = 1:lenVars
-                Y = get(simout,Vars{iV});
-                if ~isempty(Y)
-                    
-                    if ~strcmp(Vars{iV}, 'tout')&&~strcmp(Vars{iV},'logsout')&&(isstruct(Y))
-                        for iS=1:numel(Y.signals)
-                            signame = Y.signals(iS).label;
-                            if ~ismember(signame,sig_log)
-                                
-                                nbdim = size(double(Y.signals(iS).values),2);
-                                if (nbdim==1)
-                                    sig_log = {sig_log{:} signame };
-                                else
-                                    for idim = 1:nbdim
-                                        signamei = [signame '_' num2str(idim)  '_'];
-                                        sig_log = {sig_log{:} signamei};
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-            
-            logs = simout.get('logsout');
-            
-            if ~isempty(logs)
-                logs_names = logs.getElementNames();
-                
-                %% logs
-                for ilg = 1:numel(logs_names)
-                    if ~(ismember(logs_names{ilg}, sig_log))
-                        signame = logs_names{ilg};
-                        if ~ismember(signame,sig_log)
-                            
-                            sig = logs.getElement(signame);
-                            % JOHAN CHANGE
-                            try
-                                if sig.numElements > 1
-                                    sig = get(sig,1);
-                                end
-                            catch
-                                % Do nothing
-                            end
-                            
-                            try
-                                nbdim = size(sig.Values.Data,2);
-                            catch 
-                                % Sometimes, this doesn't work
-                                nbdim = length(fieldnames(sig.Values));
-                            end
-                            
-                            % NOTE!
-                            % Do we want to split multidimensional signals
-                            % or not?
-                            % For logged signals, currently we do NOT!
-                            sig_log = {sig_log{:} signame};
-                            
-                            % Alternatively, if we WANT to split them, use
-                            % the code below INSTEAD:
-                            
-                            % naming multidimensional signal= name_signal_i_
-%                             if nbdim==1
-%                                 sig_log = {sig_log{:} signame};
-%                             else
-%                                 for idim =1:nbdim
-%                                     signamei = [signame '_' num2str(idim)  '_'];
-%                                     sig_log = {sig_log{:} signamei};
+%         function sig_log = FindLoggedSignals(this)
+%             %
+%             % converts a simulink output to a data structure Breach can handle
+%             %
+%             
+%             %Run the model for time 0 to check proper initialization and collect signal names
+%             tspan = evalin('base', 'tspan;');
+%             assignin('base','tspan',[0 eps]);
+%             assignin('base','t__',0);
+%             assignin('base','u__',zeros(1, numel(this.Sys.InputList)));
+%             
+%             simout = sim(this.Sys.mdl);
+%             assignin('base','tspan',tspan);
+%             
+%             %% Outputs and scopes
+%             Vars = simout.who;
+%             lenVars = numel(Vars);
+%             sig_log = {};
+%             
+%             for iV = 1:lenVars
+%                 Y = get(simout,Vars{iV});
+%                 if ~isempty(Y)
+%                     
+%                     if ~strcmp(Vars{iV}, 'tout')&&~strcmp(Vars{iV},'logsout')&&(isstruct(Y))
+%                         for iS=1:numel(Y.signals)
+%                             signame = Y.signals(iS).label;
+%                             if ~ismember(signame,sig_log)
+%                                 
+%                                 nbdim = size(double(Y.signals(iS).values),2);
+%                                 if (nbdim==1)
+%                                     sig_log = {sig_log{:} signame };
+%                                 else
+%                                     for idim = 1:nbdim
+%                                         signamei = [signame '_' num2str(idim)  '_'];
+%                                         sig_log = {sig_log{:} signamei};
+%                                     end
 %                                 end
 %                             end
-                            % END JOHAN CHANGE
-                            
-                            
-                            
-                            
-                        end
-                    end
-                end
-            end
-        end
+%                         end
+%                     end
+%                 end
+%             end
+%             
+%             logs = simout.get('logsout');
+%             
+%             if ~isempty(logs)
+%                 logs_names = logs.getElementNames();
+%                 
+%                 %% logs
+%                 for ilg = 1:numel(logs_names)
+%                     if ~(ismember(logs_names{ilg}, sig_log))
+%                         signame = logs_names{ilg};
+%                         if ~ismember(signame,sig_log)
+%                             
+%                             sig = logs.getElement(signame);
+%                             % JOHAN CHANGE
+%                             try
+%                                 if sig.numElements > 1
+%                                     sig = get(sig,1);
+%                                 end
+%                             catch
+%                                 % Do nothing
+%                             end
+%                             
+%                             try
+%                                 nbdim = size(sig.Values.Data,2);
+%                             catch 
+%                                 % Sometimes, this doesn't work
+%                                 nbdim = length(fieldnames(sig.Values));
+%                             end
+%                             
+%                             % NOTE!
+%                             % Do we want to split multidimensional signals
+%                             % or not?
+%                             % For logged signals, currently we do NOT!
+%                             sig_log = {sig_log{:} signame};
+%                             
+%                             % Alternatively, if we WANT to split them, use
+%                             % the code below INSTEAD:
+%                             
+%                             % naming multidimensional signal= name_signal_i_
+% %                             if nbdim==1
+% %                                 sig_log = {sig_log{:} signame};
+% %                             else
+% %                                 for idim =1:nbdim
+% %                                     signamei = [signame '_' num2str(idim)  '_'];
+% %                                     sig_log = {sig_log{:} signamei};
+% %                                 end
+% %                             end
+%                             % END JOHAN CHANGE
+%                             
+%                             
+%                             
+%                             
+%                         end
+%                     end
+%                 end
+%             end
+%         end
         
         function U = InitU(this,pts,tspan)
             % Computes input values
