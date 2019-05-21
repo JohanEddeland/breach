@@ -1326,6 +1326,7 @@ Br = get_current_set(handles);
 if ~isempty(Br)
 prop = handles.properties.(handles.current_prop);
 props = STL_Break(prop);
+end
 
 for i = 1:numel(props)
     PHI_ = props(i);
