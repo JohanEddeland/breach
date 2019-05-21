@@ -851,10 +851,10 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 disp(['WARNING: An error was returned from Simulink: ' s.message]);
                 X = zeros(Sys.DimX, numel(tout));
                 status =-1;
-                this.addStatus(-1, MException.identifier, MException.message);
-                if this.StopAtSimulinkError
-                    rethrow(MException);
-                end
+                %this.addStatus(-1, MException.identifier, MException.message);
+                %if this.StopAtSimulinkError
+                rethrow(s);
+                %end
             end
             
             % FIXME: the following needs to be reviewed
