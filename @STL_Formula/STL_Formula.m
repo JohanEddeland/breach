@@ -512,7 +512,7 @@ for i = 1:numel(start_idx)
     
     [success, diag, st1, st2] = checks_parenthesis_balance(st1,st2);
     if success==-1
-        error(['STL_Parse: exppression ' st ':' diag]);
+        error(['STL_Parse: expression ' st ':' diag]);
     elseif success==1
         if nargout == 4
             interval= ['[' tokens{i}{1} ']'];

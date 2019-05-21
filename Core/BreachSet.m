@@ -386,8 +386,10 @@ classdef BreachSet < BreachStatus
               dom = cfg.domains{ip};
               if isempty(dom)
                   dom = [];
-              else
+              elseif ischar(dom)
                   dom = str2num(dom); %#ok<ST2NM>
+              elseif iscell(dom)
+                 dom = cell2mat(dom);
               end
               
               this.SetDomain(cfg.params{ip},typ,dom); 

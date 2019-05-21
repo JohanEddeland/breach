@@ -180,6 +180,9 @@ classdef BreachSignalGen < BreachSystem
                     ll = strcmp(this.signalGenerators{isg}.signals, sig_name);
                     if any(ll)
                         sg = this.signalGenerators{isg};
+                        % fix domains
+                        sg.params_domain = this.GetDomain(sg.params);
+                        sg.signals_domain = this.GetDomain(sg.signals);                        
                         return;
                     end
                 end

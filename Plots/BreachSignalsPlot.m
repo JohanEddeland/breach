@@ -289,9 +289,6 @@ classdef BreachSignalsPlot < handle
                 l = plot(time , sig_values, 'DisplayName', sig);
             end
         end
-        
-        function plot_diag(this, phi, ax)
-            
-        end
+              
     end
 end

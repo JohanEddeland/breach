@@ -221,6 +221,26 @@ classdef BreachSystem < BreachSet
             this.dispTraceStatus();
         end
         
+        %% Signals Enveloppe
+        
+        function PlotEnveloppe(this, signals)
+            dom = this.GetBoundedDomains(); 
+            if ~isempty(dom)
+                Bc = this.copy();
+                Bc.CornerSample();                
+                Bc.Sim();
+                Bc.PlotSignals(signals,[], {'k', 'LineWidth',2});
+                Br = this.copy();
+                Br.QuasiRandomSample(100);
+                Br.Sim();
+                Br.PlotSignals(signals,[],{'g','LineWidth', .5});                
+            end
+            
+            
+        end
+        
+        
+        
         %% Specs
         function phi = AddSpec(this, varargin)
             % AddSpec Adds a specification
