@@ -963,14 +963,20 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                                     
                                     % We would like to look at the
                                     % dimension maxDim, as well as the
-                                    % dimension before it. To do this, we
+                                    % dimensions before it. To do this, we
                                     % assert that maxDim > 1. 
-                                    assert(maxDim > 1, 'Need to figure out what to do if maxDim == 1. Maybe we should take maxDim and the dimension AFTER it (dimension 2)? Needs specific use case');
+                                    assert(maxDim == 3, 'Need to figure out what to do if maxDim not equal to 3. Maybe we should take maxDim and the dimension AFTER it (dimension 2)? Needs specific use case');
                                     
                                     % Interpolate it in the way we know it
-                                    % should work (maxDim and the dimension
-                                    % before it). 
-                                    xx = interp1(sig.Values.Time',double(sig.Values.Data(maxDim-1, maxDim)),tout, 'linear','extrap');
+                                    % should work (maxDim and the
+                                    % dimensions before it). 
+                                    
+                                    % permute() below moves the first
+                                    % dimension into the thrid dimension,
+                                    % essentially transforming the
+                                    % dimensions to [1 2401]
+                                    permutedData = permute(sig.Values.Data, [2 3 1]);
+                                    xx = interp1(sig.Values.Time',double(permutedData),tout, 'linear','extrap');
                                 else
                                     error('We have not defined what to do if the signal data is not 2D or 3D');
                                 end
