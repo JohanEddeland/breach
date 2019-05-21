@@ -944,8 +944,37 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                         [lia, loc]= ismember(signame, signals);
                         if lia
                             if length(sig.Values.Time) > 1
-                                % Standard case - interpolate to fill data
-                                xx = interp1(sig.Values.Time',double(sig.Values.Data(:,1)),tout, 'linear','extrap');
+                                % JOHAN EDIT
+                                dim = size(sig.Values.Data);
+                                if length(dim) == 2
+                                    % The data is 2D. We can interpolate it
+                                    % the standard Breach way. 
+                                    % Standard case - interpolate to fill data
+                                    xx = interp1(sig.Values.Time',double(sig.Values.Data(:,1)),tout, 'linear','extrap');
+                                elseif length(dim) == 3
+                                    % The data is 3D. We need to figure out
+                                    % which 2 dimensions to use. 
+                                    [maxValue, maxDim] = max(dim);
+                                    
+                                    % dim is e.g. [1 1 2401]. We assert
+                                    % that all dimensions OTHER than maxdim
+                                    % are equal to 1. 
+                                    assert(sum(dim) == maxValue + length(dim) - 1, 'All dimensions other than maxDim should be equal to 1');
+                                    
+                                    % We would like to look at the
+                                    % dimension maxDim, as well as the
+                                    % dimension before it. To do this, we
+                                    % assert that maxDim > 1. 
+                                    assert(maxDim > 1, 'Need to figure out what to do if maxDim == 1. Maybe we should take maxDim and the dimension AFTER it (dimension 2)? Needs specific use case');
+                                    
+                                    % Interpolate it in the way we know it
+                                    % should work (maxDim and the dimension
+                                    % before it). 
+                                    xx = interp1(sig.Values.Time',double(sig.Values.Data(maxDim-1, maxDim)),tout, 'linear','extrap');
+                                else
+                                    error('We have not defined what to do if the signal data is not 2D or 3D');
+                                end
+                                % END JOHAN EDIT
                             else
                                 % We have only one element - cannot
                                 % interpolate
