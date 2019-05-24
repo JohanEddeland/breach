@@ -152,6 +152,11 @@ handles.output = BreachSignalGen(signal_gens);
 % update config and params
 update_config(handles);
 
+% Update table (fix domains checkin)
+update_uitable(handles);
+sg = get_current_sg(handles);
+[sg.params, sg.p0, sg.params_domain] = read_uitable_params(handles.uitable_params);
+
 % Init plot
 update_plot(handles);
 
@@ -192,16 +197,47 @@ function popupmenu_signal_gen_type_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% get signal name
+% get signal name and current generator
 sig_name = get_current_signal(handles);
+sg = get_current_sg(handles);
 
 % assign new signal generator
 idx = get(hObject,'Value');
 classes = get(hObject,'String');
 class_name = classes{idx};
-try
-    handles.signal_gen_map(sig_name) = eval([class_name '({ sig_name });']);
+ 
+niou_sg =  eval([class_name '({ sig_name });']);
+
+cfg = sg.getSignalGenArgs();
+niou_cfg = niou_sg.getSignalGenArgs();
+
+% restore common generator parameters such as method, number of cp
+for ic =1:numel(niou_cfg);
+   io = find(strcmp(niou_cfg{ic}, cfg),1);
+    if ~isempty(io) % found in previous signal gen
+        cfg_val{ic} =  sg.(niou_cfg{ic});
+    else
+        cfg_val{ic} =  niou_sg.(niou_cfg{ic});
+    end   
 end
+
+niou_sg =  eval([class_name '({ sig_name }, cfg_val{:});']);
+
+
+% restore what is possible for p0
+for ip = 1:numel(niou_sg.params)
+    p = niou_sg.params{ip};
+    ipold= find(strcmp(p, sg.params),1);
+    if ~isempty(ipold)
+        niou_sg.p0(ip) = sg.p0(ipold);
+        niou_sg.params_domain(ip) = sg.params_domain(ipold);
+    end
+end
+
+handles.signal_gen_map(sig_name) = niou_sg;
+
+
+
 
 % update config and params
 update_config(handles);
@@ -319,22 +355,15 @@ function uitable_params_CellEditCallback(hObject, eventdata, handles)
 %	Error: error string when failed to convert EditData to appropriate value for Data
 % handles    structure with handles and user data (see GUIDATA)
 
-
-try
-    e = str2num(eventdata.NewData);
-    assert(isnumeric(e));
-    assert(size(e, 1)==1);
+try 
+    sg = get_current_sg(handles);
+    [sg.params, sg.p0, sg.params_domain] = read_uitable_params(hObject);
+    update_plot(handles);
+    guidata(hObject, handles);
 catch
-    if ~isempty(eventdata.NewData)
-        warndlg(sprintf('Invalid value(s): %s', eventdata.NewData));
-    end
+    warndlg('Invalid input', 'Problem');
 end
 
-sg = get_current_sg(handles);
-[sg.params, sg.p0, sg.params_domain] = read_uitable_params(hObject);
-
-update_plot(handles);
-guidata(hObject, handles);
 
 % --- Executes when entered data in editable cell(s) in uitable_config.
 function uitable_config_CellEditCallback(hObject, eventdata, handles)
@@ -367,10 +396,19 @@ try
     sg_name = class(sg);
     sig_name = get_current_signal(handles);
     niou_sg = eval([sg_name '(sig_name, args_val{:});']);
-    if isequal(size(sg.p0),size(niou_sg.p0))
-        niou_sg.p0 = sg.p0;
-    end
     
+    
+    % restore parameter values
+    for ip = 1:numel(niou_sg.params)
+        p = niou_sg.params{ip};
+        ipold= find(strcmp(p, sg.params),1);
+        if ~isempty(ipold)
+            niou_sg.p0(ip) = sg.p0(ipold);
+            niou_sg.params_domain(ip) = sg.params_domain(ipold);            
+        end        
+    end
+                
+    niou_sg.signals_domain = sg.signals_domain;    
     handles.signal_gen_map(sig_name)= niou_sg;
     
     update_config(handles);
@@ -417,7 +455,6 @@ end
 
 set(h_uitable, 'Data', content);
 
-
 function update_plot(handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -432,9 +469,10 @@ sig_name = sig_names{popup_sel_index};
 % fetch current generator
 sg = handles.signal_gen_map(sig_name);
 cla;
+legend off;
 % compute and plot signal
 time = evalin('base',handles.time);
-sg.plot(time);
+sg.plot(sig_name, time);
 
 title(sig_name, 'Interpreter', 'None');
 grid on;
