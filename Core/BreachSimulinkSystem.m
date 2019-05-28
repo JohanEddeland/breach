@@ -582,6 +582,11 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 for ilg = 1:numel(logs_names)
                     if ~(ismember(logs_names{ilg}, sig_log))
                         signame = logs_names{ilg};
+                        
+                        if isempty(signame)
+                            % Don't try to log signals with no name
+                            continue
+                        end
                         if ~ismember(signame,sig_log)
                             
                             sig = logs.getElement(signame);
