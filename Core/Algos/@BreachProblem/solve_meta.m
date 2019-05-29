@@ -26,14 +26,16 @@ while true
     
     %% Local phase
     x0 = res.x; % best x from last quasi-random phase
-    this.setup_nelder_mead(x0, 'MaxFunEvals', opt.local_max_obj_eval);
+    this.setup_nelder_mead(x0, 'MaxFunEvals', opt.local_max_obj_eval, 'Display', 'off');
     res = this.solve_nelder_mead();
     
     %% Disp 
     if this.stopping()
         break;
     else
-        this.Display_Best_Results(res.fval, res.x);        
+        if ~strcmp(this.display,'off')
+            this.Display_Best_Results(res.fval, res.x);
+        end
     end
 end
 end
