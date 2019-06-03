@@ -84,13 +84,16 @@ if isa(varargin{1}, 'BreachOpenSystem')
         cfg_in = varargin{2};
         % Add reading contraints    
         if isfield(cfg_in,'constraints_cfg')
+            data = {};
             for ic = 1:numel(cfg_in.constraints_cfg)
                 f = cfg_in.constraints_cfg{ic};
                 data{ic,1} = f.id;
                 data{ic,2} = f.expr;
                 handles.constraints_map(ic) = struct('id',  f.id, 'expr',f.expr);
             end
-            set(handles.table_constraints, 'Data', data);
+            if ~isempty(data)
+                set(handles.table_constraints, 'Data', data);
+            end
         end
     end
             
@@ -104,16 +107,17 @@ elseif isstruct(varargin{1})||ischar(varargin{1})  % configuration struct
     end
     % Add reading contraints
     if isfield(cfg_in,'constraints_cfg')
+        data = {};
         for ic = 1:numel(cfg_in.constraints_in)
             f = cfg_in.constraints_in{ic};
             data{ic}{1} = f.id;
             data{ic}{2} = f.expr; 
             handles.constraints_map(ic) = struct('id',  f.id, 'expr',f.expr);
         end
-        set(handles.table_constraints, 'Data', data);        
-    end
-    
-    
+        if ~isempty(data)
+            set(handles.table_constraints, 'Data', data);
+        end
+    end        
 end
 set(handles.popupmenu_signal_name, 'String', signal_names);
 
@@ -241,6 +245,7 @@ cfg = sg.getSignalGenArgs();
 niou_cfg = niou_sg.getSignalGenArgs();
 
 % restore common generator parameters such as method, number of cp
+cfg_val = {};
 for ic =1:numel(niou_cfg);
    io = find(strcmp(niou_cfg{ic}, cfg),1);
     if ~isempty(io) % found in previous signal gen
@@ -488,7 +493,10 @@ function update_plot(handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-axes(handles.axes1);
+a = handles.axes1;
+axes(a);
+set(handles.text_computing, 'visible', 'on');
+drawnow; 
 
 % get current signal name
 popup_sel_index = get(handles.popupmenu_signal_name, 'Value');
@@ -512,6 +520,8 @@ sg.plot_enveloppe(sig_name,time);
 
 update_uitable(handles);
 update_constraints_table(handles);
+set(handles.text_computing, 'visible', 'off');
+drawnow; 
 
 
 
@@ -619,14 +629,15 @@ try
         S = BreachSignalGen(handles.signal_gen_map.values);    
         S.Sim(time);
         v = S.CheckSpec(phi);
-        data{idx(1), 3} = v;
-        
+        data{idx(1), 3} = v;        
         handles.constraints_map(idx(1)) = struct('id',  id, 'expr',expr);    
         if idx(1) == size(data, 1)
            data{idx(1)+1,1} = [];
-        end
-        set(hObject, 'Data', data);
+        end        
+    else
+        data{idx(1), 3} = [];        
     end
+    set(hObject, 'Data', data);
 catch ME
     errordlg(sprintf('Error Message: %s', ME.message), 'Problem with Expression');
     data{idx(1), 3} = NaN;
@@ -648,6 +659,8 @@ function update_constraints_table(handles)
                 S.Sim(time);
                 v = S.CheckSpec(phi);
                 data{irow, 3} = v;
+            else
+                data{irow, 3} = [];
             end
         catch ME
             data{irow, 3} = NaN;
