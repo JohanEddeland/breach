@@ -51,7 +51,7 @@ classdef BreachSystem < BreachSet
                         this.Sys = inSys;
                         this.P = CreateParamSet(this.Sys);
                     else
-                        error('BreachObject with one argument assumes that the argument is a system structure.')
+                        error('BreachSystem constructor with one argument assumes that the argument is a system structure.')
                     end
                 otherwise % creates an extern system
                     if ~(exist(varargin{1})==4) % tests if the first argument is a Simulink model
@@ -218,22 +218,51 @@ classdef BreachSystem < BreachSet
             end
             this.P = ComputeTraj(this.Sys, this.P, tspan);
             this.CheckinDomainTraj();
-            this.dispTraceStatus();
+            
+            if this.verbose>=1
+                this.dispTraceStatus();
+            end
         end
+        
+        %% Signals Enveloppe
+        
+        function PlotEnveloppe(this, signals)
+            dom = this.GetBoundedDomains(); 
+            if ~isempty(dom)
+                Bc = this.copy();
+                Bc.CornerSample();                
+                Bc.Sim();
+                Bc.PlotSignals(signals,[], {'k', 'LineWidth',2});
+                Br = this.copy();
+                Br.QuasiRandomSample(100);
+                Br.Sim();
+                Br.PlotSignals(signals,[],{'g','LineWidth', .5});                
+            end
+            
+            
+        end
+        
+        
         
         %% Specs
         function phi = AddSpec(this, varargin)
             % AddSpec Adds a specification
             global BreachGlobOpt
-            if isa(varargin{1},'STL_Formula')
-                phi = varargin{1};
+            
+            f = varargin{1};
+            
+            if isa(f,'STL_Formula')
+                phi = f;
                 phi_id = get_id(phi);            
-            elseif ischar(varargin{1})
+            elseif ischar(f)&&BreachGlobOpt.STLDB.isKey(f)
+                phi_id =f;
+                phi = BreachGlobOpt.STLDB(f);                        
+            elseif ischar(f)
                 phi_id = MakeUniqueID([this.Sys.name '_spec'],  BreachGlobOpt.STLDB.keys);
-                phi = STL_Formula(phi_id, varargin{1});
-            elseif isa(varargin{1}, 'BreachRequirement')
-                phi_id = varargin{1}.req_monitors{1}.name;
-                phi = varargin{1}; 
+                phi = STL_Formula(phi_id, f);
+            elseif isa(f, 'BreachRequirement')
+                phi_id = f.req_monitors{1}.name;
+                phi = f; 
             else
                 error('Argument not a formula.');
             end
@@ -244,6 +273,9 @@ classdef BreachSystem < BreachSet
                 i_sig = FindParam(this.Sys, sig);
                 sig_not_found = find(i_sig>this.Sys.DimP, 1);
                 if ~isempty(sig_not_found)
+                    disp('sig_not_found: ');
+                    disp(sig_not_found);
+                    disp(sig(sig_not_found));
                     error('Some signals in specification are not part of the system.')
                 end
                 % Add property params
@@ -369,6 +401,16 @@ classdef BreachSystem < BreachSet
             Sim(this);
             this.CheckinDomainTraj();
             
+            % JOHAN ADDED
+            filesInTrajFolder = length(dir('trajectories')) - 2;
+            tmpP = this.P;
+            paramValues = values;
+            try
+                load('nextReqToBeFalsified'); % Loads currentReq
+                save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
+            end
+            % END JOHAN ADDED
+            
             % FIXME: this is going to break with multiple trajectories with
             % some of them containing NaN -
               
@@ -377,10 +419,66 @@ classdef BreachSystem < BreachSet
                 rob = t_phi;
                 rob(:) = NaN;
             else
-                if ischar(phi)
-                    phi = STL_Formula('phi__tmp__', phi);
-                end
-                [rob, tau] = STL_Eval(this.Sys, phi, this.P, this.P.traj,t_phi);
+
+%                 if ischar(phi)
+%                     phi = STL_Formula('phi__tmp__', phi);
+%                 end
+                [rob, tau] = STL_Eval_TESTRON(this.Sys, phi, this.P, this.P.traj, objToUse, t_phi);
+            end
+            
+        end
+        
+        function [rob, tau] = GetIORobustSat(this, inout, relabs, phi, params, values, t_phi)
+            % Monitor spec on trajectories - run simulations if not done before
+           
+            if nargin < 7
+                t_phi = 0;
+            end
+            if nargin==3
+                phi = this.spec;
+                params = {};
+                values = [];
+            end
+           
+            if nargin==4
+                params = {};
+                values = [];
+            end
+           
+            if nargin==5
+                t_phi = params;
+                params = {};
+                values = [];
+            end
+            
+            if ~isempty(params)
+                this.P = SetParam(this.P, params, values);
+            end
+            
+            this.CheckinDomainParam();
+            Sim(this);
+            this.CheckinDomainTraj();
+            
+            % JOHAN ADDED
+            % This was used previously to save trajectory info to the
+            % folder 'trajectories'
+%             filesInTrajFolder = length(dir('trajectories')) - 2;
+%             tmpP = this.P;
+%             paramValues = values;
+%             load('nextReqToBeFalsified'); % Loads currentReq
+%             save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
+            % END JOHAN ADDED
+            
+            % FIXME: this is going to break with multiple trajectories with
+            % some of them containing NaN -
+            if any(isnan(this.P.traj{1}.X))
+                tau = t_phi;
+                rob = t_phi;
+                rob(:) = NaN;
+            else
+                % TODO: This needs to be fixed for other objective
+                % functions!
+                [rob, tau] = STL_Eval_IO(this.Sys, phi, this.P, this.P.traj, inout, relabs, t_phi);
             end
             
         end
@@ -405,6 +503,29 @@ classdef BreachSystem < BreachSet
             
         end
         
+        function [robfn, BrSys] = GetIORobustSatFn(this, phi, params, t_phi, inout, relabs)
+            % Return a function of the form robfn: p -> rob such that p is a
+            % vector of values for parameters and robfn(p) is the
+            % corresponding robust satisfaction
+            
+            if ~exist('t_phi', 'var')
+                t_phi =0;
+            end
+            
+            BrSys = this.copy();
+            
+            if ischar(phi) 
+                % does not make much sense here because no inputs or output are declared
+                this__phi__ = STL_Formula('this__phi__', phi);
+                this__phi__ = set_in_signal_names(this__phi__, {});  % for consistency
+                this__phi__ = set_out_signal_names(this__phi__, {}); % for consistency
+                robfn = @(values) GetIORobustSat(BrSys, this__phi__, params, values, t_phi, inout, relabs);
+            else
+                robfn = @(values) GetIORobustSat(BrSys, phi, params, values, t_phi, inout, relabs);
+            end
+            
+        end
+        
         function PlotRobustSat(this, phi, depth, tau, ipts)
             % Plots satisfaction signal
             
@@ -425,17 +546,38 @@ classdef BreachSystem < BreachSet
             SplotSat(this.Sys,this.P, phi, depth, tau, ipts);
             
         end
+             
+        function PlotIORobustSat(this, phi, inout, relabs, depth, tau, ipts)
+            % Plots satisfaction signal
+            
+            % check arguments
+            if(~exist('ipts','var')||isempty(ipts))
+                ipts = 1;
+            end
+            
+            if(~exist('tau','var')||isempty(tau)) % also manage empty cell
+                tau = [];
+            end
+            
+            if ~exist('depth','var')||isempty(depth)
+                depth = inf;
+            end
+            
+            gca;
+            SplotSatIO(this.Sys, this.P, phi, depth, tau, ipts, inout, relabs);
+            
+        end
         
         function PlotSatParams(this, phi, params, varargin)
             % BreachSet.PlotSatParams(req, params)
             
             % default options
-            opt.DispTitle = true;
-            opt = varargin2struct(opt, varargin{:});
-            
-            if ischar(params)
-                params = {params};
-            end
+            opt.DispTitle = true;  
+            opt = varargin2struct_breach(opt, varargin{:});
+         
+           if ischar(params)
+               params = {params};
+           end
             
             [valu, pvalu, val, pval] = this.GetSatValues(phi, params);
             if isa(phi, 'BreachRequirement')
@@ -667,7 +809,7 @@ classdef BreachSystem < BreachSet
             pval = pval';
             
         end
-        
+
         function [out] = PlotRobustMap(this, phi, params, ranges, delta, options_in)
             % Plot robust satisfaction vs 1 or 2 parameters.
             
@@ -888,7 +1030,16 @@ classdef BreachSystem < BreachSet
             end
         end
         
-        %% GUI
+        function assignin_ws_p0(this)
+            ip = 0;
+            for p = this.Sys.ParamList
+                ip = ip+1;
+                assignin('base', p{1}, this.Sys.p(ip));
+            end       
+        end
+        
+        
+       %% GUI
         function new_phi  = AddSpecGUI(this)
             signals = this.Sys.ParamList(1:this.Sys.DimX);
             new_phi = STL_TemplateGUI('varargin', signals);
@@ -927,6 +1078,9 @@ classdef BreachSystem < BreachSet
             
             BreachTrajGui(this,args);
         end
+        
+        
+        
         
         %% Experimental
         function report = Analysis(this)

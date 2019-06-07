@@ -160,6 +160,13 @@ classdef BreachTraceSystem < BreachSystem
                 end
             elseif isa(trace, 'matlab.io.MatFile')
                 traj = trace;
+                % JOHAN CHANGE
+                try
+                    traj.param=traj.param(1:end-1);
+                catch
+                    traj.param = this.P.pts(1:end-1);
+                end
+                % END JOHAN CHANGE
             end
             
             
@@ -193,7 +200,6 @@ classdef BreachTraceSystem < BreachSystem
                     this.P.traj{end+1} = traj;
                     this.P.traj_ref(end+1) = numel(this.P.traj);
                 end
-                %this.P = SConcat(this.P, Pnew);
             end
             
             % FIXME still need to get rid of legacy useless Xf field... 
@@ -207,6 +213,14 @@ classdef BreachTraceSystem < BreachSystem
             else
                 this.P.Xf= Xf;
             end
+            this.P.traj_ref = 1:nb_traces+1;
+            this.P.traj_to_compute =  [];
+            this.P.pts(this.P.DimX+1,:) = 1:nb_traces+1; % index traces
+            % JOHAN CHANGE
+            if isfield(traj, 't')
+                this.Sys.tspan = traj.t;
+            end
+            % END JOHAN CHANGE
         end
         
         function AddRandomTraces(this,n_traces, n_samples, amp, end_time)

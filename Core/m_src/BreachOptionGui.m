@@ -17,7 +17,8 @@ classdef BreachOptionGui < handle
         choices
         tips
         title
-     
+        button_ok_
+        button_cancel_
     end
     
     properties
@@ -30,7 +31,7 @@ classdef BreachOptionGui < handle
                title = 'Choose Options';
            end
             if nargin>1
-                options = varargin2struct(options, varargin{:});
+                options = varargin2struct_breach(options, varargin{:});
                 this.output = options;
                 this.choices = choices;
                 this.tips = tips;
@@ -253,7 +254,7 @@ classdef BreachOptionGui < handle
             this.make_room();
             sz = this.get_multiple_sz(2);
             num_elements = size(this.gui_components,1);
-            this.gui_components{num_elements+1,1} = ....
+            this.button_cancel_ = ....
                 uicontrol('Parent',this.dlg,...
                 'Style','pushbutton',...
                 'Units', 'Normalized',...
@@ -262,8 +263,8 @@ classdef BreachOptionGui < handle
                 'FontSize', this.font_size,...
                 'Callback', @cancel_callback,...
                 'Position', sz(1,:));
-            
-            this.gui_components{num_elements+1,2} = ....
+            this.gui_components{num_elements+1,1} = this.button_cancel_;
+            this.button_ok_  = ....
                 uicontrol('Parent',this.dlg,...
                 'Style','pushbutton',...
                 'Units', 'Normalized',...
@@ -272,7 +273,7 @@ classdef BreachOptionGui < handle
                 'FontSize', this.font_size,...
                 'Callback', @ok_callback,...
                 'Position', sz(2,:));
-            
+            this.gui_components{num_elements+1,2} = this.button_ok_;
            
             function  ok_callback(hobj, evt)
                 set(hobj, 'String', 'Please wait...')

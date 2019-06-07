@@ -88,6 +88,16 @@ else % all optional parameters
     end
 end
 
+% JOHAN CHANGE
+if 1
+    disp('QuasiRefine.m: Changing algorithm to TestronRefine (random sampling)');
+    algo = 'testron';
+else
+    disp('QuasiRefine.m: No longer changing algorithm to TestronRefine (edit QuasiRefine.m if we wish to change algorithm)');
+end
+
+% END JOHAN CHANGE
+
 if(strcmpi(algo,'sobol') && numel(P.dim)>40)
     warning('QuasiRefine:InappropriateAlgo',...
         'The sobol algorithm is usable up to dimension 40, switched to halton algorithm.');
@@ -101,6 +111,10 @@ if strcmpi(algo,'sobol')
     else
         P = SobolRefine(P, nb, step);
     end
+% JOHAN CHANGE
+elseif strcmpi(algo,'testron')
+    P = TestronRefine(P, nb, step);
+% END JOHAN CHANGE
 else % default = halton
     if(strictlyInside)
         P = HaltonRefine(P, nb, step, 'strictlyInside');
@@ -109,12 +123,6 @@ else % default = halton
     end
 end
 
-% manage traj_ref and traj_to_compute: we make the supposition that no
-% generated parameter vector is equal to an previously computed parameter
-% vector
-[~,P.traj_to_compute] = unique(P.pts(1:P.DimP,:)','rows','first');
-P.traj_ref = zeros(1,size(P.pts,2));
-P.traj_to_compute = sort(reshape(P.traj_to_compute,1,[]));
 
 end
 

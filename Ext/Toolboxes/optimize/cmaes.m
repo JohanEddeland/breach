@@ -264,9 +264,9 @@ defopts.UserDat2 = ''; 'for saving data/comments associated with the run';
 % ---------------------- Handling Input Parameters ----------------------
 
 if nargin < 1 || isequal(fitfun, 'defaults') % pass default options
-  if nargin < 1
-    disp('Default options returned (type "help cmaes" for help).');
-  end
+  %if nargin < 1
+  %  disp('Default options returned (type "help cmaes" for help).');
+  %end
   xmin = defopts;
   if nargin > 1 % supplement second argument with default options
     xmin = getoptions(xstart, defopts);
@@ -1413,7 +1413,10 @@ while isempty(stopflag)
     if stopOnEqualFunctionValues
       arrEqualFunvals = [countiter arrEqualFunvals(1:end-1)];
       % stop if this happens in more than 33%
-      if arrEqualFunvals(end) > countiter - 3 * length(arrEqualFunvals)
+      % JOHAN EDIT
+      %if arrEqualFunvals(end) > countiter - 3 * length(arrEqualFunvals)
+      if false
+      % END JOHAN EDIT
         stopflag(end+1) = {'equalfunvals'}; 
       end
     else

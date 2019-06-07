@@ -40,8 +40,43 @@ classdef BreachSet < BreachStatus
         log_folder
         sigMap 
         sigMapInv
+        AliasMap
     end
     
+    properties  %  coverage stuff
+        % Gridsize is a vector that contains one value for each dimension,
+        % where each value corresponds to the length of a grid element in
+        % the corresponding dimension. The eps value for each
+        % dimension corresponds to the smallest distance allowed
+        % between any two points in the parameter space.
+        epsgridsize = [];
+        
+        % Gridsize is a vector that contains one value for each dimension,
+        % where each value corresponds to the length of a grid element in
+        % the corresponding dimension. The delta value for each
+        % dimension corresponds to the grid element size that is used to
+        % measure the cell count and entropy coverage measures.
+        deltagridsize = [];
+        
+        % The following flag determines whether all points should be
+        % shifted to the center of the appropriate grid element. If the
+        % flag is set, then this class will assume that only one point
+        % should occupy any given grid element, and that point will be in
+        % the center of the grid element.
+        snap_to_grid = false;
+        
+        % Will use containers for now. This will be an efficient
+        % representation to a.) allow the query of any cell and b.) know
+        % the total number of cells that are populated with points.
+        % This DOES NOT permit an easy way to check a region (e.g., a
+        % hybperbox) that contains points.
+        % In the future, we can switch this for BDDs. A BDD representation
+        % will allow us to do things like use an SMT query to determine
+        % whether points in a region (hyperbox) are populated.
+        EpsGridMapObj = containers.Map('UniformValues',false);
+        DeltaGridMapObj = containers.Map('KeyType','char','ValueType','int32');
+    end
+   
     methods (Hidden=true)
         function P = GetP(this)
             % Get the legacy parameter set structure
@@ -62,12 +97,17 @@ classdef BreachSet < BreachStatus
             
             this.sigMap = containers.Map();
             this.sigMapInv = containers.Map();
-            
+            this.AliasMap = containers.Map(); 
             switch nargin
                 case 0
                     return;
                 case 1
-                    this.P = CreateParamSet(Sys);
+                    if isaSys(Sys)
+                        this.P = CreateParamSet(Sys);
+                    elseif iscell(Sys) % assumes parameter names
+                        Sys = CreateSystem({}, Sys, zeros(1, numel(Sys)));
+                        this.P = CreateParamSet(Sys);
+                    end
                 case 2
                     this.P = CreateParamSet(Sys, params);
                 case 3
@@ -92,12 +132,14 @@ classdef BreachSet < BreachStatus
                     param = params{ip};
                     [idx, found] = FindParam(this.P, param);
                     if found==0
-                        error('BreachSet:SetDomain:param_or_signal_not_found', ['Parameter or signal '  param ' not found.']);
+                        warning('BreachSet:SetDomain:param_or_signal_not_found', ['Parameter or signal '  param ' not found.']);
+                        idxs(ip) = 0;
                     end
                     idxs(ip) = idx;
                 end
             end
             
+            params = params(logical(idxs));
             % create domains
             switch nargin
                 case 3
@@ -223,7 +265,7 @@ classdef BreachSet < BreachStatus
                 for itraj = 1:numel(this.P.traj)
                     for  i=1:this.P.DimX
                         if ~isempty(this.Domains(i).domain)
-                            this.P.traj{itraj}.X(i,:) = this.Domains(i).checkin(this.P.traj{itraj}.X(i,:));
+                        this.P.traj{itraj}.X(i,:) = this.Domains(i).checkin(this.P.traj{itraj}.X(i,:));
                         end
                     end
                 end
@@ -232,7 +274,7 @@ classdef BreachSet < BreachStatus
         
         %%  Params
         function SetParam(this, params, values, is_spec_param)
-            % BreachSet.SetParam(params, values,  is_spec_param) sets values to
+            % BreachSet.SetParam(params, values [,  is_spec_param]) sets values to
             % parameters listed in params. If the set contains only one sample,
             % creates as many sample as there are values. If the set has
             % several samples and there is only one value, set this value to
@@ -275,7 +317,7 @@ classdef BreachSet < BreachStatus
             
             if ischar(is_spec_param)&&strcmp(is_spec_param, 'combine')
                 if this.hasTraj()
-                    P0 = this.P;
+                    traj= this.P.traj;
                     saved_traj = true;
                  end
                 idx = N2Nn(2, [num_pts num_values]);
@@ -284,12 +326,14 @@ classdef BreachSet < BreachStatus
                 this.P.pts = old_pts(:, idx(1,:));
                 this.P.epsi= repmat(this.P.epsi,1, size(idx, 2));
                 this.P.selected = zeros(1, size(idx, 2));
+                if saved_traj
+                    this.P.traj = traj;
+                end
                 this.P = SetParam(this.P, params, values(:, idx(2,:)));
             else  % legacy, i.e., not combine version
                 if num_values==1 || num_values == num_pts
                     this.P = SetParam(this.P, params, values);
                 elseif num_pts==1    % note in this case, we have to remove traces ( or see if maybe not, )
-                    this.P = Sselect(SPurge(this.P),1);
                     this.P.pts = repmat(this.P.pts,1, size(values, 2));
                     this.P.epsi= repmat(this.P.epsi,1, size(values, 2));
                     this.P.selected = zeros(1, size(values, 2));
@@ -300,12 +344,7 @@ classdef BreachSet < BreachStatus
             end
             
             this.ApplyParamGens(params);
-            
-            % restore traj if needed
-            if saved_traj
-                this.P = Pfix_traj_ref(this.P, P0);
-            end
-            
+                       
         end
         
         function SetParamCfg(this, list_cfg)
@@ -340,7 +379,26 @@ classdef BreachSet < BreachStatus
                 this.Concat(B);
             end
         end
-        
+              
+        function SetDomainCfg(this, cfg)
+           for ip = 1:numel(cfg.params) 
+              val = cfg.values{ip};
+              if ischar(val)
+                val = str2num(val);
+              end
+              typ = cfg.types{ip};
+              dom = cfg.domains{ip};
+              if isempty(dom)
+                  dom = [];
+              elseif ischar(dom)
+                  dom = str2num(dom); %#ok<ST2NM>
+              elseif iscell(dom)
+                 dom = cell2mat(dom);
+              end
+              this.SetParam(cfg.params{ip}, val);
+              this.SetDomain(cfg.params{ip},typ,dom);               
+           end            
+        end
         
         function SetParamSpec(this, params, values, ignore_sys_param)
             % BreachSet.SetParamSpec
@@ -464,7 +522,10 @@ classdef BreachSet < BreachStatus
             for ip = 1:numel(i_params)
                 type = this.Domains(i_params(ip)).type;
                 if isequal(type, 'enum')||isequal(type,'bool')
-                    warning('SetParamRanges:enum_or_bool', 'Use SetDomain for enum or bool types.' );
+                    this.Domains(i_params(ip)).domain = ranges(ip,:);
+                    %warning('SetParamRanges:enum_or_bool', 'Use SetDomain
+                    %for enum or bool types.' ); % Maybe should keep the
+                    %warning 
                 else
                     this.Domains(i_params(ip)) = BreachDomain(type, ranges(ip,:));
                 end
@@ -514,8 +575,7 @@ classdef BreachSet < BreachStatus
                 nb_pts= size(this.P.pts,2);
             end
         end
-        
-        
+               
         function [params, ipr] = GetVariables(this)
             [params, ipr] = GetBoundedDomains(this);
             if this.GetNbParamVectors()>1
@@ -553,8 +613,7 @@ classdef BreachSet < BreachStatus
             params =   this.P.ParamList(ipr);
         end
                 
-        %% Signals
-        
+        %% Signals       
         function  this =  SetSignalMap(this, varargin)
             % SetSignalMap defines aliases for signals - used by GetSignalValues 
             %
@@ -574,28 +633,21 @@ classdef BreachSet < BreachStatus
                             error('SetSignalMap:wrong_arg', arg_err_msg);
                         end
                         for is = 1:numel(varargin{2})
-                            if ~strcmp(varargin{1}{is},varargin{2}{is})
-                                this.sigMap(varargin{1}{is}) = varargin{2}{is};
-                                this.sigMapInv( varargin{2}{is} ) = varargin{1}{is};
-                            end
+                            sig1 = varargin{1}{is};
+                            sig2 = varargin{2}{is};
+                            add_sigs(sig1, sig2);                            
                         end
                     else
-                        if ischar(varargin{1})&&ischar(varargin{2})
-                            if ~strcmp(varargin{1},varargin{2})
-                                this.sigMap(varargin{1}) = varargin{2};
-                                this.sigMapInv(varargin{2}) = varargin{1};
-                            end
-                        else
-                            error('SetSignalMap:wrong_arg', arg_err_msg);
-                        end
+                        sig1 = varargin{1};
+                        sig2 = varargin{2};
+                        add_sigs(sig1, sig2);                                                
                     end
                 otherwise
                     for is = 1:numel(varargin)/2
                         try
-                            if ~strcmp(varargin{2*is-1},varargin{2*is})
-                                this.sigMap(varargin{2*is-1}) = varargin{2*is};
-                                this.sigMapInv(varargin{2*is}) = varargin{2*is-1};
-                            end
+                            sig1 = varargin{2*is-1};
+                            sig2 = varargin{2*is};
+                            add_sigs(sig1, sig2);                            
                         catch
                             error('SetSignalMap:wrong_arg', arg_err_msg);
                         end
@@ -605,11 +657,50 @@ classdef BreachSet < BreachStatus
             if this.verbose >= 2
                 this.PrintSigMap();
             end
+                        
+            function add_sigs(sig1, sig2)
+                if ischar(sig1)&&ischar(sig2)
+                    if ~strcmp(sig1,sig2)
+                        this.sigMap(sig1) = sig2;
+                        this.sigMapInv(sig2) = sig1;
+                        
+                        % get current aliases for sig1 and sig2
+                        if this.AliasMap.isKey(sig1) 
+                           SIG1 = [{sig1} this.AliasMap(sig1)];
+                        else
+                           SIG1 = {sig1};
+                        end
+                        
+                        if this.AliasMap.isKey(sig2) 
+                           SIG2 = [{sig2} this.AliasMap(sig2)];
+                        else
+                           SIG2 = {sig2};
+                        end
+                                                                        
+                        % add aliases of each other 
+                        if ~this.AliasMap.isKey(sig1)
+                            this.AliasMap(sig1) = SIG2;
+                        else
+                            this.AliasMap(sig1) = unique([this.AliasMap(sig1) SIG2], 'stable');                            
+                        end
+                        if ~this.AliasMap.isKey(sig2)
+                            this.AliasMap(sig2) = SIG1;
+                        else
+                            this.AliasMap(sig2) = unique([this.AliasMap(sig2) SIG1], 'stable');                            
+                        end                                            
+                    end
+                else
+                    error('SetSignalMap:wrong_arg', arg_err_msg);
+                end                            
+            end
             
         end
         
         function ResetSigMap(this)
             this.sigMap = containers.Map();
+            this.sigMapInv = containers.Map();
+            this.AliasMap =containers.Map();
+      
         end
 
         function PrintSigMap(this)
@@ -794,15 +885,20 @@ classdef BreachSet < BreachStatus
             end
             % For all signals, first use sigMap-less search, then check
             % aliases
+            
+            idx = zeros(1, numel(signals));
+            ifound = idx; 
             for isig = 1:numel(signals)
                 sig = signals{isig}; 
                 [idx(isig), ifound(isig)] = FindParam(this.P, sig);
-                aliases_sig = setdiff(this.getAliases(sig), sig);
-                for ais = 1:numel(aliases_sig)
-                    [idx_s, ifound_s] = FindParam(this.P, aliases_sig{ais});
-                    if ifound_s
-                        ifound(isig)=true;
-                        idx(isig)=idx_s;
+                if this.AliasMap.isKey(sig)
+                    aliases_sig = this.AliasMap(sig);
+                    for ais = 1:numel(aliases_sig)
+                        [idx_s, ifound_s] = FindParam(this.P, aliases_sig{ais});
+                        if ifound_s
+                            ifound(isig)=true;
+                            idx(isig)=idx_s;
+                        end
                     end
                 end
             end
@@ -988,7 +1084,7 @@ classdef BreachSet < BreachStatus
             
             % restore traj if needed
             if saved_traj
-                this.P = Pfix_traj_ref(this.P, P0);
+                this.P = Pimport_traj(this.P, P0);
             end
             
         end
@@ -1014,12 +1110,16 @@ classdef BreachSet < BreachStatus
             if nargin ==1
                 max_num_samples = inf;
             end
+            
             bnd_params = this.GetBoundedDomains();
             if this.AppendWhenSample
                 this.SampleDomain(bnd_params, 2, 'corners', 'append', max_num_samples);
             else
                 this.SampleDomain(bnd_params,2, 'corners', 'replace', max_num_samples);
             end
+            
+            
+            
         end
         
         function QuasiRandomSample(this, nb_sample, step)
@@ -1045,13 +1145,34 @@ classdef BreachSet < BreachStatus
         end
                 
         %% Concatenation, ExtractSubset - needs some additional compatibility checks...
-        function Concat(this, other)
-            this.P = SConcat(this.P, other.P);
+        function Concat(this, other, fast)
+            if nargin<=2
+               fast = false; 
+            end
+            this.P = SConcat(this.P, other.P, fast);
         end
         
         function other  = ExtractSubset(this, idx)
             other = this.copy();
             other.P = Sselect(this.P, idx);
+        end
+        
+        function SavedTrajectorySample(this, paramValues)
+            % TESTRON
+            % Fixes the "sampling" for a stored trajectory
+            
+            this.ResetParamSet();
+            
+            newP = SavedTrajectoryRefine(this.P, paramValues);
+            
+            this.P = newP;
+            this.CheckinDomainParam();
+        end
+       
+        
+        %% Concatenation - needs some additional compatibility checks...
+        function Concat(this, other)
+            this.P = SConcat(this.P, other.P);
         end
         
         %% Plot parameters
@@ -1315,6 +1436,22 @@ classdef BreachSet < BreachStatus
             end
         end
         
+        function cfg=  GetDomainCfg(this)
+            params = this.GetParamList();
+            cfg.params = params;
+            for ip = 1:numel(params)
+                dom = this.GetDomain(params{ip});                
+                cfg.types{ip} = dom.type;                               
+                cfg.values{ip} = this.GetParam(params{ip},1);
+                if strcmp(dom.type, 'enum')
+                    cfg.domains{ip}=dom.enum;
+                else
+                    cfg.domains{ip}=dom.domain;
+                end
+            end                       
+        end
+        
+        
         %% Coverage
         function [cnt, grd1, grd2] = GetSignalCoverage(this,sigs, delta1,delta2)
             % 1d or 2d
@@ -1457,8 +1594,8 @@ classdef BreachSet < BreachStatus
             end
             
             % Additional options
-            options = struct('FolderName', '','IncludesOnlySignals', [], 'ExcludeSignals', []);
-            options = varargin2struct(options, varargin{:});
+            options = struct('FolderName', []);
+            options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
                 options.FolderName = ['Results_' datestr(now, 'dd_mm_yyyy_HHMM')];
@@ -1516,7 +1653,10 @@ classdef BreachSet < BreachStatus
             
         end
 
-        function traces = ExportTraces(this, signals, params, varargin)
+        function [success, msg, msg_id] = SaveResults(this, folder_name, varargin)
+            % Additional options
+            options = struct('FolderName', folder_name, 'SaveBreachSystem', true, 'ExportToExcel', false, 'ExcelFileName', 'Results.xlsx');
+            options = varargin2struct_breach(options, varargin{:});
             
             if ~exist('signals','var')
                 signals = {}; % means all
@@ -1620,16 +1760,20 @@ classdef BreachSet < BreachStatus
                         idx = min(idx,idx_ia ); % find first position in signals an alias appears
                     end
                 end
-                if idx==is % first time we see this guy, take it as rep
-                    sigs.signals_reps{end+1} = sig;
-                    idx = numel(sigs.signals_reps);
-                end
                 
                 if idx==inf
                     warning('BreachSet:GetSignalSignature:not_found', 'Signal or alias %s not found.', sig);
                 end
                 
-                sigs.signals_map_idx(is) = idx; 
+                if idx==is % first time we see this guy, take it as rep
+                    sigs.signals_reps{end+1} = sig;
+                    idx = numel(sigs.signals_reps);
+                    sigs.signals_map_idx(is) = idx;
+                else % idx is smaller than is so signals_map_idx(idx) is defined and correct, not necessarilly equal to idx ...
+                    sigs.signals_map_idx(is) = sigs.signals_map_idx(idx);
+                end
+                
+                
                 dom = this.GetDomain(signals{idx});
                 sigs.signal_types{is}  = dom.type;
                 if isempty(dom.type)  % ? 
@@ -1681,8 +1825,7 @@ classdef BreachSet < BreachStatus
                 
             end
         end
-        
-        
+           
         function summary = GetSummary(this)
             
             if this.hasTraj()
@@ -1874,8 +2017,7 @@ classdef BreachSet < BreachStatus
             
             end
         end
-        
-        
+                
         function st = get_signal_attributes_string(this, sig) 
             atts = this.get_signal_attributes(sig);
             if isempty(atts)
@@ -1889,22 +2031,39 @@ classdef BreachSet < BreachStatus
             end
         end
         
-        function st = PrintParams(this)
+        function st = PrintParams(this,params, header)
             st = '';
             nb_pts= this.GetNbParamVectors();
-            if (nb_pts<=1)
-                st = sprintf('-- PARAMETERS --\n');
-                for ip = this.P.DimX+1:numel(this.P.ParamList)
-                    st = sprintf([st '%s=%g       %s\n'],this.P.ParamList{ip},this.P.pts(ip,1), this.Domains(ip).short_disp(1));
-                end
-            else
-                st = sprintf([st '-- PARAMETERS -- (%d vectors):\n'],nb_pts);
-                for ip = this.P.DimX+1:numel(this.P.ParamList)
-                    st = sprintf([st '%s     %s\n'],this.P.ParamList{ip}, this.Domains(ip).short_disp(1));
-                end
+            
+            if ~exist('params','var')
+                params = this.P.DimX+1:numel(this.P.ParamList);
+            elseif ischar(params)||iscell(params)
+                params = FindParam(this.P, params);
             end
             
-            st = sprintf([st ' \n']);
+            if ~exist('header', 'var')
+                header = '-- PARAMETERS --';            
+            end
+                
+            if (nb_pts<=1)
+                if ~isempty(header)
+                    st = [header sprintf('\n')];
+                end
+                for ip = params
+                    st = [st sprintf('%s=%g       %s\n',this.P.ParamList{ip},this.P.pts(ip,1), this.Domains(ip).short_disp(1))];
+                end
+                
+            else
+                if ~isempty(header)
+                    st = [header sprintf(' (%d vectors):\n',nb_pts)];
+                end
+                for ip = params
+                    st = [st sprintf('%s     %s\n',this.P.ParamList{ip}, this.Domains(ip).short_disp(1))];
+                end
+                
+            end
+            
+            st = [st sprintf('\n')];
             
             if nargout==0
                 fprintf(st);
@@ -1978,7 +2137,14 @@ classdef BreachSet < BreachStatus
         function ResetSimulations(this)
             % Removes computed trajectories
             this.P = SPurge(this.P);
+            
+            if size(this.P.pts,2)>1
+                % get rid of redundant pts
+                [~, iu] = unique(this.P.pts','rows');
+                this.P = Sselect(this.P, iu);
+            end
             this.SignalRanges = [];
+            
         end
         
         function ResetSelected(this)
@@ -1987,44 +2153,313 @@ classdef BreachSet < BreachStatus
         end
         
         function aliases = getAliases(this, signals)
+            
             if ischar(signals)
                 signals = {signals};
             end
             
             aliases = signals;
-            sig_queue = signals;
-            
-            while ~isempty(sig_queue)
-                sig = sig_queue{1};
-                sig_queue = sig_queue(2:end);
-                if this.sigMap.isKey(sig)
-                    nu_sig = this.sigMap(sig);
-                    check_nusig()
-                end
-                if this.sigMapInv.isKey(sig)
-                    nu_sig = this.sigMapInv(sig);
-                    check_nusig()
-                end
+            for is = 1:numel(signals)
+               sig = signals{is} ;
+               if this.AliasMap.isKey(sig)
+                   aliases = union(aliases, this.AliasMap(sig),'stable');
+               end              
             end
             
-            % check sigMapInv for double alias
-            for  invkey = this.sigMapInv.keys()
-                sig = this.sigMapInv(invkey{1});
-                if ismember(sig,aliases)
-                    aliases = union(aliases, invkey{1});
-                end
-            end
-            
-            function check_nusig()
-                if ~ismember(nu_sig, aliases)
-                    aliases = [aliases {nu_sig}];
-                    sig_queue = [sig_queue nu_sig];
-                end
-            end
         end
          
     end
-    methods (Access=protected)    
+    
+    
+    %% Coverage Methods
+    methods
+        
+        function SetEpsGridsize(this,eps_size_vector)
+            % Assign a grid sizes for each parameter dimension. The eps
+            % grid size indicates the length of grid elements for each of
+            % the dimensions in parameter space. The eps value for each
+            % dimension corresponds to the smallest distance allowed
+            % between any two points in the parameter space.
+            
+            if ~isempty(this.epsgridsize)
+                error('Eps grid size already set. You cannot change the grid size after it has been defined.');
+            end
+            
+            if isrow(eps_size_vector)
+                eps_size_vector = eps_size_vector';
+            end
+            
+            % Number of parameters with ranges associated with them.
+            varying_parameter_indices = this.VaryingParamList();
+            
+            if length(eps_size_vector)~=length(varying_parameter_indices)
+                error('Length of the size vector does not match the number of parameters wth ranges associated with them.');
+            end
+            this.epsgridsize = eps_size_vector;
+        end
+        
+        function SetDeltaGridsize(this,delta_size_vector)
+            % Assign a grid sizes for each parameter dimension. The eps
+            % grid size indicates the length of grid elements for each of
+            % the dimensions in parameter space. The delta value for each
+            % dimension corresponds to the grid element size that is used to
+            % measure the cell count and entropy coverage measures.
+            
+            if ~isempty(this.deltagridsize)
+                error('Delta grid size already set. You cannot change the grid size after it has been defined.');
+            end
+            if isrow(delta_size_vector)
+                delta_size_vector = delta_size_vector';
+            end
+            % Number of parameters with ranges associated with them.
+            
+            varying_parameter_indices = this.VaryingParamList;
+            if length(delta_size_vector)~=length(varying_parameter_indices)
+                error('Length of the size vector does not match the number of parameters wth ranges associated with them.');
+            end
+            this.deltagridsize = delta_size_vector;
+        end
+        
+        function SetSnapToGrid(this,snapflag)
+            this.snap_to_grid = snapflag;
+        end
+        
+        function inRange = TestPointInRange(this,new_point)
+            % Identify the "lower, left" and "upper, right" corners of the
+            % parameter set
+            if isrow(new_point)
+                new_point = new_point';
+            end
+            inRange = true;
+            varying_parameter_indices = this.VaryingParamList;
+            lower_left_corner = [];
+            upper_right_corner = [];
+            for ip = varying_parameter_indices
+                lower_left_corner = [lower_left_corner; this.Domains(ip).domain(1)];
+                upper_right_corner = [upper_right_corner; this.Domains(ip).domain(2)];
+            end
+            
+            if any(new_point < lower_left_corner)||any(new_point>upper_right_corner)
+                %fprintf('\nNew point out of range.\n');
+                inRange = false;
+            end
+        end
+        
+        function lower_left_corner = LowerLeftCorner(this)
+            % Identify the "lower, left" corner of the parameter set
+            varying_parameter_indices = this.VaryingParamList;
+            lower_left_corner = [];
+            for ip = varying_parameter_indices
+                lower_left_corner = [lower_left_corner; this.Domains(ip).domain(1)];
+            end
+        end
+        
+        function upper_right_corner = UpperRightCorner(this)
+            % Identify the "upper, right" corner of the parameter set
+            varying_parameter_indices = this.VaryingParamList;
+            upper_right_corner = [];
+            for ip = varying_parameter_indices
+                upper_right_corner = [upper_right_corner; this.Domains(ip).domain(2)];
+            end
+        end
+        
+        function [varargout] = AddPoints(this,new_points)
+            % Add a collection of new points to the space.
+            
+            var = this.GetVariables();
+            if nargin<=1
+               new_points = this.GetParam(var);
+            end
+            
+            
+            % Assume that for an "row x col" matrix that represents the new points,
+            % each col represents a unique point.
+            num_points = size(new_points,2);
+            for ind = 1:num_points
+                thisPoint = new_points(:,ind);
+                this.AddPoint(thisPoint);
+            end
+            
+        end
+        
+        function [varargout] = AddPoint(this,new_point)
+            % Add a point to the data structure
+            
+            if nargout>0
+                varargout{1} = true;
+            end
+            if nargout>1
+                varargout{2} = [];
+            end
+            
+            if ~this.TestPointInRange(new_point)
+                %fprintf('\nPoint not in range, so it was not added.\n');
+                if nargout>0
+                    varargout{1} = false;
+                end
+                return
+            end
+            
+            epsgridsize = this.epsgridsize;
+            deltagridsize = this.deltagridsize;
+            
+            if isrow(new_point)
+                new_point = new_point';
+            end
+            
+            if nargout>1
+                varargout{2} = new_point;
+            end
+            
+            % Identify the "lower, left" corner of the parameter set
+            lower_left_corner = this.LowerLeftCorner();
+            
+            shifted_point = new_point - lower_left_corner;
+            
+            % First, identify corresponding eps grid element
+            shifted_grid_element = diag(epsgridsize)*floor(shifted_point./epsgridsize);
+            eps_grid_element = shifted_grid_element + lower_left_corner;
+            
+            % Also, identify delta grid element
+            shifted_grid_element = diag(deltagridsize)*floor(shifted_point./deltagridsize);
+            delta_grid_element = shifted_grid_element + lower_left_corner;
+            
+            if this.snap_to_grid
+                if this.EpsGridMapObj.isKey(mat2str(eps_grid_element))
+                    % fprintf('\nValue already present in grid element %s.\n',mat2str(eps_grid_element));
+                    if nargout>0
+                        varargout{1} = false;
+                    end
+                    if nargout>1
+                        varargout{2} = [];
+                    end
+                else
+                    if this.DeltaGridMapObj.isKey(mat2str(delta_grid_element))
+                        previous_grid_members = this.DeltaGridMapObj(mat2str(delta_grid_element));
+                        this.DeltaGridMapObj(mat2str(delta_grid_element)) = previous_grid_members + 1;
+                    else
+                        this.DeltaGridMapObj(mat2str(delta_grid_element)) = 1;
+                    end
+                    this.EpsGridMapObj(mat2str(eps_grid_element)) = 1;
+                    if nargout>1
+                        varargout{2} = eps_grid_element;
+                    end
+                end
+            else
+                % For this case, create a list for each grid
+                % element that is populated by at least one point.
+                if this.EpsGridMapObj.isKey(mat2str(eps_grid_element))
+                    previous_grid_members = this.EpsGridMapObj(mat2str(eps_grid_element));
+                    this.EpsGridMapObj(mat2str(eps_grid_element)) = [previous_grid_members new_point];
+                else
+                    this.EpsGridMapObj(mat2str(eps_grid_element)) = [new_point];
+                end
+                if this.DeltaGridMapObj.isKey(mat2str(delta_grid_element))
+                    previous_grid_members = this.DeltaGridMapObj(mat2str(delta_grid_element));
+                    this.DeltaGridMapObj(mat2str(delta_grid_element)) = previous_grid_members + 1;
+                else
+                    this.DeltaGridMapObj(mat2str(delta_grid_element)) = 1;
+                end
+            end
+            
+        end
+        
+        function varying_parameter_indices = VaryingParamList(this)
+            % Determine the indices into the SimulinkSystem parameters that
+            % correspond to parameters that are allowed to vary (i.e., that
+            % have a range assocaited with them).
+            
+            [~, varying_parameter_indices] = this.GetBoundedDomains();
+            
+        end
+        
+        function num_points = NumPoints(this)
+            % Return number of points in the list
+            num_points = double(this.EpsGridMapObj.Count);
+        end
+        
+        function DisplayPoints(this)
+            % Display all points in the list
+            KeysSet = this.EpsGridMapObj.keys;
+            fprintf('\nCell: Occupancy\n');
+            for ind = 1:length(KeysSet);
+                ValueTemp = this.EpsGridMapObj(KeysSet{ind});
+                fprintf('%s: %s \n',KeysSet{ind}, mat2str(ValueTemp'));
+            end
+        end
+        
+        function total_cells = TotalCellCount(this)
+            % Total number of cells in the parameter space
+            %
+            % First, compute the width of the range for each dimension in
+            % the parameter space.
+            varying_parameter_indices = this.VaryingParamList;
+            rg = [];
+            for ip = varying_parameter_indices
+                rg = [rg; this.Domains(ip).domain(2)-this.Domains(ip).domain(1)];
+            end
+            total_cells = prod(ceil(rg./this.epsgridsize));
+        end
+        
+        function coverage = ComputeLogCellOccupancyCoverage(this)
+            % Compute the log of the cell occupancy
+            % for the parameter space
+            
+            % Total number of cells in the parameter space
+            total_cells = this.TotalCellCount;
+            % Next, obtain the total number of populated cells
+            pop_cells = this.NumPoints;
+            coverage = log(pop_cells)/log(total_cells);
+        end
+        
+        function coverage = ComputeCellOccupancyCoverage(this)
+            % Compute the cell occupancy for the parameter space
+            
+            % Total number of cells in the parameter space
+            total_cells = this.TotalCellCount;
+            % Next, obtain the total number of populated cells
+            pop_cells = this.NumPoints;
+            coverage = pop_cells/total_cells;
+        end
+        
+        function coverage = ComputeEntropyCoverage(this)
+            % Compute the combinatorial entropy (also known as the
+            % coarse-grained Boltzmann entropy).
+            
+            % The entropy measure is given by the following:
+            %
+            % G(D) = p!/(n_1!\cdots n_c!)
+            %
+            % S_B(D) = log(G(D)),
+            %
+            % where p is the total number of points, and n_i is the number
+            % of points in cell i.
+            
+            % Collect the number of points in each cell and compute the
+            % denominator of G(D). At the same time, compute the total
+            % number of points p.
+            delta_cell_labels = this.DeltaGridMapObj.keys;
+            numpoints = 0;
+            GD_denominator = 1;
+            for ind = 1:length(delta_cell_labels)
+                n_i = double(this.DeltaGridMapObj(delta_cell_labels{ind}));
+                numpoints = numpoints + n_i;
+                GD_denominator = GD_denominator*(factorial(n_i));
+            end
+            
+            GD_numerator = factorial(numpoints);
+            
+            GD = GD_numerator/GD_denominator;
+            
+            coverage = log(GD);
+        end
+        
+    end
+
+    
+    
+    
+    methods (Access=protected)
         
         
         

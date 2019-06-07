@@ -56,10 +56,11 @@ classdef BreachImportData < BreachSignalGen
                     this.SampleDomain(param_file_idx, 'all');
                 end
                 this.Sys.Verbose=0;
-                this.Sim();
+                this.Sim();                
             end
-            
+            this.CheckinDomainParam();                
             this.fname = fname;
+            
         end
         
         function idx = GetParamsInputIdx(this)
@@ -105,7 +106,7 @@ classdef BreachImportData < BreachSignalGen
             
             % Additional options
             options = struct('FolderName', []);
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
                 options.FolderName = ['Import_Results_' datestr(now, 'dd_mm_yyyy_HHMM')];
@@ -184,7 +185,7 @@ classdef BreachImportData < BreachSignalGen
             
             % Additional options
             options = struct('FileName', 'Results.xlsx');
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
             
             global BreachGlobOpt
             

@@ -36,7 +36,7 @@ classdef BreachSignalGen < BreachSystem
             
             this.Domains = [];
             this.InitSignalGen(signalGenerators);
-            
+            this.CheckinDomain();
         end
         
         function InitSignalGen(this, signalGenerators)
@@ -117,7 +117,7 @@ classdef BreachSignalGen < BreachSystem
                X(cur_is:cur_is+ns-1, :) = sg.computeSignals(p_isg, tspan);
                cur_is = cur_is+ ns;
             end
-                
+            
         end
         
         function SetParam(this, params, values, varargin)
@@ -180,6 +180,9 @@ classdef BreachSignalGen < BreachSystem
                     ll = strcmp(this.signalGenerators{isg}.signals, sig_name);
                     if any(ll)
                         sg = this.signalGenerators{isg};
+                        % fix domains
+                        sg.params_domain = this.GetDomain(sg.params);
+                        sg.signals_domain = this.GetDomain(sg.signals);                        
                         return;
                     end
                 end
@@ -187,9 +190,9 @@ classdef BreachSignalGen < BreachSystem
             end
         end
         
-        function strct_cfg = ExportConfig(this)
-            strct_cfg = struct;
-            strct_cfg.input_cfg = {};
+        function signal_gen_cfg = ExportConfig(this)
+
+            signal_gen_cfg = {};
             
             for isg = 1:numel(this.signalGenerators)
                 sg =this.signalGenerators{isg};
@@ -205,7 +208,7 @@ classdef BreachSignalGen < BreachSystem
                 else
                     cfg.Args{end+1} = sg.p0';
                 end
-                strct_cfg.input_cfg{end+1} = cfg; 
+                signal_gen_cfg{end+1} = cfg; 
             end
             
         end

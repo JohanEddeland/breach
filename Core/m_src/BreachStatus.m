@@ -19,7 +19,7 @@ classdef BreachStatus < handle
             name_found = false;
             S = evalin('base', 'who');
             if ~exist('default', 'var')
-                my_name= 'Nobody__';
+                my_name= this.gen_name();
             else
                 my_name = default;
             end
@@ -35,7 +35,7 @@ classdef BreachStatus < handle
         end
         
         function name = gen_name(this)
-            name = [class(this) '_' datestr(now, 'mm_dd_yyyy_HHMM')];
+            name = [class(this) '_' datestr(now, 'mmm_dd_yyyy_HHMM')];
         end
         
         function new = copy(this)

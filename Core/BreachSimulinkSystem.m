@@ -33,10 +33,9 @@ classdef BreachSimulinkSystem < BreachOpenSystem
         FindTables = false
         FindStruct = false
         MaxNumTabParam
-        SimCmdArgs = {}       % argument list passed to sim command
+        SimCmdArgs = {}              % argument list passed to sim command
         InputSrc                     % for each input, we match an input port or base workspace (0)
         MdlVars                      % List of variables used by the model
-        SimInputsOnly=false % if true, will not run Simulink model
         SimInModelsDataFolder=false
         StopAtSimulinkError=false
         mdl
@@ -49,8 +48,8 @@ classdef BreachSimulinkSystem < BreachOpenSystem
         function this = BreachSimulinkSystem(mdl_name, params, p0, signals, inputfn, varargin)
             InitBreach();
             
-            if nargin==0
-                return;
+            if nargin ==0
+                    return;                   
             end
             
             if exist('p0', 'var')&&iscell(p0)
@@ -66,11 +65,38 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             end
             this.mdl.name = mdl_name;
             this.mdl.path = which(mdl_name);
-            this.mdl.date =  datestr(now,'ddmmyy-HHMM');
             this.mdl.file_info = dir(this.mdl.path);
             this.mdl.mdl_breach_path = BreachGetModelsDataPath();
-            this.ParamSrc = containers.Map();
             
+            %% Try reusing previous interface 
+            switch nargin %try reusing previous interface
+                case 1
+                    BrHash = DataHash(this.mdl);
+                case 2  
+                    BrHash = DataHash({this.mdl, params});
+                case 3  
+                    BrHash = DataHash({this.mdl, params,p0});
+                case 4
+                    BrHash = DataHash({this.mdl, params,p0,signals});
+                case 5
+                    BrHash = DataHash({this.mdl, params,p0,signals,inputfn});
+                otherwise
+                    BrHash = DataHash([{this.mdl, params,p0, signals,inputfn} varargin]);
+            end
+            global BreachGlobOpt;
+            if isfield(BreachGlobOpt, 'BrMap')                
+                if BreachGlobOpt.BrMap.isKey(BrHash)
+                    B_ = BreachGlobOpt.BrMap(BrHash);
+                    this = B_.copy();
+                    this.mdl.date =  datestr(now,'ddmmyy-HHMM');
+                    return;
+                end
+            else 
+                BreachGlobOpt.BrMap = containers.Map();               
+            end
+            
+            this.mdl.date =  datestr(now,'ddmmyy-HHMM');                                                
+            this.ParamSrc = containers.Map();            
             this.SetupOptions(varargin{:})
             
             switch nargin
@@ -115,6 +141,9 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 this.InputGenerator = BreachSignalGen(constant_signal_gen({}));
             end
             
+            %%            
+            BreachGlobOpt.BrMap(BrHash) = this.copy();
+            
         end
         
         function SetupOptions(this, varargin)
@@ -130,10 +159,8 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             options.Verbose = 1;
             options.MaxNumTabParam = 10;
             options.InitFn = '';
-            
-            global BreachGlobOpt;
-            options.DiskCachingRoot =[BreachGlobOpt.breach_dir filesep 'Ext' filesep 'ModelsData' filesep 'Cache'];
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
+            options.DiskCachingRoot = '';
             
             this.UseDiskCaching = options.UseDiskCaching;
             this.DiskCachingRoot = options.DiskCachingRoot;
@@ -508,6 +535,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             Sys.name = Sys.mdl;  % not great..
             
             this.Sys = Sys;
+            this.P = CreateParamSet(Sys);
             
             % Initializes InputMap and input generator
             this.InputMap = containers.Map();
@@ -584,22 +612,49 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 for ilg = 1:numel(logs_names)
                     if ~(ismember(logs_names{ilg}, sig_log))
                         signame = logs_names{ilg};
+                        
+                        if isempty(signame)
+                            % Don't try to log signals with no name
+                            continue
+                        end
                         if ~ismember(signame,sig_log)
                             
                             sig = logs.getElement(signame);
-                            if  isa(sig, 'Simulink.SimulationData.Signal')
-                                nbdim = size(sig.Values.Data,2);
-                                
-                                % naming multidimensional signal= name_signal_i_
-                                if nbdim==1
-                                    sig_log = {sig_log{:} signame};
-                                else
-                                    for idim =1:nbdim
-                                        signamei = [signame '_' num2str(idim)  '_'];
-                                        sig_log = {sig_log{:} signamei};
-                                    end
+                            % JOHAN CHANGE
+                            try
+                                if sig.numElements > 1
+                                    sig = get(sig,1);
                                 end
+                            catch
+                                % Do nothing
                             end
+                            
+                            try
+                                nbdim = size(sig.Values.Data,2);
+                            catch 
+                                % Sometimes, this doesn't work
+                                nbdim = length(fieldnames(sig.Values));
+                            end
+                            
+                            % NOTE!
+                            % Do we want to split multidimensional signals
+                            % or not?
+                            % For logged signals, currently we do NOT!
+                            sig_log = {sig_log{:} signame};
+                            
+                            % Alternatively, if we WANT to split them, use
+                            % the code below INSTEAD:
+                            
+                            % naming multidimensional signal= name_signal_i_
+%                             if nbdim==1
+%                                 sig_log = {sig_log{:} signame};
+%                             else
+%                                 for idim =1:nbdim
+%                                     signamei = [signame '_' num2str(idim)  '_'];
+%                                     sig_log = {sig_log{:} signamei};
+%                                 end
+%                             end
+                            % END JOHAN CHANGE
                         end
                     end
                 end
@@ -740,16 +795,44 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     cd(this.mdl.mdl_breach_path);
                 end
             end
+            % JOHAN ADDED
+            % We need clear mex since otherwise, we get erroneous start
+            % values for signals that need InitFunctions to be run at start
+            % of simulations
+            clear mex;
+            % END JOHAN ADDED
+            
             mdl = Sys.mdl;
             load_system(mdl);
             num_signals = Sys.DimX;
             params = Sys.ParamList;
             
             for i = 1:numel(params)-num_signals
-                pname =  params{i+num_signals};
-                pval  = pts(i+num_signals);
-                bparam = this.ParamSrc(pname);
-                bparam.setValue(pval); % set value in the appropriate workspace
+                % JOHAN CHANGE
+                tmp_johan = params{i+num_signals};
+                type_here = class(pts(i+num_signals));
+                try
+                    type_base = evalin('base',['class(' tmp_johan ')']);
+                    param_value = eval([type_base '(pts(i+num_signals))']);
+                    type_here_new = class(param_value);
+                    if ~strcmp(type_here_new,type_base)
+                        disp(params{i+num_signals})
+                        disp(['Warning!! Type here: ' type_here ', type in base: ' type_base]);
+                    elseif ~strcmp(type_here,type_base)
+                        %disp(['Successfully casted from ' type_here ' to ' type_here_new]);
+                    end
+                catch
+                    % The parameter doesn't exist yet (is a _u0 param)
+                    % We don't need to cast it
+                    param_value = pts(i+num_signals);
+                end
+                
+                
+                %assignin('base',params{i+num_signals}.Value,pts(i+num_signals));
+                assignin('base',params{i+num_signals},param_value);
+                bparam = this.ParamSrc(tmp_johan);
+                bparam.setValue(param_value); % set value in the appropriate workspace
+                % END JOHAN CHANGE
             end
             
             if ischar(tspan)
@@ -761,8 +844,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 assignin('base','t__',U.t);
                 assignin('base', 'u__',U.u);
             end
-            
-            
+                        
             %
             % TODO: fix support for signal builder using a proper
             % BreachParam
@@ -774,8 +856,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             %        signalbuilder(sb, 'activegroup', pts(ipts));
             %    end
             %end
-            %
-            
+            %            
             
             assignin('base','tspan',tspan);
             if numel(tspan)>2
@@ -796,28 +877,30 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     status = -2;  % error in inputs
                 else
                     simout= sim(mdl, this.SimCmdArgs{:});
+                    %time_to_sim = toc;
+                    %disp(['Finished simulation in ' num2str(time_to_sim) 's']);
                     [tout, X] = GetXFrom_simout(this, simout);
                 end
-            catch MException % TODO keep that in status message
-                if this.SimInModelsDataFolder
-                    cd(cwd);
-                end
+            catch s
                 if numel(tspan)>1
                     tout = tspan;
                 else
                     tout = [0 tspan];
                 end
+                warning(['An error was returned from Simulink:' s.message '\n Returning a null trajectory']);
+                disp(['WARNING: An error was returned from Simulink: ' s.message]);
                 X = zeros(Sys.DimX, numel(tout));
                 status =-1;
-                this.addStatus(-1, MException.identifier, MException.message);
-                if this.StopAtSimulinkError
-                    rethrow(MException);
-                end
+                %this.addStatus(-1, MException.identifier, MException.message);
+                %if this.StopAtSimulinkError
+                rethrow(s);
+                %end
             end
             
             % FIXME: the following needs to be reviewed
             if ~isempty(this.InputGenerator)&&this.use_precomputed_inputs==false
-                this.InputGenerator.Reset();
+                this.InputGenerator.ResetSimulations();
+                this.InputGenerator.resetStatus();
             end
             
             if this.SimInModelsDataFolder
@@ -877,24 +960,105 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     
                     signame = logs_names{ilg};
                     sig = logs.getElement(signame);
-                    if  isa(sig, 'Simulink.SimulationData.Signal')
-                        nbdim = size(sig.Values.Data,2);
-                        
-                        if (nbdim==1)
-                            [lia, loc]= ismember(signame, signals);
-                            if lia
-                                xx = interp1(sig.Values.Time',double(sig.Values.Data(:,1)),tout, 'linear','extrap');
-                                X(loc,:) = xx;
-                            end
-                        else
-                            for idim = 1:nbdim
-                                signamei = [signame '_' num2str(idim)  '_'];
-                                [lia, loc]= ismember(signamei, signals);
-                                if lia
-                                    xx = interp1(sig.Values.Time', double(sig.Values.Data(:,idim)),tout, 'linear','extrap') ;
-                                    X(loc,:) = xx;
+                    % JOHAN CHANGE
+                    if isempty(signame)
+                        break
+                    end
+                     
+                    try
+                        if sig.numElements > 1
+                            sig = get(sig,1);
+                        end
+                    catch
+                        % Do nothing
+                    end
+                    
+                    if ~isfield(sig.Values, 'Time') && ~isa(sig.Values, 'timeseries')
+                        % sig.Values does not have a field called Time. 
+                        % This means that the signal is actually a BUS
+                        % which has several different signal values. 
+                        % We don't handle this right now, instead we skip
+                        % it and print a warning that this signal should
+                        % not be used in a spec
+                        disp(['BreachSimulinkSystem.m: We have tried to log the bus signal ''' sig.Name '''. Skipping logging, we cannot use bus signals in specs']);
+                        continue;
+                    end
+                    
+                    if length(sig.Values.Time) < 2
+                        % We have only one element - cannot interpolate
+                        % This happens e.g. for FaultModeFID_ver in
+                        % CMA_CIDD, which is just a constant parameter
+                    end
+                    % END JOHAN CHANGE
+                    nbdim = size(sig.Values.Data,2);
+                    
+                    if (nbdim==1)
+                        [lia, loc]= ismember(signame, signals);
+                        if lia
+                            if length(sig.Values.Time) > 1
+                                % JOHAN EDIT
+                                dim = size(sig.Values.Data);
+                                if length(dim) == 2
+                                    % The data is 2D. We can interpolate it
+                                    % the standard Breach way. 
+                                    % Standard case - interpolate to fill data
+                                    xx = interp1(sig.Values.Time',double(sig.Values.Data(:,1)),tout, 'linear','extrap');
+                                elseif length(dim) == 3
+                                    % The data is 3D. We need to figure out
+                                    % which 2 dimensions to use. 
+                                    [maxValue, maxDim] = max(dim);
+                                    
+                                    % dim is e.g. [1 1 2401]. We assert
+                                    % that all dimensions OTHER than maxdim
+                                    % are equal to 1. 
+                                    assert(sum(dim) == maxValue + length(dim) - 1, 'All dimensions other than maxDim should be equal to 1');
+                                    
+                                    % We would like to look at the
+                                    % dimension maxDim, as well as the
+                                    % dimensions before it. To do this, we
+                                    % assert that maxDim > 1. 
+                                    assert(maxDim == 3, 'Need to figure out what to do if maxDim not equal to 3. Maybe we should take maxDim and the dimension AFTER it (dimension 2)? Needs specific use case');
+                                    
+                                    % Interpolate it in the way we know it
+                                    % should work (maxDim and the
+                                    % dimensions before it). 
+                                    
+                                    % permute() below moves the first
+                                    % dimension into the thrid dimension,
+                                    % essentially transforming the
+                                    % dimensions to [1 2401]
+                                    permutedData = permute(sig.Values.Data, [2 3 1]);
+                                    xx = interp1(sig.Values.Time',double(permutedData),tout, 'linear','extrap');
+                                else
+                                    error('We have not defined what to do if the signal data is not 2D or 3D');
                                 end
+                                % END JOHAN EDIT
+                            else
+                                % We have only one element - cannot
+                                % interpolate
+                                % This happens e.g for FaultModeFID_ver in
+                                % CMA_CIDD, which is just a constant
+                                % parameter
+                                xx = repmat(sig.Values.Data(:,1), size(tout));
                             end
+                            X(loc,:) = xx;
+                        end
+                    else
+                        for idim = 1:nbdim
+                            signamei = [signame '_' num2str(idim)  '_'];
+                            [lia, loc]= ismember(signamei, signals);
+                            if lia
+                                if length(sig.Value.Time) > 1
+                                    % Standard case - interpolate to fill
+                                    % data
+                                    xx = interp1(sig.Values.Time', double(sig.Values.Data(:,idim)),tout, 'linear','extrap') ;
+                                else
+                                    % We have only one element - cannot
+                                    % interpolate
+                                    xx = repmat(sig.Values.Data(:,idim), size(tout));
+                                end
+                                X(loc,:) = xx;
+                            end                  
                         end
                     end
                 end
@@ -962,6 +1126,15 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                         if ~ismember(signame,signals)
                             
                             sig = logs.getElement(signame);
+                            % JOHAN CHANGE
+                            try
+                                if sig.numElements > 1
+                                    sig = get(sig,1);
+                                end
+                            catch
+                                % Do nothing
+                            end
+                            % END JOHAN CHANGE
                             nbdim = size(sig.Values.Data,2);
                             
                             % naming multidimensional signal= name_signal_i_
@@ -988,6 +1161,106 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 end
             end
         end
+
+%         function sig_log = FindLoggedSignals(this)
+%             %
+%             % converts a simulink output to a data structure Breach can handle
+%             %
+%             
+%             %Run the model for time 0 to check proper initialization and collect signal names
+%             tspan = evalin('base', 'tspan;');
+%             assignin('base','tspan',[0 eps]);
+%             assignin('base','t__',0);
+%             assignin('base','u__',zeros(1, numel(this.Sys.InputList)));
+%             
+%             simout = sim(this.Sys.mdl);
+%             assignin('base','tspan',tspan);
+%             
+%             %% Outputs and scopes
+%             Vars = simout.who;
+%             lenVars = numel(Vars);
+%             sig_log = {};
+%             
+%             for iV = 1:lenVars
+%                 Y = get(simout,Vars{iV});
+%                 if ~isempty(Y)
+%                     
+%                     if ~strcmp(Vars{iV}, 'tout')&&~strcmp(Vars{iV},'logsout')&&(isstruct(Y))
+%                         for iS=1:numel(Y.signals)
+%                             signame = Y.signals(iS).label;
+%                             if ~ismember(signame,sig_log)
+%                                 
+%                                 nbdim = size(double(Y.signals(iS).values),2);
+%                                 if (nbdim==1)
+%                                     sig_log = {sig_log{:} signame };
+%                                 else
+%                                     for idim = 1:nbdim
+%                                         signamei = [signame '_' num2str(idim)  '_'];
+%                                         sig_log = {sig_log{:} signamei};
+%                                     end
+%                                 end
+%                             end
+%                         end
+%                     end
+%                 end
+%             end
+%             
+%             logs = simout.get('logsout');
+%             
+%             if ~isempty(logs)
+%                 logs_names = logs.getElementNames();
+%                 
+%                 %% logs
+%                 for ilg = 1:numel(logs_names)
+%                     if ~(ismember(logs_names{ilg}, sig_log))
+%                         signame = logs_names{ilg};
+%                         if ~ismember(signame,sig_log)
+%                             
+%                             sig = logs.getElement(signame);
+%                             % JOHAN CHANGE
+%                             try
+%                                 if sig.numElements > 1
+%                                     sig = get(sig,1);
+%                                 end
+%                             catch
+%                                 % Do nothing
+%                             end
+%                             
+%                             try
+%                                 nbdim = size(sig.Values.Data,2);
+%                             catch 
+%                                 % Sometimes, this doesn't work
+%                                 nbdim = length(fieldnames(sig.Values));
+%                             end
+%                             
+%                             % NOTE!
+%                             % Do we want to split multidimensional signals
+%                             % or not?
+%                             % For logged signals, currently we do NOT!
+%                             sig_log = {sig_log{:} signame};
+%                             
+%                             % Alternatively, if we WANT to split them, use
+%                             % the code below INSTEAD:
+%                             
+%                             % naming multidimensional signal= name_signal_i_
+% %                             if nbdim==1
+% %                                 sig_log = {sig_log{:} signame};
+% %                             else
+% %                                 for idim =1:nbdim
+% %                                     signamei = [signame '_' num2str(idim)  '_'];
+% %                                     sig_log = {sig_log{:} signamei};
+% %                                 end
+% %                             end
+%                             % END JOHAN CHANGE
+%                             
+%                             
+%                             
+%                             
+%                         end
+%                     end
+%                 end
+%             end
+%         end
         
         function U = InitU(this,pts,tspan)
             % Computes input values
@@ -1008,7 +1281,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
         function S = GetSignature(this, varargin)
             S = GetSignature@BreachOpenSystem(this, varargin{:});
             S.mdl_info = this.mdl;
-            
         end
         
         function OpenMdl(this)
@@ -1092,6 +1364,12 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             caching_folder_name = [CacheRoot filesep mdl_hash];
         end
         
+        function hash = get_hash(this)
+            st.signals = this.GetSignalsList();
+            st.params = this.GetParamList();
+            
+        end
+            
         %% Export result
         function [summary, traces] = ExportTracesToStruct(this,i_traces, varargin)
             % BreachSimulinkSystem.ExportTracesToStruct
@@ -1109,8 +1387,8 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             end
             
             % Additional options
-            options = struct('FolderName', [], 'PreserveTracesOrdering', false);
-            options = varargin2struct(options, varargin{:});
+            options = struct('FolderName', []);
+            options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
                 options.FolderName = [this.mdl.name '_Results_' datestr(now, 'dd_mm_yyyy_HHMM')];
@@ -1211,64 +1489,10 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             end
         end
         
-        function summary = GetSummary(this)
-            summary = GetSummary@BreachSet(this);
-            summary.model_info = this.mdl;
-            
-            % parameter names
-            param_names = this.GetSysParamList();
-            
-            % input signal names
-            signal_names= this.GetSignalNames();
-            idx =  this.GetInputSignalsIdx();
-            input_names = signal_names(idx);
-            
-            % input param names
-            idxp = this.GetParamsInputIdx();
-            input_params = this.P.ParamList(idxp);
-            
-            % signal generators
-            for is  = 1:numel(input_names)
-                signal_gen_types{is} = class(this.InputGenerator.GetSignalGenFromSignalName(input_names{is}));
-            end
-            
-            % signal names
-            signal_names = setdiff(signal_names, input_names);
-            
-            % system parameters (non-input)
-            sysparams_names = setdiff(param_names, input_params);
-            
-            if isfield(this.P,'props_names')
-                spec_names = this.P.props_names;
-            end
-            
-            summary.test_params.names = this.GetBoundedDomains();
-            summary.input_generators = signal_gen_types;
-            summary.test_params.values = this.GetParam(summary.test_params.names);
-            summary.const_params.names = setdiff( this.P.ParamList(this.P.DimX+1:end), this.GetBoundedDomains())';
-            summary.const_params.values = this.GetParam(summary.const_params.names,1)';
-            
-            if isfield(this.P, 'props')
-                summary.specs.names = spec_names;
- %               if ~options.PreserveTracesOrdering % this should not be there
-  %                 this.SortbyRob();
-  %                 this.SortbySat();
-  %             end
-                summary.specs.rob = this.GetSatValues();
-                summary.specs.sat = summary.specs.rob>=0;
-                summary.num_sat = - sum( ~summary.specs.sat, 1  );
-            end
-            
-        end
-        
-        function [success, msg, msg_id, folder_name] = SaveResults(this, folder_name, varargin)
-            % BreachSimulinkSystem.SaveResults
-            
-            if nargin<2
-                folder_name = [];
-            end
-            options = struct('FolderName', folder_name, 'SaveBreachSystem', true, 'ExportToExcel', false, 'ExcelFileName', 'Results.xlsx', 'PreserveTracesOrdering', false);
-            options = varargin2struct(options, varargin{:});
+        function [success, msg, msg_id] = SaveResults(this, folder_name, varargin)
+            % Additional options
+            options = struct('FolderName', folder_name, 'SaveBreachSystem', true, 'ExportToExcel', false, 'ExcelFileName', 'Results.xlsx');
+            options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
                 folder_name = [this.mdl.name '_Results_' datestr(now, 'dd_mm_yyyy_HHMM')];

@@ -7,10 +7,20 @@ classdef stl_monitor < req_monitor
         formula
         predicates
         formula_id
+        inout  % input output mode
+        relabs % relative absolute mode
+        
+        verdict
+        rob_map
+        diag_map
+        formula_names_map 
+        
     end
     
     methods
         function this = stl_monitor(formula)
+            this.inout = 'out';
+            this.relabs = 'rel';
             if ischar(formula)
                 this.formula= STL_Formula(STL_NewID('phi'), formula);
             elseif isa(formula,'STL_Formula')
@@ -24,56 +34,157 @@ classdef stl_monitor < req_monitor
             
             % collect signals and params names
             [this.signals_in, this.params, this.p0] = STL_ExtractSignals(this.formula);
-            
-            % Outputs
-            if ~strcmp(get_type(this.formula), 'predicate')
-                this.signals = {};
-                preds = STL_ExtractPredicates(this.formula);
-                for ip = 1:numel(preds)
-                    if ~STL_CheckID(get_id(preds(ip)))   % predicate does not exist as formula, create it
-                        pred = STL_Formula( [get_id(this.formula) '_predicate_' num2str(ip)], preds(ip));
-                    else
-                        pred = preds(ip);
-                    end
-                    this.predicates{ip} = pred;
-                    this.signals = [this.signals {get_id(this.predicates{ip})}];
-                end
-                this.signals =  [this.signals {get_id(this.formula)}];
-            else
-                this.signals = {get_id(this.formula)};
-            end
-            
+            this.formula = set_out_signal_names(this.formula, this.signals_in);
             this.init_P();
             
         end
         
-        function [time, Xout] = computeSignals(this, time, X, p)
-            this.init_tXp(time,X,p); 
-            Xout = zeros(numel(this.signals), numel(time));
-            
-            % compute predicate values
-            if ~isempty(this.predicates)
-                for ip = 1:numel(this.predicates)
-                    [time, Xout(ip,:)] = this.get_standard_rob(this.predicates{ip}, time);
-                end
+        function [] = set_mode(this, flag1, flag2)
+            switch flag1
+                case {'in','out'}
+                    this.inout = flag1;
+                otherwise
+                    this.inout = '';
             end
-            
-            % compute robustnes of top formula
-            [time, Xout(end,:)] = this.get_standard_rob(this.formula, time);
-            
+            switch flag2
+                case {'rel','abs'}
+                    this.relabs = flag2;
+                otherwise
+                    this.relabs = '';
+            end
         end
         
-        function plot_diagnosis(this, F)
-            % Assumes F has data about this formula
-            F.BrSet.PlotRobustSat(this.formula,[],[],F.ipts);            
+        function [flag1,flag2] = get_mode(this)
+            flag1 = this.inout;
+            flag2 = this.relabs;
+        end
+        
+        function [time, Xout] = computeSignals(this, time, X, p)
+            this.init_tXp(time,X,p);
+            
+           % compute robustnes of top formula at time 0
+           [time, Xout] = this.get_standard_rob(this.formula, 0);
         end
         
         function [v, t, Xout] = eval(this, t, X,p)
             [t, Xout] = this.computeSignals(t, X,p);
-            v = Xout(end,1); 
+            v = Xout(end,1);
         end
         
-        function init_tXp(this, t, X, p) 
+        function explain(this,time,X,p)
+            
+            if nargin>1
+                this.init_tXp(time,X,p);
+            end
+            
+            this.rob_map = containers.Map;
+            phi = this.formula;
+
+            [~,~,this.rob_map] = STL_Eval_IO_Rob(this.Sys, phi, this.P, this.P.traj{1}, 'out', 'rel', this.rob_map);
+            this.diag_map = containers.Map;
+            
+            this.formula_names_map = containers.Map;
+            this.formula_names_map = get_formula_name_map(phi, this.formula_names_map);
+            
+            top_signal = this.rob_map(get_id(phi));
+            
+            val = top_signal.values(1);
+            if(val < 0)
+                this.verdict = 0;
+            else
+                this.verdict = 1;
+            end
+            
+            implicant = BreachImplicant;
+            implicant = implicant.addInterval(0, 0);
+            implicant = implicant.addSignificantSample(0, val);
+            
+            id = get_id(phi);
+            this.diag_map(id) = implicant;
+            
+            [this.formula, this.diag_map] = this.diag(phi, this.rob_map, this.diag_map, this.verdict);
+            
+        end
+        
+        function plot_diagnostics(this, F, phi)
+            if nargin<3
+                phi=this.formula;
+            end
+            
+            this.plot_full_diagnostics(F,phi); 
+        end
+        
+        function plot_full_diagnostics(this,F,phi)
+            % Assumes F has data about this formula
+            this.explain();
+            
+            if nargin<3
+                phi=this.formula;
+            end
+            
+            subs = STL_Break(phi); 
+            for is = numel(subs):-1:1
+                subphi = subs(is);
+                h = F.AddAxes();
+                this.plot_implicant(h, get_id(subphi));
+            end
+            
+            for is = 1:numel(this.signals_in)
+                h = F.AddAxes();
+                this.plot_implicant(h, this.signals_in{is});
+            end
+                
+        end
+           
+        function plot_implicant(this, ax, id)
+            
+            if (this.verdict)
+                color = 'g';
+            else
+                color = 'r';
+            end
+            
+            axis(ax);
+            signal = this.rob_map(id);
+            stairs(signal.times, signal.values);
+            grid on;
+            hold on;
+            formula_name = this.formula_names_map(id);
+            if ~ismember(id, this.signals_in)
+                l = legend([id ': ' formula_name]);
+            else
+                l = legend(id);
+            end
+            set(l, 'Interpreter', 'none');
+            ylim = get(ax, 'YLim');
+            ylim_bot = ylim(1);
+            ylim_top = ylim(2);
+            
+            implicant = this.diag_map(id);
+            size = implicant.getIntervalsSize();
+            for j=1:size
+                interval = implicant.getInterval(j);
+                x = interval.begin;
+                y = interval.end;
+                if (x == y)
+                    line([x x],[ylim_bot ylim_top],'Color',color);
+                elseif (y > x)
+                    p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color);
+                    alpha(p, 0.3);
+                    set(p,'EdgeColor','none');
+                end
+            end
+            samples = implicant.getSignificantSamples();
+            for j=1:length(samples)
+                sample = samples(j);
+                hold on;
+                plot(sample.time, sample.value, 'x');
+            end
+            t0 = this.P.traj{1}.time;
+            set(ax, 'XLim', [0 t0(end)]);
+        end
+        
+        function init_tXp(this, t, X, p)
             this.P.traj{1}.time = t;
             
             if isempty(this.signals_in)
@@ -83,14 +194,24 @@ classdef stl_monitor < req_monitor
             end
             
             if nargin>=4&&~isempty(p)
-                this.P0 = SetParam(this.P, this.params,p); 
+                this.P0 = SetParam(this.P, this.params,p);
             else
                 this.P0 = this.P;
             end
         end
         
         function [time, rob] = get_standard_rob(this, phi, time)
-            [rob, time] = STL_Eval(this.Sys, phi, this.P0,this.P.traj{1},time);
+            switch this.inout
+                case {'in','out'}
+                    switch this.relabs
+                        case {'rel','abs'}
+                            [rob, time] = STL_Eval_IO(this.Sys, phi, this.P0, this.P.traj{1}, this.inout, this.relabs, time);
+                        otherwise
+                            [rob, time] = STL_Eval_IO(this.Sys, phi, this.P0, this.P.traj{1}, this.inout, 'rel', time);
+                    end
+                otherwise
+                    [rob, time] = STL_Eval(this.Sys, phi, this.P0,this.P.traj{1},time);
+            end
         end
         
         function st = disp(this)
@@ -117,22 +238,128 @@ classdef stl_monitor < req_monitor
             end
         end
     end
-    
-    
+   
     methods (Access=protected)
+        function [phi, diag_map] = diag(this, phi, rob, diag_map, flag)
+            
+            in_implicant = diag_map(get_id(phi));
+            samples = in_implicant.getSignificantSamples();
+          
+            psis = get_children(phi);
+            switch(get_type(phi))
+                case 'predicate'
+                    signal_names = STL_ExtractSignals(phi);
+                    for i=1:length(signal_names)
+                        signal_name = signal_names{i};
+                        signal = rob(signal_name);
+                        if(~diag_map.isKey(signal_name))
+                            out_implicant = BreachImplicant;
+                            intervals = in_implicant.getIntervals();
+                            for j=1:length(intervals)
+                                interval = intervals(j);
+                                out_implicant = out_implicant.addInterval(interval.begin, interval.end);
+                            end
+                            samples = in_implicant.getSignificantSamples();
+                            for j=1:length(samples)
+                                sample = samples(j);
+                                value = interp1(signal.times, signal.values, sample.time, 'previous');
+                                out_implicant = out_implicant.addSignificantSample(sample.time, value);
+                            end
+                            diag_map(signal_name) = out_implicant;
+                        end
+                    end
+                    
+                case 'not'
+                    signal = rob(get_id(psis{1}));
+                    if(flag)
+                        [implicant] = BreachDiagnostics.diag_not_t(signal, in_implicant, samples);
+                    else
+                        [implicant] = BreachDiagnostics.diag_not_f(signal, in_implicant, samples);
+                    end
+                    diag_map(get_id(psis{1})) = implicant;
+                    [psis{1}, diag_map] = this.diag(psis{1}, rob, diag_map, ~flag);
+                case 'or'
+                    signal1 = rob(get_id(psis{1}));
+                    signal2 = rob(get_id(psis{2}));
+                    if(flag)
+                        [implicant1, implicant2] = BreachDiagnostics.diag_or_t(signal1, signal2, in_implicant, samples);
+                    else
+                        [implicant1, implicant2] = BreachDiagnostics.diag_or_f(signal1, signal2, in_implicant, samples);
+                    end
+                    diag_map(get_id(psis{1})) = implicant1;
+                    diag_map(get_id(psis{2})) = implicant2;
+                    [psis{1}, diag_map] = this.diag(psis{1}, rob, diag_map, flag);
+                    [psis{2}, diag_map] = this.diag(psis{2}, rob, diag_map, flag);
+                case 'and'
+                    signal1 = rob(get_id(psis{1}));
+                    signal2 = rob(get_id(psis{2}));
+                    if(flag)
+                        [implicant1, implicant2] = BreachDiagnostics.diag_and_t(signal1, signal2, in_implicant, samples);
+                    else
+                        [implicant1, implicant2] = BreachDiagnostics.diag_and_f(signal1, signal2, in_implicant, samples);
+                    end
+                    diag_map(get_id(psis{1})) = implicant1;
+                    diag_map(get_id(psis{2})) = implicant2;
+                    [psis{1}, diag_map] = this.diag(psis{1}, rob, diag_map, flag);
+                    [psis{2}, diag_map] = this.diag(psis{2}, rob, diag_map, flag);
+                case '=>'
+                    signal1 = rob(get_id(psis{1}));
+                    signal2 = rob(get_id(psis{2}));
+                    if(flag)
+                        [implicant1, implicant2] = BreachDiagnostics.diag_implies_t(signal1, signal2, in_implicant, samples);
+                    else
+                        [implicant1, implicant2] = BreachDiagnostics.diag_implies_f(signal1, signal2, in_implicant, samples);
+                    end
+                    diag_map(get_id(psis{1})) = implicant1;
+                    diag_map(get_id(psis{2})) = implicant2;
+                    [psis{1}, diag_map] = this.diag(psis{1}, rob, diag_map, flag);
+                    [psis{2}, diag_map] = this.diag(psis{2}, rob, diag_map, flag);
+                case 'always'
+                    signal = rob(get_id(psis{1}));
+                    I = this.get_interval(phi);
+                    bound.begin = I(1);
+                    bound.end = min(I(2),max(signal.times));
+                    if(flag)
+                        [implicant] = BreachDiagnostics.diag_alw_t(signal, bound, in_implicant, samples);
+                    else
+                        [implicant] = BreachDiagnostics.diag_alw_f(signal, bound, in_implicant, samples);
+                    end
+                    
+                    diag_map(get_id(psis{1})) = implicant;
+                    [psis{1}, diag_map] = this.diag(psis{1}, rob, diag_map, flag);
+                case 'eventually'
+                    signal = rob(get_id(psis{1}));
+                    I = this.get_interval(phi);
+                    bound.begin = I(1);
+                    bound.end = min(I(2),max(signal.times));
+                    if(flag)
+                        [implicant] = BreachDiagnostics.diag_ev_t(signal, bound, in_implicant, samples);
+                    else
+                        [implicant] = BreachDiagnostics.diag_ev_f(signal, bound, in_implicant, samples);
+                    end
+                    diag_map(get_id(psis{1})) = implicant;
+                    [psis{1}, diag_map] = this.diag(psis{1}, rob, diag_map, flag);
+            end
+        end
         
         function assign_params(this, p)
+            if nargin==1
+               p = GetParam(this.P, this.params);
+            end
             % assign_params fetch parameters and assign them in the current context
             for ip = 1:numel(this.params)
                 assignin('caller', this.params{ip},p(ip));
             end
         end
         
-        function get_horizon(this__)
-            this.assign_params();
-            get_interval(this__.formula);
+        function I = get_interval(this__, phi___)
+            if nargin==1
+                phi___ = this__.formula;
+            end
+            this__.assign_params();            
+            I = eval(get_interval(phi___));                
         end
-        
+                
         function init_P(this)
             % init_P construct legacy structure from signals and
             % parameters names

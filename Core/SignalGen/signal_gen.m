@@ -55,11 +55,66 @@ classdef signal_gen <handle
             new = getArrayFromByteStream(objByteArray);
         end
         
-        function plot(this, time)
+        function plot(this, signal, time)
         % plot default signal  
             x =  computeSignals(this, this.p0, time);
-            plot(time, x); 
+            i_sig = find(strcmp(signal,this.signals),1);
+            plot(time, x(i_sig,:), 'LineWidth', 2); 
         end
+        
+        function plot_enveloppe(this, signal, time, varargin)
+            % Default implementation - no guarantee to generate a fair
+            % enveloppe
+            
+            opt.max_time = 3;            
+            opt.max_obj_eval = inf;
+            opt.constraints = {}; 
+            opt = varargin2struct(opt, varargin{:});
+            
+            
+            %%
+            S = BreachSignalGen(this);                        
+            dom = S.GetBoundedDomains();  
+            
+            if isscalar(time)
+                time = 0:time/1000:time;
+            end
+            S.SetTime(time);
+            if ~isempty(dom)
+           
+                %% Optim based                
+                reachmon = reach_monitor('r', signal, time);
+                if ~isempty(opt.constraints)
+                    for ic =1:numel(opt.constraints)
+                        precond_mon{ic} = stl_monitor(opt.constraints{ic}.id);
+                    end
+                    R = BreachRequirement(reachmon, {},precond_mon);
+                else
+                    R = BreachRequirement(reachmon);
+                end
+                
+                pb = FalsificationProblem(S, R);
+                
+                
+                pb.StopAtFalse = false;
+                pb.display = 'off';
+                pb.log_traces = false;
+                pb.max_obj_eval = opt.max_obj_eval;
+                pb.max_time = opt.max_time;
+                                
+                pb.setup_meta();
+                pb.solve();
+                [~, env] = reachmon.computeSignals(time,0,0);
+                vbot = env(2,:);
+                vtop = env(1,:);
+                
+                plot(time, vbot, 'k', 'LineWidth', .5);
+                plot(time, vtop, 'k', 'LineWidth', .5);
+                t2 = [time, fliplr(time)];
+                inBetween = [vbot, fliplr(vtop)];
+                f = fill(t2, inBetween, 'k', 'FaceAlpha', 0.1);
+            end
+        end                               
         
    end
     

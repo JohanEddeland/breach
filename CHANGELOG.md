@@ -1,3 +1,27 @@
+Breach Change log
+
+# Release 1.6.2
+
+- Enveloppe computation in signal_gen_gui works with constraints
+- New Global Nelder Mead properly re-established as default solver 
+- Bugfix: precondition with non-simulink systems working again
+
+# Release 1.6.1
+
+- set domain cfg only does warning when trying to set a non existent parameter 
+
+# Release 1.6.0
+
+- Performance and memory overhead improvement when logging during falsification
+- Global nelder mead default solver has been revamped 
+- Diagnosis and IO-aware STL support added (see HSCC'19 paper)
+ 
+
+## Bugfixes 
+- Signature computation sometimes failed to properly link aliases 
+
+
+
 # Release 1.5.2
 
 - minor fix for maxstep/minstep detection causing crash with some solver configuration (Simulink)
@@ -399,7 +423,7 @@
 ## Developpers
 - get_checksum method computes the checksum of Simulink mdl, and returned boolean true if it changed wrt creation
 - mdl BreachSimulinkSystem property is a struct with model name, original path and date of creation
-- varargin2struct function can be used to setup basic optional argument with syntax optionName, optionValue
+- varargin2struct_breach function can be used to setup basic optional argument with syntax optionName, optionValue
 
 # Release 1.2.3
 
