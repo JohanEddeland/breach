@@ -218,7 +218,10 @@ classdef BreachSystem < BreachSet
             end
             this.P = ComputeTraj(this.Sys, this.P, tspan);
             this.CheckinDomainTraj();
-            this.dispTraceStatus();
+            
+            if this.verbose>=1
+                this.dispTraceStatus();
+            end
         end
         
         %% Signals Enveloppe
@@ -245,15 +248,21 @@ classdef BreachSystem < BreachSet
         function phi = AddSpec(this, varargin)
             % AddSpec Adds a specification
             global BreachGlobOpt
-            if isa(varargin{1},'STL_Formula')
-                phi = varargin{1};
+            
+            f = varargin{1};
+            
+            if isa(f,'STL_Formula')
+                phi = f;
                 phi_id = get_id(phi);            
-            elseif ischar(varargin{1})
+            elseif ischar(f)&&BreachGlobOpt.STLDB.isKey(f)
+                phi_id =f;
+                phi = BreachGlobOpt.STLDB(f);                        
+            elseif ischar(f)
                 phi_id = MakeUniqueID([this.Sys.name '_spec'],  BreachGlobOpt.STLDB.keys);
-                phi = STL_Formula(phi_id, varargin{1});
-            elseif isa(varargin{1}, 'BreachRequirement')
-                phi_id = varargin{1}.req_monitors{1}.name;
-                phi = varargin{1}; 
+                phi = STL_Formula(phi_id, f);
+            elseif isa(f, 'BreachRequirement')
+                phi_id = f.req_monitors{1}.name;
+                phi = f; 
             else
                 error('Argument not a formula.');
             end
