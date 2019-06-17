@@ -508,6 +508,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             Sys.name = Sys.mdl;  % not great..
             
             this.Sys = Sys;
+            this.P = CreateParamSet(Sys);
             
             % Initializes InputMap and input generator
             this.InputMap = containers.Map();
@@ -761,8 +762,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 assignin('base','t__',U.t);
                 assignin('base', 'u__',U.u);
             end
-            
-            
+                        
             %
             % TODO: fix support for signal builder using a proper
             % BreachParam
@@ -774,8 +774,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             %        signalbuilder(sb, 'activegroup', pts(ipts));
             %    end
             %end
-            %
-            
+            %            
             
             assignin('base','tspan',tspan);
             if numel(tspan)>2
