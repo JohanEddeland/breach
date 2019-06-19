@@ -212,7 +212,7 @@ classdef BreachOpenSystem < BreachSystem
                     this.SetDomain(parami, IGdomains(ip));
                 end
             end
-            bluk
+
             % Copy or init ParamSrc
             
             %% Init param sources, if not done already
