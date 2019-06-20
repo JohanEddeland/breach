@@ -768,8 +768,20 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             % JOHAN ADDED
             % We need clear mex since otherwise, we get erroneous start
             % values for signals that need InitFunctions to be run at start
-            % of simulations
-            clear mex;
+            % of simulations. 
+            % We only clear mex is FastRestart is turned OFF. 
+            try
+                fastRestart = get_param(Sys.mdl, 'FastRestart');
+            catch
+                % Model does not have parameter FastRestart. Probably means
+                % we are in 2013b - either way, fastRestart is considered
+                % off. 
+                fastRestart = 'off';
+            end
+            
+            if strcmp(fastRestart, 'off')
+                clear mex;
+            end
             % END JOHAN ADDED
             
             mdl = Sys.mdl;
@@ -807,6 +819,16 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 bparam.setValue(pval); % set value in the appropriate workspace
             end
             
+            if ischar(tspan)
+                tspan = evalin('base', tspan);
+            end
+            
+            if isfield(Sys,'init_u')
+                U = Sys.init_u(Sys.InputOpt, pts, tspan);
+                assignin('base','t__',U.t);
+                assignin('base', 'u__',U.u);
+            end
+            
             
             %
             % TODO: fix support for signal builder using a proper
@@ -840,7 +862,6 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     X(idx,:) = Xin;
                     status = -2;  % error in inputs
                 else
-
                     simout= sim(mdl, this.SimCmdArgs{:});
                     %time_to_sim = toc;
                     %disp(['Finished simulation in ' num2str(time_to_sim) 's']);
