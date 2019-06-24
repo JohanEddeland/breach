@@ -50,6 +50,9 @@ classdef alw_monitor < stl_monitor
                     %valarray = -valarray;
                     [~, val_output] = alw_monitor_RobustAlways_v1(time_values, valarray, I___);
                     v = val_output(1);
+                case 'MARV'
+                    [~, val_output] = alw_monitor_MARV(time_values, valarray, I___);
+                    v = min(val_output);
                 otherwise
                     error('Unknown objective function!');
             end

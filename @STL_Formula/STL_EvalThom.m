@@ -145,13 +145,7 @@ if strcmp(objToUse, 'vbool')
     % Do nothing
 elseif strcmp(objToUse, 'vbool_v1')
     % Do nothing
-else
-    objToUse = 'standard';
-end
-
-if strcmp(objToUse, 'vbool')
-    % Do nothing
-elseif strcmp(objToUse, 'vbool_v1')
+elseif strcmp(objToUse, 'MARV')
     % Do nothing
 else
     objToUse = 'standard';
@@ -198,6 +192,10 @@ switch(phi.type)
             case 'vbool_v1'
                 [time_values, valarray] = robustAndPlus_v1(time_values1, -valarray1, time_values2, -valarray2);
                 valarray = -valarray;
+            case 'MARV'
+                % On this level, MARV is just standard robustness, since
+                % MARV only applies to top-level "always"-operator. 
+                [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
             otherwise
                 error('Unknown objective function (objToUse)');
         end
@@ -217,6 +215,10 @@ switch(phi.type)
             case 'vbool_v1'
                 % Old additive semantics
                 [time_values, valarray] = robustAndPlus_v1(time_values1, valarray1, time_values2, valarray2);
+            case 'MARV'
+                % On this level, MARV is just standard robustness, since
+                % MARV only applies to top-level "always"-operator. 
+                [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
             otherwise
                 error('Unknown objective function (objToUse)');
         end
@@ -252,6 +254,10 @@ switch(phi.type)
             case 'vbool_v1'
                 [time_values, valarray] = robustAndPlus_v1(time_values1, -valarray1, time_values2, -valarray2);
                 valarray = -valarray;
+            case 'MARV'
+                % On this level, MARV is just standard robustness, since
+                % MARV only applies to top-level "always"-operator. 
+                [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
             otherwise
                 error('Unknown objective function!');
         end
@@ -298,6 +304,15 @@ switch(phi.type)
                 %[time_values, valarray] = RobustAvEvRight(time_values, -valarray, I___);
                 %valarray = -valarray;
                 [time_values, valarray] = RobustAlways_v1(time_values, valarray, I___);
+            case 'MARV'
+                % On this level, MARV is just standard robustness, since
+                % MARV only applies to top-level "always"-operator. 
+                if(I___(end)~=inf)
+                    time_values = [time_values time_values(end)+I___(end)];
+                    valarray = [valarray valarray(end)];
+                end
+                [time_values, valarray] = RobustEv(time_values, -valarray, I___);
+                valarray = -valarray;
             otherwise
                 error('Unknown objective function!');
         end
@@ -334,6 +349,14 @@ switch(phi.type)
             case 'vbool_v1'
                 [time_values, valarray] = RobustAlways_v1(time_values1, -valarray1, I___);
                 valarray = -valarray;
+            case 'MARV'
+                % On this level, MARV is just standard robustness, since
+                % MARV only applies to top-level "always"-operator. 
+                if(I___(end)~=inf)
+                    time_values1 = [time_values1 time_values1(end)+I___(end)];
+                    valarray1 = [valarray1 valarray1(end)];
+                end
+                [time_values, valarray] = RobustEv(time_values1, valarray1, I___);
             otherwise
                 error('Unknown objective function!');
         end
