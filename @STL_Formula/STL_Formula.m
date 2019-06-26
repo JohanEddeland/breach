@@ -499,11 +499,14 @@ switch(numel(varargin))
         
         
         %% Maybe expression defined without >0
-        if isempty(regexp(st,'[>< ]','once'))
-            st = [st '>0'];
-            phi = STL_Parse(phi, st);
-            return;
-        end
+        % Johan comment: We don't do this check, since we instead check for
+        % this further down (if the formula has no comparison, then we
+        % change "st" to "not(st == 0)"). 
+%         if isempty(regexp(st,'[>< ]','once'))
+%             st = [st '>0'];
+%             phi = STL_Parse(phi, st);
+%             return;
+%         end
      
         %% Last possibility, the formula already exists - note: in that case
         % we ignore id and use the id of existing formula
