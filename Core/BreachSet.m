@@ -97,7 +97,7 @@ classdef BreachSet < BreachStatus
             
             this.sigMap = containers.Map();
             this.sigMapInv = containers.Map();
-            this.sigAliasMap = containers.Map(); 
+            this.AliasMap = containers.Map(); 
             switch nargin
                 case 0
                     return;

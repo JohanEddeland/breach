@@ -373,11 +373,11 @@ classdef BreachRequirement < BreachTraceSystem
             idxB = zeros(1, numel(signals)); ifoundB = zeros(1, numel(signals));
             [idx, ifound] = FindSignalsIdx@BreachSet(this, signals);   %
             
-            if any(~ifound)   % if not a signal of the requirement, look into BrSet (system) signals
+            if any(~ifound)   % if not a direct signal of the requirement, look into aliases and BrSet (system) signals
                 idx_not_found = find(~ifound);
                 for isig = 1:numel(idx_not_found)
                     s0 = signals{idx_not_found(isig)};
-                    aliases = this.BrSet.getAliases(s0);  % compute all aliases for s
+                    aliases = this.getAliases(s0);                                                                                
                     [idx_s, ifound_s] = FindParam(this.P, aliases);
                     if any(ifound_s) % one alias is the one !
                         idx(idx_not_found(isig)) = idx_s(find(ifound_s, 1));
@@ -1135,9 +1135,9 @@ classdef BreachRequirement < BreachTraceSystem
                if this.AliasMap.isKey(sig)
                    aliases = union(aliases, this.AliasMap(sig),'stable');
                end
-               if isa(this.BrSet, 'BreachSet')
+               if isa(this.BrSet, 'BreachSet')                   
                    if this.BrSet.AliasMap.isKey(sig)
-                       aliases = union(aliases, this.AliasMap(sig),'stable');
+                       aliases = union(aliases, this.BrSet.getAliases(aliases),'stable');
                    end
                end
             end
