@@ -1210,22 +1210,23 @@ classdef BreachRequirement < BreachTraceSystem
                 all_sigs_in = all_sigs_in';
             end
             
-            reps_sigs_in = all_sigs_in(1);
-            aliases = this.getAliases(all_sigs_in{1});
-            for is = 1:numel(all_sigs_in)
-                if ~ismember(all_sigs_in{is}, aliases)
-                    reps_sigs_in= union(reps_sigs_in, all_sigs_in(is));
-                    aliases = union(aliases, this.getAliases(all_sigs_in(is)));
+            if ~isempty(all_sigs_in)
+                reps_sigs_in = all_sigs_in(1);
+                aliases = this.getAliases(all_sigs_in{1});
+                for is = 1:numel(all_sigs_in)
+                    if ~ismember(all_sigs_in{is}, aliases)
+                        reps_sigs_in= union(reps_sigs_in, all_sigs_in(is));
+                        aliases = union(aliases, this.getAliases(all_sigs_in(is)));
+                    end
+                end
+                
+                for is = 1:numel(reps_sigs_in) % remove postprocess_out
+                    s  = this.get_signal_attributes(reps_sigs_in{is});
+                    if ~ismember('postprocess_out', s)
+                        sigs_in=union(sigs_in, reps_sigs_in{is});
+                    end
                 end
             end
-                        
-            for is = 1:numel(reps_sigs_in) % remove postprocess_out
-                s  = this.get_signal_attributes(reps_sigs_in{is});
-                if ~ismember('postprocess_out', s)
-                    sigs_in=union(sigs_in, reps_sigs_in{is});
-                end
-            end
-            
             
         end
         
