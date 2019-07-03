@@ -380,6 +380,27 @@ classdef BreachProblem < BreachStatus
             this.display = 'off';
         end
         
+        function solver_opt = setup_tomlab_glbfast(this)
+            this.solver = 'tomlab_glbfast';
+            solver_opt.lb = this.lb;
+            solver_opt.ub = this.ub;
+            this.display = 'off';
+        end
+        
+        function solver_opt = setup_tomlab_lgo(this)
+            this.solver = 'tomlab_lgo';
+            solver_opt.lb = this.lb;
+            solver_opt.ub = this.ub;
+            this.display = 'off';
+        end
+        
+        function solver_opt = setup_snobfit(this)
+            this.solver = 'snobfit';
+            solver_opt.lb = this.lb;
+            solver_opt.ub = this.ub;
+            this.display = 'off';
+        end
+        
         %% solve functions for various solvers
         function [res, startSample] = solve(this, startSample)
             
@@ -417,6 +438,165 @@ classdef BreachProblem < BreachStatus
                     else
                         [res, ~, startSample] = testron_SA(inputRanges, fun, this, startSample);
                     end
+                    
+                case 'tomlab_glbfast'
+                    % glbFast from TOMLAB
+                    % Requires TOMLAB to be installed on the computer, plus
+                    % a valid license file in the TOMLAB directory
+                    
+                    % To find example how to setup solver, see
+                    % tomlab/quickguide/glbQG.m
+                    if nargin < 2
+                        % No startSample given
+                        startSample = testronGetNewSample([this.lb this.ub]);
+                    end
+                    Name  = 'phi';
+                    x_L   = this.lb;  % Lower bounds for x.
+                    x_U   = this.ub;  % Upper bounds for x.
+                    x_opt = [];
+                    x_0   = startSample;
+                    f_opt = [];
+                    f_Low = [];             % Lower bound on function.
+                    x_min = []; % For plotting
+                    x_max = []; % For plotting
+                    
+                    fun = @(x, ~) this.objective(x);
+                    
+                    Prob  = glcAssign('tomlab_wrapper', x_L, x_U, Name, [], [], [], ...
+                        [], [], [], x_0, ...
+                        [], [], [], [], ...
+                        f_Low, x_min, x_max, f_opt, x_opt);
+                    
+                    %Prob.PriLevOpt = 0; % No printing
+                    Prob.optParam.MaxFunc = this.max_obj_eval;
+                    Prob.optParam.fGoal = -eps;
+                    
+                    Prob.brProblem = this;
+                    
+                    Result = tomRun('glbFast', Prob, 0);
+                    res = struct('bestRob',[],'bestSample',[],'nTests',[],'bestCost',[],'paramVal',[],'falsified',[],'time',[]);
+                    res.bestSample = Result.x_k(:,1);
+                    res.bestRob = Result.f_k;
+                    
+                case 'tomlab_lgo'
+                    % LGO from TOMLAB
+                    % Requires TOMLAB to be installed on the computer, plus
+                    % a valid license file in the TOMLAB directory
+                    
+                    % To find example how to setup solver, see
+                    % tomlab/quickguide/glbQG.m
+                    if nargin < 2
+                        % No startSample given
+                        startSample = testronGetNewSample([this.lb this.ub]);
+                    end
+                    Name  = 'phi';
+                    x_L   = this.lb;  % Lower bounds for x.
+                    x_U   = this.ub;  % Upper bounds for x.
+                    x_opt = [];
+                    x_0   = startSample;
+                    f_opt = [];
+                    f_Low = [];             % Lower bound on function.
+                    x_min = []; % For plotting
+                    x_max = []; % For plotting
+                    
+                    fun = @(x, ~) this.objective(x);
+                    
+                    Prob  = glcAssign('tomlab_wrapper', x_L, x_U, Name, [], [], [], ...
+                        [], [], [], x_0, ...
+                        [], [], [], [], ...
+                        f_Low, x_min, x_max, f_opt, x_opt);
+                    
+                    %Prob.PriLevOpt = 0; % No printing
+                    Prob.optParam.MaxFunc = this.max_obj_eval;
+                    Prob.optParam.fGoal = -eps;
+                    
+                    Prob.brProblem = this;
+                    
+                    Result = tomRun('lgo', Prob, 0);
+                    res = struct('bestRob',[],'bestSample',[],'nTests',[],'bestCost',[],'paramVal',[],'falsified',[],'time',[]);
+                    res.bestSample = Result.x_k(:,1);
+                    res.bestRob = Result.f_k;
+                    
+                case 'snobfit'
+                    % SNOBFIT
+                    % Install latest SNOBFIT, but MINQ for Matlab 5
+                    % The following is mostly copied from
+                    % snobfit/snobtest.m (some things changed)
+                    file = 'snobfit_data'; 
+                    fcn = 'snobfit_wrapper';
+                    fac = 0;        % factor for multiplicative perturbation of the data
+                    ncall = this.max_obj_eval;   % limit on the number of function calls
+                    u = this.lb;
+                    v = this.ub;
+                    fglob = -0.01;
+                    n = length(u);  % dimension of the problem
+                    % the following are meaningful default values
+                    npoint = 1;   % number of random start points to be generated
+                    nreq = n+6;     % no. of points to be generated in each call to SNOBFIT
+                    if nargin < 2
+                        % No startSample given
+                        startSample = testronGetNewSample([this.lb this.ub]);
+                    end
+                    x = startSample';
+                    % starting points in [u,v]
+                    dx = (v-u)'*1.e-5; % resolution vector
+                    p = 0.5;        % probability of generating a point of class 4
+                    prt = 0;        % print level
+                    % prt = 0 prints ncall, xbest and fbest if xbest has
+                    %         changed
+                    % prt = 1 in addition prints the points suggested by
+                    %         SNOBFIT, their model function values and
+                    %         classes after each call to SNOBFIT
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    % end of data to be adapted
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    for j=1:npoint
+                        f(j,:) = [feval(fcn,x(j,:),this)+fac*randn max(sqrt(eps),3*fac)];
+                        % computation of the function values (if necessary, with additive
+                        % noise)
+                    end
+                    ncall0 = npoint;   % function call counter
+                    params = struct('bounds',{u,v},'nreq',nreq,'p',p); % input structure
+                    % repeated calls to Snobfit
+                    while ncall0 < ncall % repeat till ncall function values are reached
+                        % (if the stopping criterion is not fulfilled first)
+                        if ncall0 == npoint  % initial call
+                            [request,xbest,fbest] = snobfit(file,x,f,params,dx);
+                            %ncall0,xbest,fbest;
+                        else                 % continuation call
+                            [request,xbest,fbest] = snobfit(file,x,f,params);
+                        end
+                        if prt>0, request, end
+                        clear x
+                        clear f
+                        for j=1:size(request,1)
+                            x(j,:) = request(j,1:n);
+                            f(j,:) = [feval(fcn,x(j,:), this)+fac*randn max(sqrt(eps),3*fac)];
+                            % computation of the (perturbed) function values at the suggested points
+                        end
+                        ncall0 = ncall0 + size(f,1); % update function call counter
+                        [fbestn,jbest] = min(f(:,1)); % best function value
+                        if fbestn < fbest
+                            fbest = fbestn;
+                            xbest = x(jbest,:);
+                            %ncall0,xbest,fbest % display current number of function values,
+                            % best point and function value if fbest has
+                            % changed
+                        end
+                        % check stopping criterion
+                        % if fglob == 0, stop if fbest < 1.e-5
+                        % otherwise, stop if (fbest-fglob)/abs(fglob) < 1.e-2
+                        if fglob
+                            if abs((fbest-fglob)/fglob) < 1.e-2,break,end
+                        else
+                            if abs(fbest) < 1.e-5,break,end
+                        end
+                    end
+                    %ncall0,xbest,fbest  % show number of function values, best point and
+                    % function value
+                    res = struct('bestRob',[],'bestSample',[],'nTests',[],'bestCost',[],'paramVal',[],'falsified',[],'time',[]);
+                    res.bestSample = xbest;
+                    res.bestRob = fbest;
                     
                 case 'cmaes'
                     % adds a few more initial conditions
