@@ -373,7 +373,7 @@ classdef BreachRequirement < BreachTraceSystem
             idxB = zeros(1, numel(signals)); ifoundB = zeros(1, numel(signals));
             [idx, ifound] = FindSignalsIdx@BreachSet(this, signals);   %
             
-            if any(~ifound)   % if not a signal of the requirement, look into BrSet (system) signals
+            if any(~ifound)&&isa(this.BrSet, 'BreachSet')   % if not a signal of the requirement, look into BrSet (system) signals
                 idx_not_found = find(~ifound);
                 for isig = 1:numel(idx_not_found)
                     s0 = signals{idx_not_found(isig)};
@@ -1137,14 +1137,15 @@ classdef BreachRequirement < BreachTraceSystem
                end
                if isa(this.BrSet, 'BreachSet')
                    if this.BrSet.AliasMap.isKey(sig)
-                       aliases = union(aliases, this.AliasMap(sig),'stable');
+                       aliases = union(aliases, this.BrSet.AliasMap(sig),'stable');
                    end
                end
             end
         end
         
         function st = PrintAliases(this)
-            if ~isempty(this.sigMap)
+            st='';
+            if ~isempty(this.AliasMap)
                 st = sprintf('---- ALIASES ----\n');
                 keys = union(this.sigMap.keys(), this.sigMapInv.keys());
                 printed ={};
@@ -1179,7 +1180,7 @@ classdef BreachRequirement < BreachTraceSystem
                 st = sprintf([st '\n']);
             end
             
-            if nargout==0
+            if nargout==0&&~isempty(st)
                 fprintf(st);
             end
             
