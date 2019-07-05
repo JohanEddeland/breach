@@ -89,12 +89,8 @@ else % all optional parameters
 end
 
 % JOHAN CHANGE
-%if numel(P.dim) > 10
-%if evalin('base', 'exist(''testron_useFile'')')
-    disp('Changing algorithm to TestronRefine');
-    algo = 'testron';
-%end
-%end
+disp('QuasiRefine.m: No longer changing algorithm to TestronRefine (edit QuasiRefine.m if we wish to change algorithm)');
+%algo = 'testron';
 % END JOHAN CHANGE
 
 if(strcmpi(algo,'sobol') && numel(P.dim)>40)
