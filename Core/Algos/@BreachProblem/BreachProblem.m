@@ -428,6 +428,9 @@ classdef BreachProblem < BreachStatus
                 case 'corners'
                     res = this.solve_corners();
                     
+                case 'morris'
+                    res = this.solve_morris();
+                    
                 case 'nelder_mead'
                     res = this.solve_nelder_mead();
                     
