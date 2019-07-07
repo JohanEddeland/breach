@@ -35,23 +35,23 @@ classdef stl_monitor < req_monitor
             [this.signals_in, this.params, this.p0] = STL_ExtractSignals(this.formula);
             
             % Outputs
-            if ~strcmp(get_type(this.formula), 'predicate')
-                this.signals = {};
-                preds = STL_ExtractPredicates(this.formula);
-                for ip = 1:numel(preds)
-                    if ~STL_CheckID(get_id(preds(ip)))   % predicate does not exist as formula, create it
-                        pred = STL_Formula( [get_id(this.formula) '_predicate_' num2str(ip)], preds(ip));
-                    else
-                        pred = preds(ip);
-                    end
-                    this.predicates{ip} = pred;
-                    this.signals = [this.signals {get_id(this.predicates{ip})}];
-                end
-                this.signals =  [this.signals {get_id(this.formula)}];
-            else
-                this.signals = {get_id(this.formula)};
-            end
-            
+%             if ~strcmp(get_type(this.formula), 'predicate')
+%                 this.signals = {};
+%                 preds = STL_ExtractPredicates(this.formula);
+%                 for ip = 1:numel(preds)
+%                     if ~STL_CheckID(get_id(preds(ip)))   % predicate does not exist as formula, create it
+%                         pred = STL_Formula( [get_id(this.formula) '_predicate_' num2str(ip)], preds(ip));
+%                     else
+%                         pred = preds(ip);
+%                     end
+%                     this.predicates{ip} = pred;
+%                     this.signals = [this.signals {get_id(this.predicates{ip})}];
+%                 end
+%                 this.signals =  [this.signals {get_id(this.formula)}];
+%             else
+%                 this.signals = {get_id(this.formula)};
+%             end
+            this.signals = {}; % nothing by default, will recompute for plot  
             this.init_P();
             
         end
@@ -78,20 +78,27 @@ classdef stl_monitor < req_monitor
         
         function [time, Xout] = computeSignals(this, time, X, p)
             this.init_tXp(time,X,p);
-            Xout = zeros(numel(this.signals), numel(time));
+            [~, Xout] = this.get_standard_rob(this.formula, 0);
+            
+            %Xout = zeros(numel(this.signals), numel(time));
             
             % compute predicate values
-            if ~isempty(this.predicates)
-                for ip = 1:numel(this.predicates)
-                    [~, Xout(ip,:)] = this.get_standard_rob(this.predicates{ip}, time);
-                end
-            end
-            
-            % compute robustnes of top formula
-            [time, Xout(end,:)] = this.get_standard_rob(this.formula, time);
-            
+%             if ~isempty(this.predicates)
+%                 for ip = 1:numel(this.predicates)
+%                     [~, Xout(ip,:)] = this.get_standard_rob(this.predicates{ip}, time);
+%                 end
+%             end
+%             
+%             % compute robustnes of top formula
+%             [time, Xout(end,:)] = this.get_standard_rob(this.formula, time);
+%             
         end
         
+        function [v, t, Xout] = eval(this, t, X,p)
+            [t, Xout] = this.computeSignals(t, X,p);
+            v = Xout(end,1);
+        end
+                
         function [verdict, rob_map, diag_map, formula_names_map] = explain(this,time,X,p)
             
             if nargin>1
@@ -186,12 +193,7 @@ classdef stl_monitor < req_monitor
             end
             
         end
-        
-        function [v, t, Xout] = eval(this, t, X,p)
-            [t, Xout] = this.computeSignals(t, X,p);
-            v = Xout(end,1);
-        end
-        
+                
         function init_tXp(this, t, X, p)
             this.P.traj{1}.time = t;
             
