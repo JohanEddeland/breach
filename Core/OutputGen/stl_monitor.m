@@ -10,6 +10,7 @@ classdef stl_monitor < req_monitor
         inout  % input output mode
         relabs % relative absolute mode
         
+        verdict
         rob_map
         diag_map
         formula_names_map 
@@ -18,8 +19,8 @@ classdef stl_monitor < req_monitor
     
     methods
         function this = stl_monitor(formula)
-            this.inout = '';
-            this.relabs = '';
+            this.inout = 'out';
+            this.relabs = 'rel';
             if ischar(formula)
                 this.formula= STL_Formula(STL_NewID('phi'), formula);
             elseif isa(formula,'STL_Formula')
@@ -33,6 +34,8 @@ classdef stl_monitor < req_monitor
             
             % collect signals and params names
             [this.signals_in, this.params, this.p0] = STL_ExtractSignals(this.formula);
+            
+            sg.formula = set_out_signal_names(sg.formula, sg.signals_in);
             
             % Outputs
 %             if ~strcmp(get_type(this.formula), 'predicate')
@@ -99,28 +102,28 @@ classdef stl_monitor < req_monitor
             v = Xout(end,1);
         end
                 
-        function [verdict, rob_map, diag_map, formula_names_map] = explain(this,time,X,p)
+        function explain(this,time,X,p)
             
             if nargin>1
                 this.init_tXp(time,X,p);
             end
             
-            rob_map = containers.Map;
+            this.rob_map = containers.Map;
             phi = this.formula;
 
-            [~,~,rob_map] = STL_Eval_IO_Rob(this.Sys, phi, this.P, this.P.traj{1}, 'out', 'rel', rob_map);
-            diag_map = containers.Map;
+            [~,~,this.rob_map] = STL_Eval_IO_Rob(this.Sys, phi, this.P, this.P.traj{1}, 'out', 'rel', this.rob_map);
+            this.diag_map = containers.Map;
             
-            formula_names_map = containers.Map;
-            formula_names_map = get_formula_name_map(phi, formula_names_map);
+            this.formula_names_map = containers.Map;
+            this.formula_names_map = get_formula_name_map(phi, this.formula_names_map);
             
-            top_signal = rob_map(get_id(phi));
+            top_signal = this.rob_map(get_id(phi));
             
             val = top_signal.values(1);
             if(val < 0)
-                verdict = 0;
+                this.verdict = 0;
             else
-                verdict = 1;
+                this.verdict = 1;
             end
             
             implicant = BreachImplicant;
@@ -128,72 +131,73 @@ classdef stl_monitor < req_monitor
             implicant = implicant.addSignificantSample(0, val);
             
             id = get_id(phi);
-            diag_map(id) = implicant;
+            this.diag_map(id) = implicant;
             
-            [this.formula, diag_map] = this.diag(phi, rob_map, diag_map, verdict);
-            
-            this.rob_map = rob_map;
-            this.diag_map = diag_map;
-            this.formula_names_map = formula_names_map;
+            [this.formula, this.diag_map] = this.diag(phi, this.rob_map, this.diag_map, this.verdict);
             
         end
         
-        function plot_diagnosis(this, F)
+        function plot_diagnosis(this,F,phi)
             % Assumes F has data about this formula
-            [verdict, rob_map, diag_map, formula_names_map] = this.explain();
+            this.explain();
             
-            nb_plots = rob_map.size(1);
-            keys = rob_map.keys();
-
-            if (verdict)
+            if nargin<3
+                phi=this.formula;
+            end
+            
+            subs = STL_Break(phi);
+            for is = numel(subs):-1:1
+                subphi = subs(is);
+                h = F.AddAxes();
+                this.plot_implicant(h, get_id(subphi));
+            end
+            
+        end
+           
+        function plot_implicant(this, ax, id)
+            
+            if (this.verdict)
                 color = 'g';
             else
                 color = 'r';
             end
             
-            traj = this.P.traj{1}; 
-            t0 = traj.time;
-            for i=1:nb_plots
-                id = keys{i};
-                h = F.AddAxes();
-                axis(h);
-                signal = rob_map(id);
-                stairs(signal.times, signal.values);
-                
-                grid on;               
-                formula_name = formula_names_map(id);
-                title(formula_name, 'Interpreter', 'none');
-                
-                ylim = get(h, 'YLim');
-                ylim_bot = ylim(1);
-                ylim_top = ylim(2);
-                
-                implicant = diag_map(id);
-                size = implicant.getIntervalsSize();
-                for j=1:size
-                    interval = implicant.getInterval(j);
-                    x = interval.begin;
-                    y = interval.end;
-                    if (x == y)
-                        line([x x],[ylim_bot ylim_top],'Color',color);
-                    elseif (y > x)
-                        p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color);
-                        alpha(p, 0.05);
-                        set(p,'EdgeColor','none');
-                    end
-                end
-                samples = implicant.getSignificantSamples();
-                for j=1:length(samples)
-                    sample = samples(j);
-                    hold on;
-                    plot(sample.time, sample.value, 'x');
-                end
-                
-                set(h, 'XLim', [0 t0(end)]);
-            end
+            axis(ax);
+            signal = this.rob_map(id);
+            stairs(signal.times, signal.values);
+            grid on;
+            hold on;
+            formula_name = this.formula_names_map(id);
+            l = legend(formula_name);
+            set(l, 'Interpreter', 'none');
+            ylim = get(ax, 'YLim');
+            ylim_bot = ylim(1);
+            ylim_top = ylim(2);
             
+            implicant = this.diag_map(id);
+            size = implicant.getIntervalsSize();
+            for j=1:size
+                interval = implicant.getInterval(j);
+                x = interval.begin;
+                y = interval.end;
+                if (x == y)
+                    line([x x],[ylim_bot ylim_top],'Color',color);
+                elseif (y > x)
+                    p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color);
+                    alpha(p, 0.2);
+                    set(p,'EdgeColor','none');
+                end
+            end
+            samples = implicant.getSignificantSamples();
+            for j=1:length(samples)
+                sample = samples(j);
+                hold on;
+                plot(sample.time, sample.value, 'x');
+            end
+            t0 = this.P.traj{1}.time;
+            set(ax, 'XLim', [0 t0(end)]);
         end
-                
+        
         function init_tXp(this, t, X, p)
             this.P.traj{1}.time = t;
             

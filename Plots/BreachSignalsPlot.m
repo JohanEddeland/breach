@@ -15,7 +15,8 @@ classdef BreachSignalsPlot < handle
                 case 0
                     return;
                 case 1
-                    signals = BrSet.P.ParamList{1};
+                    all_sigs = BrSet.GetSignalList; 
+                    signals = all_sigs{1};
                     ipts = 1;
                 case 2
                     ipts = 1;
@@ -25,12 +26,8 @@ classdef BreachSignalsPlot < handle
             this.Fig = figure;
             this.ipts = ipts;
             
-            if exist('signals','var')
-                if ischar(signals)
-                    signals = {signals};
-                end
-            else
-                signals = {BrSet.P.ParamList{1}};
+            if ischar(signals)
+                signals = {signals};
             end
             
             for is = 1:numel(signals)
@@ -64,7 +61,12 @@ classdef BreachSignalsPlot < handle
                 set(ax, 'XLim', Xlim);
             end
             this.Axes = [this.Axes(1:pos-1) ax this.Axes(pos:end)];
-            figure(this.Fig);
+            if isempty(this.Fig)
+                this.Fig = figure;
+            else
+                figure(this.Fig);
+            end
+            
             if numel(this.Axes)>1
                 linkaxes(this.Axes, 'x');
             end
@@ -201,11 +203,18 @@ classdef BreachSignalsPlot < handle
                     uimenu(m, 'Label', sig, 'Callback', @(o,e)ctxtfn_highlight_false(ax,sig,o,e));
                 end
             end
+            
+            if isa(this.BrSet,'BreachRequirement')
+                trm = uimenu(cm, 'Label', 'Requirements','Separator', 'on');
+                for ir = 1:numel(this.BrSet.req_monitors)
+                    uimenu(trm, 'Label', this.BrSet.req_monitors{ir}.name);
+                end
+            end             
+            
             uimenu(cm, 'Label', 'Add axes above','Separator', 'on', 'Callback', @(o,e)ctxtfn_add_axes_above(ax,o,e));
             uimenu(cm, 'Label', 'Add axes below', 'Callback', @(o,e)ctxtfn_add_axes_below(ax, o,e));
             uimenu(cm, 'Label', 'Reset axes','Separator', 'on', 'Callback', @(o,e)ctxtfn_reset_axes(ax, o,e));
             uimenu(cm, 'Label', 'Delete axes', 'Callback', @(o,e)ctxtfn_delete_axes(ax, o,e));
-                
             
             function ctxtfn_add_axes_above(ax, ~,~)
                 for ia = 1:numel(this.Axes)
@@ -248,6 +257,9 @@ classdef BreachSignalsPlot < handle
             function ctxtfn_highlight_false(ax, sig, ~,~)
                 this.HighlightFalse(sig, ax);
             end
+            
+            
+            
         end
    
         function update_legend(this, ax)
