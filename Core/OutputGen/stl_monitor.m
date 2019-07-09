@@ -34,9 +34,9 @@ classdef stl_monitor < req_monitor
             
             % collect signals and params names
             [this.signals_in, this.params, this.p0] = STL_ExtractSignals(this.formula);
-            
-            sg.formula = set_out_signal_names(sg.formula, sg.signals_in);
-            
+            this.formula = set_out_signal_names(this.formula, this.signals_in);
+            this.signals = {[ this.name '_violation']};
+        
             % Outputs
 %             if ~strcmp(get_type(this.formula), 'predicate')
 %                 this.signals = {};
@@ -54,7 +54,6 @@ classdef stl_monitor < req_monitor
 %             else
 %                 this.signals = {get_id(this.formula)};
 %             end
-            this.signals = {}; % nothing by default, will recompute for plot  
             this.init_P();
             
         end
@@ -81,27 +80,28 @@ classdef stl_monitor < req_monitor
         
         function [time, Xout] = computeSignals(this, time, X, p)
             this.init_tXp(time,X,p);
-            [~, Xout] = this.get_standard_rob(this.formula, 0);
-            
+            this.explain();
+            Xout = time*0;
+            if this.verdict==0
+                implicant = this.diag_map(this.signals_in{1});
+                Xout = implicant.getSignal(time);
+                for is = 2:numel(this.signals_in)
+                    implicant = this.diag_map(this.signals_in{1});
+                    Xout = Xout|implicant.getSignal(time);                   
+                end
+            end
             %Xout = zeros(numel(this.signals), numel(time));
             
-            % compute predicate values
-%             if ~isempty(this.predicates)
-%                 for ip = 1:numel(this.predicates)
-%                     [~, Xout(ip,:)] = this.get_standard_rob(this.predicates{ip}, time);
-%                 end
-%             end
-%             
-%             % compute robustnes of top formula
+           % compute robustnes of top formula
 %             [time, Xout(end,:)] = this.get_standard_rob(this.formula, time);
-%             
         end
         
         function [v, t, Xout] = eval(this, t, X,p)
             [t, Xout] = this.computeSignals(t, X,p);
-            v = Xout(end,1);
+            v = this.rob_map(this.name);
+            v = v.values(1);
         end
-                
+            
         function explain(this,time,X,p)
             
             if nargin>1
@@ -145,12 +145,19 @@ classdef stl_monitor < req_monitor
                 phi=this.formula;
             end
             
-            subs = STL_Break(phi);
+            subs = STL_Break(phi); 
             for is = numel(subs):-1:1
                 subphi = subs(is);
                 h = F.AddAxes();
                 this.plot_implicant(h, get_id(subphi));
             end
+            
+            for is = 1:numel(this.signals_in)
+                h = F.AddAxes();
+                this.plot_implicant(h, this.signals_in{is});
+            end
+                
+            
             
         end
            
@@ -168,7 +175,11 @@ classdef stl_monitor < req_monitor
             grid on;
             hold on;
             formula_name = this.formula_names_map(id);
-            l = legend(formula_name);
+            if ~ismember(id, this.signals_in)
+                l = legend([id ': ' formula_name]);
+            else
+                l = legend(id);
+            end
             set(l, 'Interpreter', 'none');
             ylim = get(ax, 'YLim');
             ylim_bot = ylim(1);
@@ -184,7 +195,7 @@ classdef stl_monitor < req_monitor
                     line([x x],[ylim_bot ylim_top],'Color',color);
                 elseif (y > x)
                     p = patch([x y y x], [ylim_bot ylim_bot ylim_top ylim_top], color);
-                    alpha(p, 0.2);
+                    alpha(p, 0.3);
                     set(p,'EdgeColor','none');
                 end
             end
