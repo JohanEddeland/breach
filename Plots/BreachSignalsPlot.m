@@ -126,7 +126,7 @@ classdef BreachSignalsPlot < handle
             
         end
         
-        function int_false= HighlightFalse(this, sig, ax)
+        function int_false= HighlightFalse(this, sig, ax,inv)
             if ~exist('ax', 'var')||isempty(ax)
                 ax = this.Axes(end);
             end
@@ -137,6 +137,9 @@ classdef BreachSignalsPlot < handle
             idx = FindParam(this.BrSet.P, sig);
             tau = traj.time;
             val = traj.X(idx,:);
+            if inv
+                val(~isnan(val)) = ~val(~isnan(val));
+            end
             int_false = highlight_truth_intervals(tau,val, 'g', 0, 'r', 0.3);
             set(ax,'UserData', int_false);
             this.update_legend(ax);
@@ -205,9 +208,9 @@ classdef BreachSignalsPlot < handle
             end
             
             if isa(this.BrSet,'BreachRequirement')
-                trm = uimenu(cm, 'Label', 'Requirements','Separator', 'on');
+                trm = uimenu(cm, 'Label', 'Debug requirement','Separator', 'on');
                 for ir = 1:numel(this.BrSet.req_monitors)
-                    uimenu(trm, 'Label', this.BrSet.req_monitors{ir}.name);
+                    uimenu(trm, 'Label', this.BrSet.req_monitors{ir}.name,'Callback', @(o,e)ctxtfn_plot_full_diag(this.BrSet.req_monitors{ir},o,e));
                 end
             end             
             
@@ -256,6 +259,10 @@ classdef BreachSignalsPlot < handle
             
             function ctxtfn_highlight_false(ax, sig, ~,~)
                 this.HighlightFalse(sig, ax);
+            end
+            
+            function ctxtfn_plot_full_diag(req, ~,~)
+                req.plot_full_diagnosis(this);
             end
             
             

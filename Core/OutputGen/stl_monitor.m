@@ -35,25 +35,6 @@ classdef stl_monitor < req_monitor
             % collect signals and params names
             [this.signals_in, this.params, this.p0] = STL_ExtractSignals(this.formula);
             this.formula = set_out_signal_names(this.formula, this.signals_in);
-            this.signals = {[ this.name '_violation']};
-        
-            % Outputs
-%             if ~strcmp(get_type(this.formula), 'predicate')
-%                 this.signals = {};
-%                 preds = STL_ExtractPredicates(this.formula);
-%                 for ip = 1:numel(preds)
-%                     if ~STL_CheckID(get_id(preds(ip)))   % predicate does not exist as formula, create it
-%                         pred = STL_Formula( [get_id(this.formula) '_predicate_' num2str(ip)], preds(ip));
-%                     else
-%                         pred = preds(ip);
-%                     end
-%                     this.predicates{ip} = pred;
-%                     this.signals = [this.signals {get_id(this.predicates{ip})}];
-%                 end
-%                 this.signals =  [this.signals {get_id(this.formula)}];
-%             else
-%                 this.signals = {get_id(this.formula)};
-%             end
             this.init_P();
             
         end
@@ -80,28 +61,16 @@ classdef stl_monitor < req_monitor
         
         function [time, Xout] = computeSignals(this, time, X, p)
             this.init_tXp(time,X,p);
-            this.explain();
-            Xout = time*0;
-            if this.verdict==0
-                implicant = this.diag_map(this.signals_in{1});
-                Xout = implicant.getSignal(time);
-                for is = 2:numel(this.signals_in)
-                    implicant = this.diag_map(this.signals_in{1});
-                    Xout = Xout|implicant.getSignal(time);                   
-                end
-            end
-            %Xout = zeros(numel(this.signals), numel(time));
             
-           % compute robustnes of top formula
-%             [time, Xout(end,:)] = this.get_standard_rob(this.formula, time);
+           % compute robustnes of top formula at time 0
+           [time, Xout] = this.get_standard_rob(this.formula, 0);
         end
         
         function [v, t, Xout] = eval(this, t, X,p)
             [t, Xout] = this.computeSignals(t, X,p);
-            v = this.rob_map(this.name);
-            v = v.values(1);
+            v = Xout(end,1);
         end
-            
+        
         function explain(this,time,X,p)
             
             if nargin>1
@@ -137,7 +106,11 @@ classdef stl_monitor < req_monitor
             
         end
         
-        function plot_diagnosis(this,F,phi)
+        function plot_diagnosis(this, F, phi)
+           this.plot_full_diagnosis(F,phi); 
+        end
+        
+        function plot_full_diagnosis(this,F,phi)
             % Assumes F has data about this formula
             this.explain();
             
@@ -157,8 +130,6 @@ classdef stl_monitor < req_monitor
                 this.plot_implicant(h, this.signals_in{is});
             end
                 
-            
-            
         end
            
         function plot_implicant(this, ax, id)
@@ -269,8 +240,7 @@ classdef stl_monitor < req_monitor
             
             in_implicant = diag_map(get_id(phi));
             samples = in_implicant.getSignificantSamples();
-            id = get_id(phi);
-            
+          
             psis = get_children(phi);
             switch(get_type(phi))
                 case 'predicate'
@@ -342,7 +312,7 @@ classdef stl_monitor < req_monitor
                     [psis{2}, diag_map] = this.diag(psis{2}, rob, diag_map, flag);
                 case 'always'
                     signal = rob(get_id(psis{1}));
-                    I = this.get_interval();
+                    I = this.get_interval(phi);
                     bound.begin = I(1);
                     bound.end = min(I(2),max(signal.times));
                     if(flag)
@@ -355,7 +325,7 @@ classdef stl_monitor < req_monitor
                     [psis{1}, diag_map] = this.diag(psis{1}, rob, diag_map, flag);
                 case 'eventually'
                     signal = rob(get_id(psis{1}));
-                    I = this.get_interval();
+                    I = this.get_interval(phi);
                     bound.begin = I(1);
                     bound.end = min(I(2),max(signal.times));
                     if(flag)
@@ -378,9 +348,12 @@ classdef stl_monitor < req_monitor
             end
         end
         
-        function I = get_interval(this__)
+        function I = get_interval(this__, phi___)
+            if nargin==1
+                phi___ = this__.formula;
+            end
             this__.assign_params();            
-            I = eval(get_interval(this__.formula));                
+            I = eval(get_interval(phi___));                
         end
                 
         function init_P(this)

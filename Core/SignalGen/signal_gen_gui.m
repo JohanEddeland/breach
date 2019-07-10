@@ -655,7 +655,7 @@ catch ME
     data{idx(1), 3} = NaN;
     set(hObject, 'Data', data);    
 end
-
+update_constraints_table(handles);
 guidata(hObject,handles);
 
 function update_constraints_table(handles)
@@ -666,8 +666,14 @@ function update_constraints_table(handles)
         try
             if ~isempty(id)&&~isempty(expr)
                 phi = STL_Formula(id,expr);
+                [sigs,params] =  STL_ExtractSignals(phi);  
                 time = evalin('base',handles.time);
                 S = BreachSignalGen(handles.signal_gen_map.values);                
+                Usigs = S.GetSignalList();
+                Uparams = S.GetParamList();
+                if isempty(intersect(sigs, Usigs))&&isempty(intersect(params, Uparams))
+                    warndlg(sprintf('The constraint [ %s ] is syntactically correct but does not involve signals or parameters related to the input signals. Please double-check for potential typo.', expr), 'Warning');
+                end
                 S.Sim(time);
                 v = S.CheckSpec(phi);
                 data{irow, 3} = v;
@@ -679,7 +685,9 @@ function update_constraints_table(handles)
             set(handles.table_constraints, 'Data', data);
         end
     end
-    
+    if ~(isempty(data{end,1})&&isempty(data{end,2}))
+        data{end+1,1} = '';
+    end
     set(handles.table_constraints, 'Data', data);
     
 
