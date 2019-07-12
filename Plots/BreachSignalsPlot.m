@@ -130,6 +130,9 @@ classdef BreachSignalsPlot < handle
             if ~exist('ax', 'var')||isempty(ax)
                 ax = this.Axes(end);
             end
+            if ~exist('inv', 'var')||isempty(inv)
+                inv = false;
+            end
             
             axes(ax);
             hold on;

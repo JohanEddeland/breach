@@ -152,7 +152,6 @@ classdef BreachRequirement < BreachTraceSystem
             this.val = [];
             this.traces_vals_precond= [];
             this.BrSet =[];
-            
         end
         
         function [global_val, traces_vals, traces_vals_precond] = Eval(this, varargin)
