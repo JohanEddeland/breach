@@ -974,10 +974,14 @@ classdef BreachProblem < BreachStatus
                 this.disp_msg(['Note: ' st_status],1);
             end
             
-            if ~isempty(idx_ok)&&B.hasTraj();
-                BrOut = this.Spec.copy();
-                BrOut.ResetSimulations();
-                BrOut.Eval(B);
+            if ~isempty(idx_ok)&&B.hasTraj()
+                if this.R_log.hasTraj()&&numel(idx_ok)==numel(this.R_log.P.traj)
+                    BrOut=this.R_log;
+                else
+                    BrOut = this.Spec.copy();
+                    BrOut.ResetSimulations();
+                    BrOut.Eval(B);
+                end
             end
         end
  

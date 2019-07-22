@@ -860,6 +860,20 @@ classdef BreachRequirement < BreachTraceSystem
             
         end
         
+        
+        function Concat(this,other,fast)
+            if nargin<=2
+                fast = false;
+            end
+            this.P = SConcat(this.P, other.P, fast);
+            
+            this.traces_vals_precond = [this.traces_vals_precond ; other.traces_vals_precond]; 
+            this.traces_vals = [this.traces_vals ; other.traces_vals]; 
+            this.val= min([ this.val other.val]);
+            
+        end
+        
+        
     end
     
     
