@@ -835,7 +835,7 @@ classdef BreachProblem < BreachStatus
             BrOut = this.BrSet_Logged;
             if isempty(BrOut)
                 BrOut = this.BrSys.copy();
-                BrOut.ResetSimulations();
+                BrOut.ResetSimulations();               
                 BrOut.SetParam(this.params, this.X_log, 'combine');
                 BrOut.Sim();
             end
@@ -975,11 +975,11 @@ classdef BreachProblem < BreachStatus
             end
             
             if ~isempty(idx_ok)&&B.hasTraj()
-                if this.R_log.hasTraj()&&numel(idx_ok)==numel(this.R_log.P.traj)
+                if isa(this.R_log, 'BreachRequirement')&&this.R_log.hasTraj()&&...
+                        numel(idx_ok)==numel(this.R_log.P.traj)
                     BrOut=this.R_log;
                 else
-                    BrOut = this.Spec.copy();
-                    BrOut.ResetSimulations();
+                    BrOut = this.R0.copy();
                     BrOut.Eval(B);
                 end
             end
