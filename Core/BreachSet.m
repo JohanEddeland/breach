@@ -523,7 +523,10 @@ classdef BreachSet < BreachStatus
             for ip = 1:numel(i_params)
                 type = this.Domains(i_params(ip)).type;
                 if isequal(type, 'enum')||isequal(type,'bool')
-                    warning('SetParamRanges:enum_or_bool', 'Use SetDomain for enum or bool types.' );
+                    this.Domains(i_params(ip)).domain = ranges(ip,:);
+                    %warning('SetParamRanges:enum_or_bool', 'Use SetDomain
+                    %for enum or bool types.' ); % Maybe should keep the
+                    %warning 
                 else
                     this.Domains(i_params(ip)) = BreachDomain(type, ranges(ip,:));
                 end
