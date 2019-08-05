@@ -858,6 +858,7 @@ classdef BreachProblem < BreachStatus
         end
         
         function fval = objective_wrapper(this,x)
+            global objToUse;
              % objective_wrapper calls the objective function and wraps some bookkeeping           
              
              if size(x,1) ~= numel(this.params)
@@ -888,6 +889,19 @@ classdef BreachProblem < BreachStatus
                         else
                             % calling actual objective function
                             fval(:,iter) = fun(iter);
+                            
+                            % JOHAN EDIT
+                            % Add possibility for "constant" objective
+                            % function
+                            if strcmp(objToUse, 'constant')
+                                if fval(:,iter) >= 0
+                                    fval(:,iter) = 100;
+                                else
+                                    fval(:,iter) = -100;
+                                end
+                            end
+                            % END Johan edit
+                            
                         
                             % logging and updating best
                             this.LogX(x(:, iter), fval(:,iter));

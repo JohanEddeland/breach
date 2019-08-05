@@ -52,7 +52,7 @@ else
 end
 
 ii=1;
-num_dim = size(P.pts,1); 
+num_dim = size(P.pts,1);
 eval_str = [P.ParamList(1:num_dim);num2cell(1:num_dim)];
 eval_str = sprintf('%s=P.pts(%d,ii);',eval_str{:});
 eval(eval_str);
@@ -147,6 +147,11 @@ elseif strcmp(objToUse, 'vbool_v1')
     % Do nothing
 elseif strcmp(objToUse, 'MARV')
     % Do nothing
+elseif strcmp(objToUse, 'constant')
+    % Do nothing
+    % NOTE: The "constant semantics" are actually applied in
+    % BreachProblem/objective_wrapper(this, x). 
+    % In this file, 'standard' and 'constant' are equivalent. 
 else
     objToUse = 'standard';
 end
@@ -194,7 +199,9 @@ switch(phi.type)
                 valarray = -valarray;
             case 'MARV'
                 % On this level, MARV is just standard robustness, since
-                % MARV only applies to top-level "always"-operator. 
+                % MARV only applies to top-level "always"-operator.
+                [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
+            case 'constant'
                 [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
             otherwise
                 error('Unknown objective function (objToUse)');
@@ -217,7 +224,10 @@ switch(phi.type)
                 [time_values, valarray] = robustAndPlus_v1(time_values1, valarray1, time_values2, valarray2);
             case 'MARV'
                 % On this level, MARV is just standard robustness, since
-                % MARV only applies to top-level "always"-operator. 
+                % MARV only applies to top-level "always"-operator.
+                [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
+            case 'constant'
+                % Standard and
                 [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
             otherwise
                 error('Unknown objective function (objToUse)');
@@ -256,7 +266,9 @@ switch(phi.type)
                 valarray = -valarray;
             case 'MARV'
                 % On this level, MARV is just standard robustness, since
-                % MARV only applies to top-level "always"-operator. 
+                % MARV only applies to top-level "always"-operator.
+                [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
+            case 'constant'
                 [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
             otherwise
                 error('Unknown objective function!');
@@ -306,7 +318,14 @@ switch(phi.type)
                 [time_values, valarray] = RobustAlways_v1(time_values, valarray, I___);
             case 'MARV'
                 % On this level, MARV is just standard robustness, since
-                % MARV only applies to top-level "always"-operator. 
+                % MARV only applies to top-level "always"-operator.
+                if(I___(end)~=inf)
+                    time_values = [time_values time_values(end)+I___(end)];
+                    valarray = [valarray valarray(end)];
+                end
+                [time_values, valarray] = RobustEv(time_values, -valarray, I___);
+                valarray = -valarray;
+            case 'constant'
                 if(I___(end)~=inf)
                     time_values = [time_values time_values(end)+I___(end)];
                     valarray = [valarray valarray(end)];
@@ -351,7 +370,13 @@ switch(phi.type)
                 valarray = -valarray;
             case 'MARV'
                 % On this level, MARV is just standard robustness, since
-                % MARV only applies to top-level "always"-operator. 
+                % MARV only applies to top-level "always"-operator.
+                if(I___(end)~=inf)
+                    time_values1 = [time_values1 time_values1(end)+I___(end)];
+                    valarray1 = [valarray1 valarray1(end)];
+                end
+                [time_values, valarray] = RobustEv(time_values1, valarray1, I___);
+            case 'constant'
                 if(I___(end)~=inf)
                     time_values1 = [time_values1 time_values1(end)+I___(end)];
                     valarray1 = [valarray1 valarray1(end)];
@@ -396,14 +421,14 @@ if ~isempty(find(ibof, 1))
     time_ok = time_values(~ibof);
     if ~isempty(val_ok)
         warning('STL_Eval:Inf_or_Nan', 'Some values are NaN or inf for property %s (use warning(''off'', ''STL_Eval:Inf_or_Nan'') to disable warning)', disp(phi));
-    if numel(val_ok)==1
-        valarray(1,:) = val_ok;
-    else
-        valarray = interp1(time_ok, val_ok, time_values, 'nearest');
-    end
+        if numel(val_ok)==1
+            valarray(1,:) = val_ok;
+        else
+            valarray = interp1(time_ok, val_ok, time_values, 'nearest');
+        end
     else
         warning('STL_Eval:Inf_or_Nan', 'All values are NaN or inf for property %s', disp(phi));
-    end     
+    end
 end
 
 
@@ -442,7 +467,7 @@ end
 
 % Last time instant
 if(interval(end)==inf)
-        time_values = [time_values traj.time(1,ind_ti:end)];
+    time_values = [time_values traj.time(1,ind_ti:end)];
 else
     ind_tf = find(traj.time >= interval(end),1);
     if isempty(ind_tf)
