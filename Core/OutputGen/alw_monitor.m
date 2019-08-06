@@ -53,6 +53,13 @@ classdef alw_monitor < stl_monitor
                 case 'MARV'
                     [~, val_output] = alw_monitor_MARV(time_values, valarray, I___);
                     v = min(val_output);
+				case 'constant'
+                    standardVal = min(valarray);
+                    if standardVal >= 0
+                        v = 100;
+                    else
+                        v = -100;
+                    end
                 otherwise
                     error('Unknown objective function!');
             end
