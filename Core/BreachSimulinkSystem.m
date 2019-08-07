@@ -958,6 +958,17 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                         % Do nothing
                     end
                     
+                    if ~isfield(sig.Values, 'Time')
+                        % sig.Values does not have a field called Time. 
+                        % This means that the signal is actually a BUS
+                        % which has several different signal values. 
+                        % We don't handle this right now, instead we skip
+                        % it and print a warning that this signal should
+                        % not be used in a spec
+                        disp('BreachSimulinkSystem.m: We have tried to log the bus signal ''' sig.Name '''. Skipping logging, we cannot use bus signals in specs');
+                        continue;
+                    end
+                    
                     if length(sig.Values.Time) < 2
                         % We have only one element - cannot interpolate
                         % This happens e.g. for FaultModeFID_ver in
