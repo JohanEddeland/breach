@@ -965,7 +965,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                         % We don't handle this right now, instead we skip
                         % it and print a warning that this signal should
                         % not be used in a spec
-                        disp('BreachSimulinkSystem.m: We have tried to log the bus signal ''' sig.Name '''. Skipping logging, we cannot use bus signals in specs');
+                        disp(['BreachSimulinkSystem.m: We have tried to log the bus signal ''' sig.Name '''. Skipping logging, we cannot use bus signals in specs']);
                         continue;
                     end
                     
