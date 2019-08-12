@@ -958,7 +958,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                         % Do nothing
                     end
                     
-                    if ~isfield(sig.Values, 'Time')
+                    if ~isfield(sig.Values, 'Time') && ~isa(sig.Values, 'timeseries')
                         % sig.Values does not have a field called Time. 
                         % This means that the signal is actually a BUS
                         % which has several different signal values. 
