@@ -109,11 +109,9 @@ classdef BreachRequirement < BreachTraceSystem
             this.P = SPurge(this.P);
             if size(this.P.pts,2)>1
                this.P.pts = unique(this.P.pts', 'rows')';
-               this.P.epsi = this.P.epsi(:,1:size(this.P.pts,2));
-               if isfield(this.P,'selected')
-                 this.P.selected = this.P.traj_ref;
-               end          
+               this.P.epsi = this.P.epsi(:,1:size(this.P.pts,2));               
             end
+            this.P.selected = zeros(1, size(this.P.pts,2));
             this.P = Preset_traj_ref(this.P);
             this.traces_vals_precond = [];
             this.traces_vals = [];
