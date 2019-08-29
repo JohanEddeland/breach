@@ -36,7 +36,7 @@ if isempty(pts_indices_to_compute)
     P.traj_to_compute = [];
 else
     
-    [~, ia, ib] = unique(P.pts(:,pts_indices_to_compute)','rows','stable');
+    [~, ia, ib] = unique(P.pts(1:P.DimP,pts_indices_to_compute)','rows','stable');
     P.traj_to_compute = pts_indices_to_compute(ia);
     traj_ref_to_compute = num_traj+(1:numel(P.traj_to_compute));
     

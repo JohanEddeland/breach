@@ -16,6 +16,7 @@ classdef MyFalsificationProblem < FalsificationProblem
         function [fval, cval] = objective_fn(this,x)
             rob = min(this.robust_fn(x)); % note: robust_fn might return an array of values 
             fval = rob*norm(x);  % variation: we can try to maximize the norm of x            
+            cval = inf;          
         end
         
         % call solver and return a structure with results. 
