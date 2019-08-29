@@ -372,10 +372,6 @@ classdef BreachProblem < BreachStatus
             if this.max_time < inf
                 solver_opt = saoptimset(solver_opt, 'MaxTime', this.max_time);
             end
-            if this.max_obj_eval < inf
-                solver_opt = saoptimset(solver_opt, 'MaxFunEvals', this.max_obj_eval);
-            end
-            % Mathworks currently don't support parallel simulannealbnd
             
             this.solver = 'simulannealbnd';
             this.solver_options = solver_opt;
@@ -497,16 +493,20 @@ classdef BreachProblem < BreachStatus
                     
                     this.display_status_header();
                     if this.use_parallel
-                        num_works = this.BrSys.Sys.Parallel;
-                        for idx = 1:num_works
-                            F(idx) = parfeval(this.solver, 4, problem);
-                        end
-                        res = cell(1,num_works);
-                        for idx = 1:num_works
-                            [completedIdx, x, fval,exitflag,output] = fetchNext(F);
-                            this.nb_obj_eval = this.nb_obj_eval + output.funccount;
-                            res{completedIdx} = struct('x',x,'fval',fval, 'exitflag', exitflag, 'output', output);
-                        end
+                        warning('Parallel Computation not yet supported for Simulated Annealing.');
+                        [x,fval,exitflag,output] = feval(this.solver, problem);
+                        res = struct('x',x,'fval',fval, 'exitflag', exitflag, 'output', output);                        
+                        
+%                         num_works = this.BrSys.Sys.Parallel;
+%                         for idx = 1:num_works
+%                             F(idx) = parfeval(this.solver, 4, problem);
+%                         end
+%                         res = cell(1,num_works);
+%                         for idx = 1:num_works
+%                             [completedIdx, x, fval,exitflag,output] = fetchNext(F);
+%                             this.nb_obj_eval = this.nb_obj_eval + output.funccount;
+%                             res{completedIdx} = struct('x',x,'fval',fval, 'exitflag', exitflag, 'output', output);
+%                         end
                     else
                         [x,fval,exitflag,output] = feval(this.solver, problem);
                         res = struct('x',x,'fval',fval, 'exitflag', exitflag, 'output', output);                        
