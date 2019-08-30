@@ -108,7 +108,7 @@ if ~strcmp(this.display,'off')
     fprintf('\nEND OPTIMIZATION METAHEURISTICS\n');
 end
 
-this.solver = 'meta';
+this.setup_meta(opt);
 
 end
 

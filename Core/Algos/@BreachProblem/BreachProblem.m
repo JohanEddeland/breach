@@ -586,8 +586,16 @@ classdef BreachProblem < BreachStatus
         end
         
         function problem = get_problem(this)
-            problem = struct('objective', this.objective, ...
-                'fitnessfcn', this.objective, ... % for ga
+            
+            if numel(this.Spec.req_monitors)>1
+                fun_obj = @(x)(min(this.objective(x),[],1)); % for basic multi-objective support                
+            else
+                fun_obj = this.objective;
+            end
+            
+            
+            problem = struct('objective', fun_obj, ...
+                'fitnessfcn', fun_obj, ... % for ga
                 'x0', this.x0, ...   
                 'nvars', size(this.x0, 1),... % for ga
                 'solver', this.solver,...

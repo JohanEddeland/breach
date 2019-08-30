@@ -165,7 +165,7 @@ switch Sys.type
         if ischar(tspan) 
             tspan = evalin('base', tspan);
         end
-                    
+        icount = 0;
         for ii = ipts
             iref = P0.traj_ref(ii);
             if isfield(Sys,'init_u')
@@ -192,9 +192,11 @@ switch Sys.type
             
             Pf.traj{iref} = traj;
             Pf.Xf(:,iref) = zeros(Pf.DimX,1);
+            icount = icount+1;
+                    
             if Verbose==1
                 if(numel(ipts)>1)
-                    rfprintf(['Computed ' num2str(ii) '/' num2str(numel(ipts)) ' simulations of ' model])
+                    rfprintf(['Computed ' num2str(icount) '/' num2str(numel(ipts)) ' simulations of ' model])
                 end
             end
             
@@ -236,7 +238,7 @@ switch Sys.type
                 [completedIdx, value] = fetchNext(f);
                 trajs{completedIdx} = value;
                 if Verbose >=1
-                    if(numel(ipts)>1)
+                    if(numel(ipts)>1)                        
                         rfprintf(['Computed ' num2str(idx) '/' num2str(numel(ipts)) ' simulations of ' model])
                     end
                 end
@@ -257,12 +259,14 @@ switch Sys.type
         else
             
             trajs = cell(1, numel(ipts));
+            icount = 0;
             for ii = ipts
                 iref = P0.traj_ref(ii);
                 trajs{iref} = task_sim(Sys, P0, tspan, ii);
                 if Verbose >=1
                     if(numel(ipts)>1)
-                        rfprintf(['Computed ' num2str(ii) '/' num2str(numel(ipts)) ' simulations of ' model])
+                        icount = icount+1;
+                        rfprintf(['Computed ' num2str(icount) '/' num2str(numel(ipts)) ' simulations of ' model])
                     end
                 end
             end
