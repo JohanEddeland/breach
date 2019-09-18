@@ -34,7 +34,11 @@ classdef stl_monitor < req_monitor
             
             % collect signals and params names
             [this.signals_in, this.params, this.p0] = STL_ExtractSignals(this.formula);
-            this.formula = set_out_signal_names(this.formula, this.signals_in);
+            input_signals = get_in_signal_names(this.formula);
+            output_signals = get_out_signal_names(this.formula);
+            if isempty(input_signals)&&isempty(output_signals) % if no IO specified, everybody is output and nobody input
+                this.formula = set_out_signal_names(this.formula, this.signals_in);
+            end
             this.init_P();
             
         end
