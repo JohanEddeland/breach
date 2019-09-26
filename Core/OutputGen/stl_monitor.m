@@ -43,18 +43,26 @@ classdef stl_monitor < req_monitor
             
         end
         
-        function [] = set_mode(this, flag1, flag2)
-            switch flag1
-                case {'in','out'}
-                    this.inout = flag1;
-                otherwise
-                    this.inout = '';
-            end
-            switch flag2
-                case {'rel','abs'}
-                    this.relabs = flag2;
-                otherwise
-                    this.relabs = '';
+        function status = set_mode(this, flag1, flag2)            
+            input_signals = get_in_signal_names(this.formula);
+            if ~isempty(input_signals)
+                
+                
+                switch flag1
+                    case {'in','out'}
+                        this.inout = flag1;
+                    otherwise
+                        this.inout = '';
+                end
+                switch flag2
+                    case {'rel','abs'}
+                        this.relabs = flag2;
+                    otherwise
+                        this.relabs = '';
+                end
+                status = 1;
+            else
+                status = 0;   % modes are irrelevant
             end
         end
         
