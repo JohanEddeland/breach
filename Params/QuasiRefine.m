@@ -89,8 +89,13 @@ else % all optional parameters
 end
 
 % JOHAN CHANGE
-disp('QuasiRefine.m: No longer changing algorithm to TestronRefine (edit QuasiRefine.m if we wish to change algorithm)');
-%algo = 'testron';
+if 1
+    disp('QuasiRefine.m: Changing algorithm to TestronRefine (random sampling)');
+    algo = 'testron';
+else
+    disp('QuasiRefine.m: No longer changing algorithm to TestronRefine (edit QuasiRefine.m if we wish to change algorithm)');
+end
+
 % END JOHAN CHANGE
 
 if(strcmpi(algo,'sobol') && numel(P.dim)>40)
