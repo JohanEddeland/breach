@@ -1,5 +1,4 @@
 function res = solve_global_nelder_mead(this)
-
 % display header
 if ~strcmp(this.display,'off')
     fprintf('\nSTART OPTIMIZATION METAHEURISTICS\n');   
@@ -104,6 +103,7 @@ while ~this.stopping()
     end
 end
 
+
 if ~strcmp(this.display,'off')
     fprintf('\nEND OPTIMIZATION METAHEURISTICS\n');
 end
@@ -119,6 +119,4 @@ res = this.solve_nelder_mead();
 
 
 end
-
-
 

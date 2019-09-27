@@ -1151,7 +1151,7 @@ classdef BreachSet < BreachStatus
             end
             this.P = SConcat(this.P, other.P, fast);
         end
-        
+       
         function other  = ExtractSubset(this, idx)
             other = this.copy();
             other.P = Sselect(this.P, idx);
@@ -1170,10 +1170,6 @@ classdef BreachSet < BreachStatus
         end
        
         
-        %% Concatenation - needs some additional compatibility checks...
-        function Concat(this, other)
-            this.P = SConcat(this.P, other.P);
-        end
         
         %% Plot parameters
         function PlotParams(this, varargin)
@@ -1525,7 +1521,7 @@ classdef BreachSet < BreachStatus
                 folder_name = '';
             end
             options = struct('FolderName', folder_name, 'SaveBreachSystem', true, 'ExportToExcel', false, 'ExcelFileName', 'Results.xlsx');
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
                 try
@@ -1653,59 +1649,6 @@ classdef BreachSet < BreachStatus
             
         end
 
-        function [success, msg, msg_id] = SaveResults(this, folder_name, varargin)
-            % Additional options
-            options = struct('FolderName', folder_name, 'SaveBreachSystem', true, 'ExportToExcel', false, 'ExcelFileName', 'Results.xlsx');
-            options = varargin2struct_breach(options, varargin{:});
-            
-            if ~exist('signals','var')
-                signals = {}; % means all
-            end
-            if ~exist('params','var')||isempty(params)
-                params = {}; % means all
-            end
-            
-            % Options
-            options = struct('WriteToFolder','');
-            options = varargin2struct(options, varargin{:});
-            
-            if ~isempty(options.WriteToFolder)
-                if ~exist(options.WriteToFolder,'dir' )
-                    [success, err_msg] = mkdir(options.WriteToFolder);
-                    if ~success
-                        error('Folder creation failed with error:\n %s', err_msg);
-                    end
-                end
-                dir_traces = options.WriteToFolder;
-            else
-                dir_traces = '';
-            end
-            
-            [signature,~, params] = this.GetSignature(signals, params);
-            num_traces = numel(this.P.traj);
-            signals = signature.signals_reps; % signal representants, assuming there are aliases
-            param_values = this.GetParam(params);
-            for it = 1:num_traces
-                traj = this.P.traj{it};
-                X = this.GetSignalValues(signals, it);
-                
-                if ~isempty(dir_traces)
-                    traces{it} = matfile([dir_traces filesep num2str(it) '.mat'], 'Writable',true);
-                end
-                
-                if isfield(traj, 'status')
-                    traces{it}.status = traj.status;
-                end
-                traces{it}.signature = signature;
-                traces{it}.param = [zeros(1,numel(signals)) param_values(:,it)'];
-                traces{it}.time = traj.time;
-                traces{it}.X = X;
-                
-                if ~isempty(dir_traces)
-                    traces{it}.Properties.Writable= false;
-                end
-            end
-        end
         
         function [signature, signals, params] = GetSignature(this, signal_list, param_list)
             %  GetSignature returns information about signals and parameters 

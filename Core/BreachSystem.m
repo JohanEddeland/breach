@@ -370,7 +370,7 @@ classdef BreachSystem < BreachSet
             end
         end
         
-        function [rob, tau] = GetRobustSat(this, phi, params, values, t_phi)
+        function [rob, tau] = GetRobustSat(this, phi, params, values, t_phi, objToUse)
             % Monitor spec on trajectories - run simulations if not done before
             
             if nargin < 5
@@ -402,13 +402,14 @@ classdef BreachSystem < BreachSet
             this.CheckinDomainTraj();
             
             % JOHAN ADDED
-            filesInTrajFolder = length(dir('trajectories')) - 2;
-            tmpP = this.P;
-            paramValues = values;
-            try
-                load('nextReqToBeFalsified'); % Loads currentReq
-                save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
-            end
+
+            % This was used previously to save trajectory info to the
+            % folder 'trajectories'
+%             filesInTrajFolder = length(dir('trajectories')) - 2;
+%             tmpP = this.P;
+%             paramValues = values;
+%             load('nextReqToBeFalsified'); % Loads currentReq
+%             save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
             % END JOHAN ADDED
             
             % FIXME: this is going to break with multiple trajectories with

@@ -1326,7 +1326,6 @@ Br = get_current_set(handles);
 prop = handles.properties.phi;
 % END JOHAN UGLY FIX
 props = STL_Break(prop);
-end
 
 for i = 1:numel(props)
     PHI_ = props(i);

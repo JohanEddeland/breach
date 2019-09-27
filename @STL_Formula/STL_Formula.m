@@ -80,7 +80,7 @@ if(nargin==2)
         phistruct = struct(phi);
         BreachGlobOpt.STLDB(phi.id) = phi;
         return;
-    elseif ischar(varargin{2}) % here we reference an existing formula 
+    elseif ischar(varargin{2}) % here we reference an existing formula
         st = varargin{2};
         st_trimmed = regexprep(st,'[()\s]','');
         if isKey(BreachGlobOpt.STLDB,st_trimmed)
@@ -566,7 +566,6 @@ switch(numel(varargin))
             return
         end
 
-        
         % Below, basically copied from "==" case some rows above
         % This was used when we replaced "st" with "st == 1"
         %             [~, st1, st2] = parenthesisly_balanced_split(st, '==');

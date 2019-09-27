@@ -52,15 +52,9 @@ else
 end
 
 ii=1;
-<<<<<<< HEAD
-num_dim = size(P_.pts,1); 
-eval_str = [P_.ParamList(1:num_dim);num2cell(1:num_dim)];
-eval_str = sprintf('%s=P_.pts(%d,ii);',eval_str{:});
-=======
 num_dim = size(P.pts,1);
 eval_str = [P.ParamList(1:num_dim);num2cell(1:num_dim)];
 eval_str = sprintf('%s=P.pts(%d,ii);',eval_str{:});
->>>>>>> Now use objToUse with constant semantics
 eval(eval_str);
 
 %% for each trajectory, compute values and times
@@ -147,7 +141,6 @@ global BreachGlobOpt;
 global objToUse;
 global useVboolImplicationRobustness;
 eval(BreachGlobOpt.GlobVarsDeclare);
-
 if strcmp(objToUse, 'vbool')
     % Do nothing
 elseif strcmp(objToUse, 'vbool_v1')

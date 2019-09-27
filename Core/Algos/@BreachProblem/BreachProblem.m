@@ -779,7 +779,6 @@ classdef BreachProblem < BreachStatus
                 if ~exist('n_samples', 'var')
                     n_samples = 180; % Arbitrary choice
                 end
-
                 fprintf('%d varying parameters, using QuasiRandomSample(%d) (TestronRefine) to not run out of memory\n',numel(this.params),n_samples);
                 BrC.QuasiRandomSample(n_samples);
                 
@@ -1023,20 +1022,6 @@ classdef BreachProblem < BreachStatus
                             break
                         end
                     end
-                elseif journalPaperExperimentUseRandomObj == 2
-                    % We want a constant objective function
-                    if fval < 0
-                        fval = -100;
-                    else
-                        fval = 100;
-                    end
-                elseif journalPaperExperimentUseRandomObj == 2
-                    % We want a constant objective function
-                    if fval < 0
-                        fval = -100;
-                    else
-                        fval = 100;
-                    end
                 end
             else
                 fval = this.obj_best*ones(1, nb_eval);
@@ -1091,7 +1076,6 @@ classdef BreachProblem < BreachStatus
                  this.num_consecutive_constraints_failed = this.num_consecutive_constraints_failed+1;
                  this.num_constraints_failed = this.num_constraints_failed+1;                
             end
-            
             if rem(this.nb_obj_eval+this.num_constraints_failed,this.freq_update)==0
                 this.display_status(fval, cval);
             end

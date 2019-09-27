@@ -798,8 +798,20 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             % JOHAN ADDED
             % We need clear mex since otherwise, we get erroneous start
             % values for signals that need InitFunctions to be run at start
-            % of simulations
-            clear mex;
+            % of simulations. 
+            % We only clear mex is FastRestart is turned OFF. 
+            try
+                fastRestart = get_param(Sys.mdl, 'FastRestart');
+            catch
+                % Model does not have parameter FastRestart. Probably means
+                % we are in 2013b - either way, fastRestart is considered
+                % off. 
+                fastRestart = 'off';
+            end
+            
+            if strcmp(fastRestart, 'off')
+                clear mex;
+            end
             % END JOHAN ADDED
             
             mdl = Sys.mdl;
@@ -809,30 +821,32 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             
             for i = 1:numel(params)-num_signals
                 % JOHAN CHANGE
-                tmp_johan = params{i+num_signals};
-                type_here = class(pts(i+num_signals));
-                try
-                    type_base = evalin('base',['class(' tmp_johan ')']);
-                    param_value = eval([type_base '(pts(i+num_signals))']);
-                    type_here_new = class(param_value);
-                    if ~strcmp(type_here_new,type_base)
-                        disp(params{i+num_signals})
-                        disp(['Warning!! Type here: ' type_here ', type in base: ' type_base]);
-                    elseif ~strcmp(type_here,type_base)
-                        %disp(['Successfully casted from ' type_here ' to ' type_here_new]);
-                    end
-                catch
-                    % The parameter doesn't exist yet (is a _u0 param)
-                    % We don't need to cast it
-                    param_value = pts(i+num_signals);
-                end
-                
-                
-                %assignin('base',params{i+num_signals}.Value,pts(i+num_signals));
-                assignin('base',params{i+num_signals},param_value);
-                bparam = this.ParamSrc(tmp_johan);
-                bparam.setValue(param_value); % set value in the appropriate workspace
-                % END JOHAN CHANGE
+%                 tmp_johan = params{i+num_signals};
+%                 type_here = class(pts(i+num_signals));
+%                 try
+%                     type_base = evalin('base',['class(' tmp_johan ')']);
+%                     param_value = eval([type_base '(pts(i+num_signals))']);
+%                     type_here_new = class(param_value);
+%                     if ~strcmp(type_here_new,type_base)
+%                         disp(params{i+num_signals})
+%                         disp(['Warning!! Type here: ' type_here ', type in base: ' type_base]);
+%                     elseif ~strcmp(type_here,type_base)
+%                         %disp(['Successfully casted from ' type_here ' to ' type_here_new]);
+%                     end
+%                 catch
+%                     % The parameter doesn't exist yet (is a _u0 param)
+%                     % We don't need to cast it
+%                     param_value = pts(i+num_signals);
+%                 end
+%                 
+%                 
+%                 %assignin('base',params{i+num_signals}.Value,pts(i+num_signals));
+%                 assignin('base',params{i+num_signals},param_value);
+%                 % END JOHAN CHANGE
+                pname =  params{i+num_signals};
+                pval  = pts(i+num_signals);
+                bparam = this.ParamSrc(pname);
+                bparam.setValue(pval); % set value in the appropriate workspace
             end
             
             if ischar(tspan)
@@ -1277,6 +1291,21 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             end
         end
         
+        % Old function Sim
+%         function Sim(this, tspan, U)
+%             switch nargin
+%                 case 1
+%                     Sim@BreachOpenSystem(this);
+%                 case 2
+%                     Sim@BreachOpenSystem(this, tspan);
+%                 case 3
+%                     Sim@BreachOpenSystem(this, tspan, U);
+%             end
+%             if this.use_parallel == 0 % don't autosave in parallel mode
+%                 %save_system(this.Sys.mdl);
+%             end
+%         end
+
         %% Misc
         function S = GetSignature(this, varargin)
             S = GetSignature@BreachOpenSystem(this, varargin{:});
@@ -1321,7 +1350,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                 else
                     options.StoreTracesOnDisk = true;
                 end
-                options = varargin2struct(options, varargin{:});
+                options = varargin2struct_breach(options, varargin{:});
                 this.DiskCachingRoot = options.DiskCachingRoot;
                 this.Sys.StoreTracesOnDisk  = options.StoreTracesOnDisk;
             end
