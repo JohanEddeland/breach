@@ -144,6 +144,9 @@ end
 phistruct = struct(phi);
 BreachGlobOpt.STLDB(phi.id) = phi;
 
+%TESTRON: We set alpha and true_value to 10000
+phi = set_params(phi, {'true_value__', 'alpha__'}, [10000 10000]);
+
 end
 
 function phi = STL_Parse(phi,varargin)
