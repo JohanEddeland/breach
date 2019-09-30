@@ -996,7 +996,7 @@ classdef BreachProblem < BreachStatus
                         
                             % logging and updating best
                             this.time_spent = toc(this.time_start);
-                            this.LogX(x(:, iter), fval(:,iter));
+                            this.LogX(x(:, iter), fval(:,iter), cval(:,iter));
                             % update status
                         end
                                                                         
