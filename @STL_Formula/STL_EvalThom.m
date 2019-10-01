@@ -52,9 +52,9 @@ else
 end
 
 ii=1;
-num_dim = size(P.pts,1);
-eval_str = [P.ParamList(1:num_dim);num2cell(1:num_dim)];
-eval_str = sprintf('%s=P.pts(%d,ii);',eval_str{:});
+num_dim = size(P_.pts,1);
+eval_str = [P_.ParamList(1:num_dim);num2cell(1:num_dim)];
+eval_str = sprintf('%s=P_.pts(%d,ii);',eval_str{:});
 eval(eval_str);
 
 %% for each trajectory, compute values and times
