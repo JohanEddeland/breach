@@ -43,6 +43,7 @@ function [val__, time_values__] = STL_EvalThom_TESTRON(Sys, phi, P, trajs, objTo
 
 %% defines the parameter as global variables so that they are available for
 % all subsequent computations
+error('There is no support for this function anymore! This should be replaced with STL_EvalThom');
 
 global objToUse;
 objToUse = objToUseHere;

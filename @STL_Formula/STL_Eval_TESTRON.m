@@ -50,6 +50,7 @@ function [val, tau] = STL_Eval_TESTRON(Sys, phi, P, trajs, objToUse, varargin)
 %
 
 %% formula is given directly as a string
+error('There is no support for this function anymore! This should be replaced with STL_Eval');
 if ischar(phi)
     STL_Formula('phi_tmp__', phi);
     [val__, time_values__] = STL_EvalThom(Sys, phi_tmp__, P, trajs, objToUse, t);
