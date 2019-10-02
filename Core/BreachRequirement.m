@@ -208,11 +208,12 @@ classdef BreachRequirement < BreachTraceSystem
                     time = this.P.traj{it}.time;
                     for ipre = 1:numel(this.req_monitors)
                         req = this.req_monitors{ipre};
-                        [traces_vals(it, ipre) traces_vals_vac(it, ipre)]  = eval_req(this,req,it);
+                        [traces_vals(it, ipre), traces_vals_vac(it, ipre)]  = eval_req(this,req,it);
                     end
                 end
             end
             this.traces_vals_precond = traces_vals_precond;
+            this.traces_vals_vac = traces_vals_vac;
             this.traces_vals = traces_vals;
                         
         end
@@ -814,6 +815,7 @@ classdef BreachRequirement < BreachTraceSystem
             
             this.traces_vals_precond = [this.traces_vals_precond ; other.traces_vals_precond]; 
             this.traces_vals = [this.traces_vals ; other.traces_vals]; 
+            
             this.val= min([ this.val other.val]);
             
         end
