@@ -115,6 +115,7 @@ classdef BreachRequirement < BreachTraceSystem
             this.P.selected = zeros(1, size(this.P.pts,2));
             this.P = Preset_traj_ref(this.P);
             this.traces_vals_precond = [];
+            this.traces_vals_vac = [];
             this.traces_vals = [];
             this.val = [];            
         end
@@ -299,12 +300,22 @@ classdef BreachRequirement < BreachTraceSystem
                 summary.statement = sprintf([summary.statement ', %d traces have violations'], summary.num_traces_violations);
                 summary.num_total_violations =  sum( sum(this.traces_vals<0) );
                 if  summary.num_total_violations == 1
-                    summary.statement = sprintf([summary.statement ', %d requirement violation.' ], summary.num_traces_violations);
+                    summary.statement = sprintf([summary.statement ', %d requirement violation' ], summary.num_traces_violations);
                 elseif summary.num_total_violations >1
-                    summary.statement = sprintf([summary.statement ', %d requirement violations total.' ], summary.num_traces_violations);
+                    summary.statement = sprintf([summary.statement ', %d requirement violations total' ], summary.num_traces_violations);
+                end
+                
+                summary.num_vacuous_sat = num(this.requirements.rob == inf);
+                
+                if  summary.num_vacuous_sat == 1
+                    summary.statement = sprintf([summary.statement ', %d vacuous satisfaction.' ], summary.num_vacuous_sat);
+                elseif summary.num_vacuous_sat >1
+                    summary.statement = sprintf([summary.statement ', %d vacuous satisfactions.' ], summary.num_vacuous_sat);
                 else
                     summary.statement = [summary.statement '.'];
                 end
+                
+                
             else
                 summary.statement = [summary.statement '.'];
             end
@@ -812,9 +823,12 @@ classdef BreachRequirement < BreachTraceSystem
                 fast = false;
             end
             this.P = SConcat(this.P, other.P, fast);
+            % wild guess:
+            this.P = SetParam(this.P, this.P.DimX+1,this.P.traj_ref);
             
             this.traces_vals_precond = [this.traces_vals_precond ; other.traces_vals_precond]; 
             this.traces_vals = [this.traces_vals ; other.traces_vals]; 
+            this.traces_vals_vac = [this.traces_vals_vac ; other.traces_vals_vac]; 
             
             this.val= min([ this.val other.val]);
             

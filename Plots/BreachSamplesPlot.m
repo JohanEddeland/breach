@@ -551,7 +551,7 @@ classdef BreachSamplesPlot < handle
                 hold on;
                 
                 if has_vac&&~isempty(xdata_vac)
-                    this.vac_plot = plot(xdata_vac,ydata_vac,'.c', 'MarkerSize', 20);
+                    this.vac_plot = plot(xdata_vac,ydata_vac,'.m', 'MarkerSize', 20);
                 end
                 hold on;                
                 
@@ -570,7 +570,7 @@ classdef BreachSamplesPlot < handle
                 hold on;
                 
                 if has_vac&&~isempty(xdata_vac)
-                    this.vac_plot = plot3(xdata_vac,ydata_vac,zdata_vac, '.c', 'MarkerSize', 20);
+                    this.vac_plot = plot3(xdata_vac,ydata_vac,zdata_vac, '.m', 'MarkerSize', 20);
                 end
                 hold on;
                 
@@ -592,7 +592,7 @@ classdef BreachSamplesPlot < handle
                 hold on;
                 
                 if has_vac&&~isempty(xdata_vac)
-                    this.vac_plot = plot(xdata_vac,ydata_vac,'.c', 'MarkerSize', 20);
+                    this.vac_plot = plot(xdata_vac,ydata_vac,'.m', 'MarkerSize', 20);
                 end
                 hold on;
                                                 
@@ -611,7 +611,7 @@ classdef BreachSamplesPlot < handle
                 hold on;
 
                 if has_vac&&~isempty(xdata_vac)
-                    this.vac_plot = plot3(xdata_vac,ydata_vac,zdata_vac, '.c', 'MarkerSize', 20);
+                    this.vac_plot = plot3(xdata_vac,ydata_vac,zdata_vac, '.m', 'MarkerSize', 20);
                 end
                 
                 if has_neg&&~isempty(xdata_neg)
@@ -630,16 +630,14 @@ classdef BreachSamplesPlot < handle
                     if has_vac&&~isempty(xdata_vac)
                         ydata_pos = this.data.pos_pts.v_num_pos;
                         ydata_vac = this.data.vac_pts.v_num_vac;                        
-                        this.pos_plot = bar(xdata_pos-.15, ydata_pos ,0.2,'g');
+                        this.pos_plot = bar(xdata_pos-.15, ydata_pos ,0.15,'g');
                         hold on                                            
-                        this.vac_plot = bar(xdata_vac+.15, ydata_vac ,0.1,'c');                        
+                        this.vac_plot = bar(xdata_vac+.15, ydata_vac ,0.15,'m');                        
                         leg = {'#Satisfied', '#Criteria not Sat.'};
                     else
                         ydata_pos = this.data.pos_pts.v_num_pos;
                         ydata_vac = this.data.vac_pts.v_num_vac;                        
-                        this.pos_plot = bar(xdata_pos-.2, ydata_pos ,0.25,'g');
-                        hold on                                            
-                        this.vac_plot = bar(xdata_vac+.2, ydata_vac ,0.1,'c');        
+                        this.pos_plot = bar(xdata_pos, ydata_pos ,0.3,'g');
                         leg = {'#Satisfied'};
                     end
                 end
@@ -668,8 +666,7 @@ classdef BreachSamplesPlot < handle
                 grid on;
                 if has_neg
                     ydata_neg = this.data.neg_pts.v_num_neg;
-                    this.neg_plot = plot3(xdata_neg, ydata_neg , zdata_neg,'.r', 'MarkerSize', 20);
-                    %set(gca, 'YLim', [min(ydata_neg)-.1, max(ydata_pos)+.1],  'Ytick', ceil(min(ydata_neg)-.1):1:floor(max(ydata_pos)+.1));
+                    this.neg_plot = plot3(xdata_neg, ydata_neg , zdata_neg,'.r', 'MarkerSize', 20);                    
                 end
                 xlabel(this.x_axis, 'Interpreter', 'None');
                 ylabel(this.y_axis, 'Interpreter', 'None');        
@@ -677,7 +674,8 @@ classdef BreachSamplesPlot < handle
             end
 
             stat = this.BrSet.GetStatement();
-            st = sprintf('#traces: %g #req: %g #false traces: %g #false req: %g', stat.num_traces_evaluated, stat.num_requirements, stat.num_traces_violations, stat.num_total_violations);
+            st = sprintf('#traces: %g #req: %g #false traces: %g #false req: %g #vacuous sat: %g',...
+                stat.num_traces_evaluated, stat.num_requirements, stat.num_traces_violations, stat.num_total_violations, stat.num_vacuous_sat);
             
             h = title(st, 'FontWeight', 'normal', 'FontSize', 10);
             set(this.Fig,'Name', 'Left click on data to get details, right click to plot signals')
@@ -686,7 +684,6 @@ classdef BreachSamplesPlot < handle
             cursor_h = datacursormode(this.Fig);
             cursor_h.UpdateFcn = @myupdatefcn;
             cursor_h.SnapToDataVertex = 'on';
-            %   datacursormode on
             
             function [txt] = myupdatefcn(obj,event_obj)
                 pos = event_obj.Position;
