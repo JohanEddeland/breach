@@ -305,7 +305,7 @@ classdef BreachRequirement < BreachTraceSystem
                     summary.statement = sprintf([summary.statement ', %d requirement violations total' ], summary.num_traces_violations);
                 end
                 
-                summary.num_vacuous_sat = num(this.requirements.rob == inf);
+                summary.num_vacuous_sat = sum(sum(summary.requirements.rob == inf));
                 
                 if  summary.num_vacuous_sat == 1
                     summary.statement = sprintf([summary.statement ', %d vacuous satisfaction.' ], summary.num_vacuous_sat);
@@ -1114,8 +1114,8 @@ classdef BreachRequirement < BreachTraceSystem
             b = false;
             for ifo = 1:numel(this.req_monitors)
                 if isa(this.req_monitors{ifo}, 'stl_monitor')
-                    if strcmp(sig, [this.req_monitors{ifo}.formula_id '_quant_sat' ])||...
-                            strcmp(sig, [get_id(this.req_monitors{ifo}.formula) ])
+                    if strcmp(sig, [this.req_monitors{ifo}.formula_id '_quant_sat' ])%||... 
+                            %strcmp(sig, [get_id(this.req_monitors{ifo}.formula) ])
                         b = true;
                     end
                 end
