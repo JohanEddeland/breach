@@ -175,7 +175,7 @@ classdef BreachRequirement < BreachTraceSystem
             [traces_vals, traces_vals_precond] = this.evalAllTraces(varargin{:});
             
             % A BreachRequirement must return a single value
-            global_val = min(min(traces_vals));
+            global_val = min(min(min(traces_vals)));
             global_precond_val = min(min(traces_vals_precond));
             this.val = min([global_val,-global_precond_val]);
         end
@@ -197,13 +197,29 @@ classdef BreachRequirement < BreachTraceSystem
         end
         
         function [traces_vals, traces_vals_precond] =evalAllTraces(this,varargin)
+            % TESTRON: Add extra (optional) argument with objective
+            % functions
+            if nargin > 2
+                % varargin{0} is the BreachSimulinkSystem
+                % varargin{1} is a cell array of objective functions
+                % (strings)
+                objFunctions = varargin{2};
+                % Remove the argument from varargin, since varargin is used
+                % later
+                varargin(2) = [];
+            else
+                objFunctions = {'standard'};
+            end
+            
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
             this.getBrSet(varargin{:});
             num_traj = numel(this.P.traj);
-            traces_vals = nan(num_traj, numel(this.req_monitors));
+            traces_vals = nan(numel(objFunctions), num_traj, numel(this.req_monitors));
             traces_vals_precond = nan(num_traj, numel(this.precond_monitors));
             
+            % TODO: Might need to add objFunctions calculations to the
+            % pre-conditions as well?
             % eval pre conditions
             if ~isempty(this.precond_monitors)
                 for it = 1:num_traj
@@ -216,20 +232,28 @@ classdef BreachRequirement < BreachTraceSystem
             end
             
             % eval requirement
-            for it = 1:num_traj
-                if any(traces_vals_precond(it,:)<0)
-                    traces_vals(it, :)  = NaN;
-                else
-                    time = this.P.traj{it}.time;
-                    for ipre = 1:numel(this.req_monitors)
-                        req = this.req_monitors{ipre};
-                        traces_vals(it, ipre)  = eval_req(this,req,it);
+            global objToUse;
+            for objFunctionCounter = 1:numel(objFunctions)
+                thisObjFunction = objFunctions{objFunctionCounter};
+                fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction]);
+                objToUse = thisObjFunction;
+                tic
+                for it = 1:num_traj
+                    if any(traces_vals_precond(it,:)<0)
+                        traces_vals(objFunctionCounter, it, :)  = NaN;
+                    else
+                        time = this.P.traj{it}.time;
+                        for ipre = 1:numel(this.req_monitors)
+                            req = this.req_monitors{ipre};
+                            traces_vals(objFunctionCounter, it, ipre)  = eval_req(this,req,it);
+                        end
                     end
                 end
+                fprintf([' (time: ' num2str(toc) 's)\n']);
             end
             this.traces_vals_precond = traces_vals_precond;
             this.traces_vals = traces_vals;
-                        
+            
         end
         
         function F = PlotDiagnostics(this, idx_req_monitors, itraj)
