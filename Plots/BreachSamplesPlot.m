@@ -81,10 +81,10 @@ classdef BreachSamplesPlot < handle
             
             all_pts = 1:num_samples;
             if isa(this.BrSet, 'BreachRequirement')
-                vals = this.summary.requirements.rob;
-                vals_vac =  this.summary.requirements.rob_vac;
+                rob = this.summary.requirements.rob;
+                rob_vac =  this.summary.requirements.rob_vac;
             else
-                vals = 0*all_pts'+1;
+                rob = 0*all_pts'+1;
             end
             
             this.data.all_pts.idx = all_pts;
@@ -96,7 +96,7 @@ classdef BreachSamplesPlot < handle
                 for ir = 1:numel(this.BrSet.req_monitors)
                     name = this.BrSet.req_monitors{ir}.name;
                     this.data.req_names{end+1} = name;
-                    vals_req = vals(:,ir);
+                    vals_req = rob(:,ir);
                     
                     vals_pos = vals_req';
                     vals_pos(vals_req'<=0) = 0;
@@ -104,7 +104,7 @@ classdef BreachSamplesPlot < handle
                     
                     
                     % vacuous pos
-                    vals_vac = vals_vac(:,ir)';
+                    vals_vac = rob_vac(:,ir)';
                     vals_vac(vals_pos'<inf) = 0;
                     
                     % falsified requirements
@@ -154,12 +154,12 @@ classdef BreachSamplesPlot < handle
             end
             %% sum and num
             % satisfied requirements
-            vals_pos = vals';
-            vals_pos(vals'<=0) = 0;
+            vals_pos = rob';
+            vals_pos(rob'<=0) = 0;
             
             % falsified requirements
-            vals_neg = vals';
-            vals_neg(vals'>=0) = 0;
+            vals_neg = rob';
+            vals_neg(rob'>=0) = 0;
             
             % idx pos and neg
             num_vals_pos = sum(vals_pos>=0&vals_neg==0,1);
@@ -636,8 +636,8 @@ classdef BreachSamplesPlot < handle
                         leg = {'#Satisfied', '#Criteria not Sat.'};
                     else
                         ydata_pos = this.data.pos_pts.v_num_pos;
-                        ydata_vac = this.data.vac_pts.v_num_vac;                        
                         this.pos_plot = bar(xdata_pos, ydata_pos ,0.3,'g');
+                        hold on                                            
                         leg = {'#Satisfied'};
                     end
                 end
@@ -709,10 +709,11 @@ classdef BreachSamplesPlot < handle
                     
                     txt{end+1} = '--------------';
                     for irr = 1:numel(this.summary.requirements.names)
-                        txt{end+1} = [this.summary.requirements.names{irr} ':' num2str(this.summary.requirements.rob(i_pts_req, irr))];                        
+                        rob = this.summary.requirements.rob(i_pts_req, irr);
+                        txt{end+1} = [this.summary.requirements.names{irr} ':' num2str(rob)];                        
                         if isfield(this.summary.requirements, 'rob_vac')
                             rob_vac = this.summary.requirements.rob_vac(i_pts_req, irr);
-                            if ~isnan(rob_vac)
+                            if ~isnan(rob_vac)&&rob==inf
                                 txt{end+1} = [this.summary.requirements.names{irr} ' vacuity:' num2str(rob_vac)];                            
                             end
                         end
