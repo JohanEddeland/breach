@@ -633,7 +633,7 @@ classdef BreachSamplesPlot < handle
                         this.pos_plot = bar(xdata_pos-.15, ydata_pos ,0.15,'g');
                         hold on                                            
                         this.vac_plot = bar(xdata_vac+.15, ydata_vac ,0.15,'m');                        
-                        leg = {'#Satisfied', '#Criteria not Sat.'};
+                        leg = {'#Satisfied', '#Vacuous Sat.'};
                     else
                         ydata_pos = this.data.pos_pts.v_num_pos;
                         this.pos_plot = bar(xdata_pos, ydata_pos ,0.3,'g');
