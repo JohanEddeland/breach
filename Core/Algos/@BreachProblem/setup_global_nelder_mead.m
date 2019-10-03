@@ -11,6 +11,15 @@ opt = struct( ...
     'local_options', optimset('Display', 'off') ...
     );
 
+% JOHAN CHANGE
+% Prevent "corner sampling", we want to do pure random initial sampling
+% instead, this is for achieving similar results to with other algorithms
+% (like Simulated Annealing).
+% Setting num_corners = 0 will result to no "corner solve" in
+% solve_global_nelder_mead.m. 
+opt.num_corners = 0;
+% END JOHAN CHANGE
+
 if this.use_parallel
     opt.use_parallel = true;
 end

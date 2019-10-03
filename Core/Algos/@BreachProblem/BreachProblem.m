@@ -307,7 +307,7 @@ classdef BreachProblem < BreachStatus
                 'quasi_rand_seed', 1,...
                 'num_quasi_rand_samples', 100 ...   % arbitrary - should be dim-dependant?  
             );
-            solver_opt= varargin2struct(solver_opt, varargin{:});
+            solver_opt= varargin2struct_breach(solver_opt, varargin{:});
         
             this.solver = 'quasi_random';
             this.solver_options = solver_opt; 
