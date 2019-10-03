@@ -688,11 +688,19 @@ classdef BreachSamplesPlot < handle
             function [txt] = myupdatefcn(obj,event_obj)
                 pos = event_obj.Position;
                 ipos = find(event_obj.Target.XData==pos(1)&event_obj.Target.YData==pos(2),1);
+                is_neg = 0;
+                is_pos = 0;
+                is_vac = 0;
+                
+                
                 if isequal(this.neg_plot, event_obj.Target)
+                    is_neg = 1;
                     i_pts_req = neg_idx(ipos);
                 elseif isequal(this.pos_plot, event_obj.Target)
+                    is_pos = 1;
                     i_pts_req = pos_idx(ipos);                    
                 elseif isequal(this.vac_plot, event_obj.Target)
+                    is_vac = 1; 
                     i_pts_req = vac_idx(ipos);
                 end
                 
@@ -710,11 +718,13 @@ classdef BreachSamplesPlot < handle
                     txt{end+1} = '--------------';
                     for irr = 1:numel(this.summary.requirements.names)
                         rob = this.summary.requirements.rob(i_pts_req, irr);
-                        txt{end+1} = [this.summary.requirements.names{irr} ':' num2str(rob)];                        
-                        if isfield(this.summary.requirements, 'rob_vac')
-                            rob_vac = this.summary.requirements.rob_vac(i_pts_req, irr);
-                            if ~isnan(rob_vac)&&rob==inf
-                                txt{end+1} = [this.summary.requirements.names{irr} ' vacuity:' num2str(rob_vac)];                            
+                        if (rob==inf&&is_vac)||(rob<0)&&is_neg||(rob>=0)&&is_pos
+                            txt{end+1} = [this.summary.requirements.names{irr} ':' num2str(rob)];
+                            if isfield(this.summary.requirements, 'rob_vac')
+                                rob_vac = this.summary.requirements.rob_vac(i_pts_req, irr);
+                                if ~isnan(rob_vac)&&rob==inf
+                                    txt{end+1} = [this.summary.requirements.names{irr} ' vacuity:' num2str(rob_vac)];
+                                end
                             end
                         end
                     end

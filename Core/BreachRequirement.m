@@ -665,7 +665,7 @@ classdef BreachRequirement < BreachTraceSystem
                 folder_name = pwd;
             end
             options = struct('FolderName', folder_name, 'ExportToExcel', false, 'ExcelFileName', 'Results.xlsx', ...
-                'IncludeSignals', [],  'IncludeParams', []);
+                'IncludeSignals', [],  'IncludeParams', [], 'AddWorkflowNum',[]);
             options = varargin2struct(options, varargin{:});
             
             try
@@ -694,6 +694,12 @@ classdef BreachRequirement < BreachTraceSystem
             end
             
             summary = this.GetSummary(options.IncludeSignals, options.IncludeParams);
+            if ~isempty(options.AddWorkflowNum);
+                summary.workflow = options.AddWorkflowNum;
+            end
+            
+            
+            
             summary_filename = [folder_name filesep 'summary'];
             tr = this.ExportTraces(options.IncludeSignals, options.IncludeParams, 'WriteToFolder', [folder_name filesep 'traces']);
             summary.traces_list = cell(1,numel(tr));
