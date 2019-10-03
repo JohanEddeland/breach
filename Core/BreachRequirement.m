@@ -198,15 +198,26 @@ classdef BreachRequirement < BreachTraceSystem
         
         function [traces_vals, traces_vals_precond] =evalAllTraces(this,varargin)
             % TESTRON: Add extra (optional) argument with objective
-            % functions
+            % functions when running global sensitivity experiments
             if nargin > 2
                 % varargin{0} is the BreachSimulinkSystem
                 % varargin{1} is a cell array of objective functions
                 % (strings)
-                objFunctions = varargin{2};
-                % Remove the argument from varargin, since varargin is used
-                % later
-                varargin(2) = [];
+                % Check that varargin{2} actually contains objFunctions,
+                % that is, it contains the string 'standard'
+                IndexC = strfind(varargin{2}, 'standard');
+                Index = find(not(cellfun('isempty',IndexC)));
+                if Index
+                    % varargin{2} contains a list of objective functions to
+                    % use for global sensitivity analysis
+                    objFunctions = varargin{2};
+                    % Remove the argument from varargin, since varargin is used
+                    % later
+                    varargin(2) = [];
+                else
+                    % varargin{2} does not contain objective functions.
+                    objFunctions = {'standard'};
+                end
             else
                 objFunctions = {'standard'};
             end
@@ -235,7 +246,9 @@ classdef BreachRequirement < BreachTraceSystem
             global objToUse;
             for objFunctionCounter = 1:numel(objFunctions)
                 thisObjFunction = objFunctions{objFunctionCounter};
-                fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction]);
+                if numel(objFunctions) > 1
+                    fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction]);
+                end
                 objToUse = thisObjFunction;
                 tic
                 for it = 1:num_traj
@@ -249,7 +262,10 @@ classdef BreachRequirement < BreachTraceSystem
                         end
                     end
                 end
-                fprintf([' (time: ' num2str(toc) 's)\n']);
+                
+                if numel(objFunctions) > 1
+                    fprintf([' (time: ' num2str(toc) 's)\n']);
+                end
             end
             this.traces_vals_precond = traces_vals_precond;
             this.traces_vals = traces_vals;
