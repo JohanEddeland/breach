@@ -155,7 +155,7 @@ elseif strcmp(objToUse, 'MARV')
 elseif strcmp(objToUse, 'constant')
     % Do nothing
     % NOTE: The "constant semantics" are actually applied in
-    % BreachProblem/objective_wrapper(this, x). 
+    % STL_Eval/STL_Eval_Gen/STL_Eval_Gen_Rob/STL_Eval_IO/STL_Eval_IO_Rob
     % In this file, 'standard' and 'constant' are equivalent. 
 else
     objToUse = 'standard';

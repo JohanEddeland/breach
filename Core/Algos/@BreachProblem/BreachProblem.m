@@ -982,18 +982,6 @@ classdef BreachProblem < BreachStatus
                             % calling actual objective function
                             [fval(:,iter), cval(:,iter)] = fun(iter);
                             
-                            % JOHAN EDIT
-                            % Add possibility for "constant" objective
-                            % function
-                            if strcmp(objToUse, 'constant')
-                                if fval(:,iter) >= 0
-                                    fval(:,iter) = 100;
-                                else
-                                    fval(:,iter) = -100;
-                                end
-                            end
-                            % END Johan edit
-                        
                             % logging and updating best
                             this.time_spent = toc(this.time_start);
                             this.LogX(x(:, iter), fval(:,iter), cval(:,iter));
