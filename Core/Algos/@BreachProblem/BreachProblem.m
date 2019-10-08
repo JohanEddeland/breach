@@ -642,11 +642,15 @@ classdef BreachProblem < BreachStatus
                     
                 case 'cmaes'
                     % JOHAN CHANGE
-                    Px0 = CreateParamSet(this.BrSet.P, this.params,  [this.lb this.ub]);
-                    Px0 = TestronRefine(Px0, 1); % Generate only 1 sample
-                    this.x0 = GetParam(Px0,this.params);
+                    %                     Px0 = CreateParamSet(this.BrSet.P, this.params,  [this.lb this.ub]);
+                    %                     Px0 = TestronRefine(Px0, 1); % Generate only 1 sample
+                    %                     this.x0 = GetParam(Px0,this.params);
+                    if nargin < 2
+                        % No startSample given
+                        startSample = testronGetNewSample([this.lb this.ub]);
+                    end
                     % END JOHAN CHANGE
-                    [x, fval, counteval, stopflag, out, bestever] = cmaes(this.objective, this.x0', [], this.solver_options);
+                    [x, fval, counteval, stopflag, out, bestever] = cmaes(this.objective, startSample, [], this.solver_options);
                     res = struct('x',x, 'fval',fval, 'counteval', counteval,  'stopflag', stopflag, 'out', out, 'bestever', bestever);
                     this.add_res(res);
 
@@ -732,8 +736,9 @@ classdef BreachProblem < BreachStatus
                     this.add_res(res);
                     
             end
+            % TESTRON: Mute these outputs
             this.DispResultMsg(); 
-            this.Display_Best_Results(this.obj_best, this.x_best);
+            %this.Display_Best_Results(this.obj_best, this.x_best);
             
             %% Saving run in cache folder
             this.SaveInCache();
