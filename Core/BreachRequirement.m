@@ -247,9 +247,13 @@ classdef BreachRequirement < BreachTraceSystem
             for objFunctionCounter = 1:numel(objFunctions)
                 thisObjFunction = objFunctions{objFunctionCounter};
                 if numel(objFunctions) > 1
+                    % Only if we want to loop over objFunctions here will
+                    % we change the global variable. 
+                    % If there is only 1, objToUse has been initiated
+                    % elsewhere. 
                     fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction]);
+                    objToUse = thisObjFunction;
                 end
-                objToUse = thisObjFunction;
                 tic
                 for it = 1:num_traj
                     if any(traces_vals_precond(it,:)<0)
