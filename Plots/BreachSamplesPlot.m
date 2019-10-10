@@ -50,7 +50,21 @@ classdef BreachSamplesPlot < handle
             this.update_data();
             
             %% default axis
-            if ~isa(this.BrSet, 'BreachRequirement')
+            if ~isempty(this.params)
+                var = this.params;
+                if numel(var)>=1
+                    this.x_axis = 'idx';
+                    this.y_axis = var{1};
+                end
+                if numel(var)>=2
+                    this.x_axis= var{1}; 
+                    this.y_axis = var{2};
+                end
+                if numel(var)>=3
+                    this.z_axis = var{3};
+                end
+                
+            elseif ~isa(this.BrSet, 'BreachRequirement')
                 var = this.data.variables;
                 if numel(var)>=1
                     this.x_axis = var{1};
@@ -85,6 +99,8 @@ classdef BreachSamplesPlot < handle
                 rob_vac =  this.summary.requirements.rob_vac;
             else
                 rob = 0*all_pts'+1;
+                rob_vac = rob;
+                rob_vac(:) = nan;
             end
             
             this.data.all_pts.idx = all_pts;
@@ -157,6 +173,9 @@ classdef BreachSamplesPlot < handle
             vals_pos = rob';
             vals_pos(rob'<=0) = 0;
             
+            vals_vac = vals_pos; 
+            vals_vac(vals_pos<inf)=0;
+            
             % falsified requirements
             vals_neg = rob';
             vals_neg(rob'>=0) = 0;
@@ -164,8 +183,10 @@ classdef BreachSamplesPlot < handle
             % idx pos and neg
             num_vals_pos = sum(vals_pos>=0&vals_neg==0,1);
             num_vals_neg = sum(vals_neg<0,1);
-            idx_pos = num_vals_pos  >0;
+            num_vals_vac = sum(vals_vac>=0&vals_neg==0,1);
+            idx_pos = num_vals_pos >0;
             idx_neg = num_vals_neg >0;
+            idx_vac = num_vals_vac >0;
             
             if any(idx_pos)
                 this.data.pos_pts.idx= all_pts(idx_pos);
@@ -354,7 +375,7 @@ classdef BreachSamplesPlot < handle
         function update_req_plot(this)
             
             B = this.BrSet.BrSet;
-            none_z = 'none (2D plot)';
+            none_z = {'none (2D plot)', 'none', '', '2D'};
             
             has_pos = isfield(this.data, 'pos_pts');
             has_vac = isfield(this.data, 'vac_pts');
@@ -395,7 +416,7 @@ classdef BreachSamplesPlot < handle
                         plot_this = @plot_sum;
                     case 'num'
                         ydata_pos = this.data.pos_pts.v_num_pos;
-                        if strcmp(this.z_axis, none_z)
+                        if any(strcmp(this.z_axis, none_z))
                             plot_this = @plot_num;
                         end
                     otherwise
@@ -405,7 +426,7 @@ classdef BreachSamplesPlot < handle
                         else
                             ydata_pos  = B.GetParam(this.y_axis, pos_idx);
                         end
-                        if strcmp(this.z_axis, none_z)
+                        if any(strcmp(this.z_axis, none_z))
                             plot_this = @plot_param;
                         end
                 end
