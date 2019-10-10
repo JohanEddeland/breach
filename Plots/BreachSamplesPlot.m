@@ -695,7 +695,7 @@ classdef BreachSamplesPlot < handle
             end
 
             stat = this.BrSet.GetStatement();
-            st = sprintf('#traces: %g #req: %g #false traces: %g #false req: %g #vacuous sat: %g',...
+            st = sprintf('#traces:%g  #req:%g  #false traces:%g  #false req:%g  #vacuous sat:%g',...
                 stat.num_traces_evaluated, stat.num_requirements, stat.num_traces_violations, stat.num_total_violations, stat.num_vacuous_sat);
             
             h = title(st, 'FontWeight', 'normal', 'FontSize', 10);
@@ -739,7 +739,7 @@ classdef BreachSamplesPlot < handle
                     txt{end+1} = '--------------';
                     for irr = 1:numel(this.summary.requirements.names)
                         rob = this.summary.requirements.rob(i_pts_req, irr);
-                        if (rob==inf&&is_vac)||(rob<0)&&is_neg||(rob>=0)&&is_pos
+                        if (rob==inf&&is_vac)||(rob<0)&&is_neg||(rob>=0)&&(rob<inf)&&is_pos
                             txt{end+1} = [this.summary.requirements.names{irr} ':' num2str(rob)];
                             if isfield(this.summary.requirements, 'rob_vac')
                                 rob_vac = this.summary.requirements.rob_vac(i_pts_req, irr);
