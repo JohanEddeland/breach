@@ -174,6 +174,7 @@ if isempty(useVboolImplicationRobustness)
     useVboolImplicationRobustness = 0;
 end
 
+
 switch(phi.type)
     
     case 'predicate'
@@ -256,6 +257,7 @@ switch(phi.type)
             otherwise
                 error('Unknown objective function (objToUse)');
         end
+
         
     case 'and'
         [valarray1, time_values1, robustness_map] = GetValues(Sys, phi.phi1, P, traj, partition, relabs, interval, robustness_map);
@@ -282,6 +284,7 @@ switch(phi.type)
             otherwise
                 error('Unknown objective function (objToUse)');
         end
+
         
     case 'andn'
         n_phi = numel(phi.phin);
@@ -323,6 +326,7 @@ switch(phi.type)
             otherwise
                 error('Unknown objective function!');
         end
+
         
     case 'always'
         I___ = eval(phi.interval);
@@ -385,6 +389,7 @@ switch(phi.type)
             otherwise
                 error('Unknown objective function!');
         end
+
         
     case 'av_eventually'
         I___ = eval(phi.interval);
@@ -435,6 +440,7 @@ switch(phi.type)
             otherwise
                 error('Unknown objective function!');
         end
+
         
     case 'until'
         I___ = eval(phi.interval);

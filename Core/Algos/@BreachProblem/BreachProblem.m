@@ -308,6 +308,7 @@ classdef BreachProblem < BreachStatus
                 'num_quasi_rand_samples', 100 ...   % arbitrary - should be dim-dependant?  
             );
             solver_opt= varargin2struct_breach(solver_opt, varargin{:});
+
         
             this.solver = 'quasi_random';
             this.solver_options = solver_opt; 
@@ -501,6 +502,7 @@ classdef BreachProblem < BreachStatus
                     f_Low = [];             % Lower bound on function.
                     x_min = []; % For plotting
                     x_max = []; % For plotting
+
                     
                     fun = @(x, ~) this.objective(x);
                     
@@ -919,6 +921,7 @@ classdef BreachProblem < BreachStatus
             % For falsification, default objective_fn is simply robust satisfaction of the least
             this.robust_fn(x);
             robs = this.Spec.traces_vals;
+
             if (~isempty(this.Spec.traces_vals_precond))
                 num_tr = size(this.Spec.traces_vals_precond,1);
                 precond_robs = zeros(num_tr,1);
@@ -948,6 +951,7 @@ classdef BreachProblem < BreachStatus
             global objToUse;
             % objective_wrapper calls the objective function and wraps some bookkeeping
             if size(x,1) ~= numel(this.params)
+
                 x = x';
             end
             
@@ -985,6 +989,7 @@ classdef BreachProblem < BreachStatus
                             % logging and updating best
                             this.time_spent = toc(this.time_start);
                             this.LogX(x(:, iter), fval(:,iter), cval(:,iter));
+
                             % update status
                         end
                                                                         
@@ -1064,9 +1069,7 @@ classdef BreachProblem < BreachStatus
                  this.num_consecutive_constraints_failed = this.num_consecutive_constraints_failed+1;
                  this.num_constraints_failed = this.num_constraints_failed+1;                
             end
-            if rem(this.nb_obj_eval+this.num_constraints_failed,this.freq_update)==0
-                this.display_status(fval, cval);
-            end
+            if rem(this.nb_obj_eval+this.num_constraints_failed,this.freq_update)
         end
          
         function [BrOut, Berr, BbadU] = GetBrSet_Logged(this)
@@ -1141,6 +1144,7 @@ classdef BreachProblem < BreachStatus
             end
         end
         
+
         function Display_Best_Results(this, best_fval, param_values)
             if ~strcmp(this.display, 'off')
                 if ~isempty(param_values)
