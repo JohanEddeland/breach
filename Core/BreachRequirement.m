@@ -198,7 +198,7 @@ classdef BreachRequirement < BreachTraceSystem
             this.val = min([global_val,-global_precond_val]);
         end
         
-        function [traces_vals, traces_vals_precond] =evalAllTraces(this,varargin)
+        function [traces_vals, traces_vals_precond, traces_vals_vac] =evalAllTraces(this,varargin)
             % TESTRON: Add extra (optional) argument with objective
             % functions when running global sensitivity experiments
             if nargin > 2

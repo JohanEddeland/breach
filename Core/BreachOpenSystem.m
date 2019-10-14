@@ -81,7 +81,7 @@ classdef BreachOpenSystem < BreachSystem
             % BreachOpenSystem.SetInputGen Attach a BreachSystem as input generator.
             
             opt.SetInputGenTime = false;
-            opt= varargin2struct(opt, varargin{:});
+            opt= varargin2struct_breach(opt, varargin{:});
             
             % look for property parameters and save them
             PropParams={};

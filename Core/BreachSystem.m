@@ -484,50 +484,7 @@ classdef BreachSystem < BreachSet
             end
             
         end
-        
-        function [rob, tau] = GetIORobustSat(this, inout, relabs, phi, params, values, t_phi)
-            % Monitor spec on trajectories - run simulations if not done before
-           
-            if nargin < 7
-                t_phi = 0;
-            end
-            if nargin==3
-                phi = this.spec;
-                params = {};
-                values = [];
-            end
-           
-            if nargin==4
-                params = {};
-                values = [];
-            end
-           
-            if nargin==5
-                t_phi = params;
-                params = {};
-                values = [];
-            end
-            
-            if ~isempty(params)
-                this.P = SetParam(this.P, params, values);
-            end
-            
-            this.CheckinDomainParam();
-            Sim(this);
-            this.CheckinDomainTraj();
-            
-            % FIXME: this is going to break with multiple trajectories with
-            % some of them containing NaN -
-            if any(isnan(this.P.traj{1}.X))
-                tau = t_phi;
-                rob = t_phi;
-                rob(:) = NaN;
-            else
-                [rob, tau] = STL_Eval_IO(this.Sys, phi, this.P, this.P.traj, inout, relabs, t_phi);
-            end
-            
-        end
-        
+      
         function [robfn, BrSys] = GetRobustSatFn(this, phi, params, t_phi)
             % Return a function of the form robfn: p -> rob such that p is a
             % vector of values for parameters and robfn(p) is the

@@ -69,27 +69,7 @@ classdef stl_monitor < req_monitor
         function [flag1,flag2] = get_mode(this)
             flag1 = this.inout;
             flag2 = this.relabs;
-        end
-        
-        function [] = set_mode(this, flag1, flag2)
-            switch flag1
-                case {'in','out'}
-                    this.inout = flag1;
-                otherwise
-                    this.inout = '';
-            end
-            switch flag2
-                case {'rel','abs'}
-                    this.relabs = flag2;
-                otherwise
-                    this.relabs = '';
-            end
-        end
-        
-        function [flag1,flag2] = get_mode(this)
-            flag1 = this.inout;
-            flag2 = this.relabs;
-        end
+        end    
         
         function [time, Xout] = computeSignals(this, time, X, p)
             this.init_tXp(time,X,p);
