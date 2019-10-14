@@ -213,8 +213,8 @@ classdef BreachRequirement < BreachTraceSystem
             % evalTrace
             this.getBrSet(varargin{:});
             num_traj = numel(this.P.traj);
-            traces_vals = nan(numel(objFunctions), num_traj, numel(this.req_monitors));
-            traces_vals_vac = nan(numel(objFunctions),num_traj, numel(this.req_monitors));                    
+            traces_vals = nan(num_traj, numel(this.req_monitors),numel(objFunctions));
+            traces_vals_vac = nan(num_traj, numel(this.req_monitors), numel(objFunctions));                    
             traces_vals_precond = nan(num_traj, numel(this.precond_monitors));
             
             % TODO: Might need to add objFunctions calculations to the
@@ -240,13 +240,13 @@ classdef BreachRequirement < BreachTraceSystem
                 tic
                 for it = 1:num_traj
                     if any(traces_vals_precond(it,:)<0)
-                        traces_vals(objFunctionCounter, it, :)  = NaN;
+                        traces_vals( it, :, objFunctionCounter)  = NaN;
                     else
                         time = this.P.traj{it}.time;
                         for ipre = 1:numel(this.req_monitors)
                             req = this.req_monitors{ipre};
-                            [traces_vals(objFunctionCounter, it, ...
-                                         ipre), traces_vals_vac(objFunctionCounter,it, ipre)]  = eval_req(this,req,it);
+                            [traces_vals(it, ...
+                                         ipre,objFunctionCounter), traces_vals_vac(it, ipre,objFunctionCounter)]  = eval_req(this,req,it);
                         end
                     end
                 end
@@ -305,7 +305,7 @@ classdef BreachRequirement < BreachTraceSystem
             
             summary = GetStatement(this);
             summary.signature = this.GetSignature(varargin{:});
-            summary.num_violations_per_trace =sum(this.traces_vals<0 , 2 )';
+            summary.num_violations_per_trace =sum(this.traces_vals(:,:,1)<0 , 2 )';
             [~,idxm ] = sort(summary.num_violations_per_trace, 2, 'descend');
             summary.idx_traces_with_most_violations = idxm;
             
@@ -329,8 +329,8 @@ classdef BreachRequirement < BreachTraceSystem
             end
             if summary.num_traces_evaluated>0
                 summary.val = this.val;
-                summary.requirements.rob = this.traces_vals;
-                summary.requirements.rob_vac = this.traces_vals_vac;
+                summary.requirements.rob = this.traces_vals(:,:,1); % might want to use global objective variable here
+                summary.requirements.rob_vac = this.traces_vals_vac(:,:,1);
                 summary.requirements.sat = this.traces_vals >=0;
                 summary.num_requirements = size(this.traces_vals,2);
                 if summary.num_requirements == 1
@@ -338,9 +338,9 @@ classdef BreachRequirement < BreachTraceSystem
                 else
                     summary.statement = sprintf([summary.statement ' on %d requirements'], summary.num_requirements);
                 end
-                summary.num_traces_violations = sum( any(this.traces_vals<0, 2) );
+                summary.num_traces_violations = sum( any(this.traces_vals(:,:,1)<0, 2) );
                 summary.statement = sprintf([summary.statement ', %d traces have violations'], summary.num_traces_violations);
-                summary.num_total_violations =  sum( sum(this.traces_vals<0) );
+                summary.num_total_violations =  sum( sum(this.traces_vals(:,:,1)<0) );
                 if  summary.num_total_violations == 1
                     summary.statement = sprintf([summary.statement ', %d requirement violation' ], summary.num_traces_violations);
                 elseif summary.num_total_violations >1
