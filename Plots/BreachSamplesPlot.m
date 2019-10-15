@@ -183,7 +183,7 @@ classdef BreachSamplesPlot < handle
             % idx pos and neg
             num_vals_pos = sum(vals_pos>=0&vals_neg==0,1);
             num_vals_neg = sum(vals_neg<0,1);
-            num_vals_vac = sum(vals_vac>=0&vals_neg==0,1);
+            num_vals_vac = sum(vals_vac>0&vals_neg==0,1);
             idx_pos = num_vals_pos >0;
             idx_neg = num_vals_neg >0;
             idx_vac = num_vals_vac >0;
@@ -651,9 +651,9 @@ classdef BreachSamplesPlot < handle
                     if has_vac&&~isempty(xdata_vac)
                         ydata_pos = this.data.pos_pts.v_num_pos;
                         ydata_vac = this.data.vac_pts.v_num_vac;                        
-                        this.pos_plot = bar(xdata_pos-.15, ydata_pos ,0.15,'g');
+                        this.pos_plot = bar(xdata_pos, ydata_pos ,0.3,'g');
                         hold on                                            
-                        this.vac_plot = bar(xdata_vac+.15, ydata_vac ,0.15,'m');                        
+                        this.vac_plot = bar(xdata_vac+.05, ydata_vac ,0.2,'m');                        
                         leg = {'#Satisfied', '#Vacuous Sat.'};
                     else
                         ydata_pos = this.data.pos_pts.v_num_pos;
@@ -797,7 +797,7 @@ classdef BreachSamplesPlot < handle
             
             
             top_z = uimenu(cm, 'Label', ['Change z-axis']);
-            uimenu(top_z, 'Label', none_z,'Callback',@(o,e)(this.set_z_axis(none_z)));
+            uimenu(top_z, 'Label', none_z{1},'Callback',@(o,e)(this.set_z_axis(none_z{1})));
             uimenu(top_z, 'Label', 'sum','Callback',@(o,e)(this.set_z_axis('sum')));
             for ip = 1:numel(this.data.variables)
                 uimenu(top_z, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_z_axis(this.data.variables{ip})));
