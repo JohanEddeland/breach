@@ -624,6 +624,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                             try
                                 if sig.numElements > 1
                                     sig = get(sig,1);
+
                                 end
                             catch
                                 % Do nothing
@@ -646,15 +647,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                             % the code below INSTEAD:
                             
                             % naming multidimensional signal= name_signal_i_
-%                             if nbdim==1
-%                                 sig_log = {sig_log{:} signame};
-%                             else
-%                                 for idim =1:nbdim
-%                                     signamei = [signame '_' num2str(idim)  '_'];
-%                                     sig_log = {sig_log{:} signamei};
-%                                 end
-%                             end
-                            % END JOHAN CHANGE
+%                             if nbdim
                         end
                     end
                 end
@@ -1074,6 +1067,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                                 X(loc,:) = xx;
                             end                  
                         end
+                        
                     end
                 end
             end

@@ -213,7 +213,6 @@ switch(phi.type)
     case 'or'
         [valarray1, time_values1] = GetValues(Sys, phi.phi1, P, traj, partition, relabs, interval);
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, partition, relabs, interval);
-        
         switch objToUse
             case 'vbool'
                 % ||+
@@ -237,7 +236,6 @@ switch(phi.type)
     case 'and'
         [valarray1, time_values1] = GetValues(Sys, phi.phi1, P, traj, partition, relabs, interval);
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, partition, relabs, interval);
-        
         % JOHAN CHANGE
         switch objToUse
             case 'vbool'
@@ -362,6 +360,7 @@ switch(phi.type)
             otherwise
                 error('Unknown objective function!');
         end
+
         
     case 'av_eventually'
         I___ = eval(phi.interval);
@@ -412,6 +411,7 @@ switch(phi.type)
             otherwise
                 error('Unknown objective function!');
         end
+
         
     case 'until'
         I___ = eval(phi.interval);

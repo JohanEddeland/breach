@@ -1,5 +1,6 @@
 function [props_names, props, signal_names, param_names, in_signal_names, out_signal_names] = STL_ReadFile(fname, onlyLoadLastFormula)
 
+
 %STL_READFILE reads formulas from a text file and loads them in the base
 %workspace 
 %

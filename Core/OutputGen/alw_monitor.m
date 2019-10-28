@@ -75,6 +75,7 @@ classdef alw_monitor < stl_monitor
                 otherwise
                     error('Unknown objective function!');
             end
+
         end
         
         function st = disp(this)

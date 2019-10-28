@@ -242,6 +242,7 @@ classdef BreachSystem < BreachSet
             
         end
         
+
         
         
         %% Specs
@@ -483,7 +484,7 @@ classdef BreachSystem < BreachSet
             end
             
         end
-        
+      
         function [robfn, BrSys] = GetRobustSatFn(this, phi, params, t_phi)
             % Return a function of the form robfn: p -> rob such that p is a
             % vector of values for parameters and robfn(p) is the
