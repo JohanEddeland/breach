@@ -1075,6 +1075,8 @@ classdef BreachProblem < BreachStatus
                  this.num_constraints_failed = this.num_constraints_failed+1;                
             end
             if rem(this.nb_obj_eval+this.num_constraints_failed,this.freq_update)
+                % TODO: what should be here?
+            end
         end
          
         function [BrOut, Berr, BbadU] = GetBrSet_Logged(this)
