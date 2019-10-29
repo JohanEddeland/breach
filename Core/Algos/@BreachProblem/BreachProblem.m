@@ -432,6 +432,13 @@ classdef BreachProblem < BreachStatus
             this.display = 'off';
         end
         
+        function solver_opt = setup_uniform_random(this)
+            this.solver = 'uniform_random';
+            solver_opt.lb = this.lb;
+            solver_opt.ub = this.ub;
+            this.display = 'off';
+        end
+        
         %% solve functions for various solvers
         function [res, startSample] = solve(this, startSample)
             
@@ -732,6 +739,34 @@ classdef BreachProblem < BreachStatus
                 case 'binsearch'
                     res = solve_binsearch(this);
                     this.add_res(res);
+                    
+                case 'uniform_random'
+                    % Initialize variables used
+                    xbest = [];
+                    fbest = Inf;
+                    
+                    for iterationCounter = 1:this.max_obj_eval
+                        % Sample from uniform random distribution between
+                        % this.lb and this.ub
+                        x = (this.ub - this.lb).*rand(size(this.lb)) + this.lb;
+                        
+                        % Calculate robustness
+                        rob = this.objective(x);
+                        
+                        % Store if it's best
+                        if rob < fbest
+                            xbest = x;
+                            fbest = rob;
+                        end
+                        
+                        % Exit if robustness negative
+                        if rob < 0
+                            break
+                        end
+                    end
+                    res = struct('bestRob',[],'bestSample',[],'nTests',[],'bestCost',[],'paramVal',[],'falsified',[],'time',[]);
+                    res.bestSample = xbest;
+                    res.bestRob = fbest;
 
                 otherwise
                     res = feval(this.solver, problem);
