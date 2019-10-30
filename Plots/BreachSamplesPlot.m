@@ -646,7 +646,7 @@ classdef BreachSamplesPlot < handle
             
             
             function plot_num()
-                
+                leg = {};
                 if has_pos&&~isempty(xdata_pos)
                     if has_vac&&~isempty(xdata_vac)
                         ydata_pos = this.data.pos_pts.v_num_pos;
