@@ -21,7 +21,7 @@ function fig_resize(h, x_scal, y_scal)
 %
 
 pos = get(h,'Position');
-pos([1 2]) = [0 0];
+%pos([1 2]) = [0 0];
 pos(3) = pos(3)*x_scal;
 pos(4) = pos(4)*y_scal;
 
