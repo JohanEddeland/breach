@@ -609,9 +609,13 @@ classdef BreachProblem < BreachStatus
                     ncall0 = npoint;   % function call counter
                     params = struct('bounds',{u,v},'nreq',nreq,'p',p); % input structure
                     % repeated calls to Snobfit
+                    bestForPrint = f(1);
+                    printFlag = 1;
                     while ncall0 < ncall % repeat till ncall function values are reached
                         % (if the stopping criterion is not fulfilled first)
                         if ncall0 == npoint  % initial call
+                            disp(['Initial robustness value: ' num2str(f(1))]);
+                            
                             [request,xbest,fbest] = snobfit(file,x,f,params,dx);
                             %ncall0,xbest,fbest;
                         else                 % continuation call
@@ -624,10 +628,24 @@ classdef BreachProblem < BreachStatus
                             x(j,:) = request(j,1:n);
                             f(j,:) = [feval(fcn,x(j,:), this)+fac*randn max(sqrt(eps),3*fac)];
                             % computation of the (perturbed) function values at the suggested points
+                            
+                            % Display
+                            totalCounter = ncall0 + j;
+                            if f(j,1) < bestForPrint
+                                bestForPrint = f(j,1);
+                                disp([num2str(totalCounter) ': NEW BEST: ' num2str(bestForPrint)]);
+                                if bestForPrint < 0
+                                    disp(['FALSIFIED at sample ' num2str(totalCounter) '!']); 
+                                    printFlag = 0;
+                                end
+                            elseif mod(totalCounter, 10)==0 && printFlag
+                                fprintf([num2str(totalCounter) ': Rob: ' num2str(f(j,1)) '\t\tBEST:' num2str(bestForPrint) '\n']);
+                            end
                         end
                         ncall0 = ncall0 + size(f,1); % update function call counter
                         [fbestn,jbest] = min(f(:,1)); % best function value
                         if fbestn < fbest
+                            
                             fbest = fbestn;
                             xbest = x(jbest,:);
                             %ncall0,xbest,fbest % display current number of function values,
@@ -637,11 +655,11 @@ classdef BreachProblem < BreachStatus
                         % check stopping criterion
                         % if fglob == 0, stop if fbest < 1.e-5
                         % otherwise, stop if (fbest-fglob)/abs(fglob) < 1.e-2
-                        if fglob
-                            if abs((fbest-fglob)/fglob) < 1.e-2,break,end
-                        else
-                            if abs(fbest) < 1.e-5,break,end
+                        if fbest < 0
+                            break
                         end
+                        
+                        
                     end
                     %ncall0,xbest,fbest  % show number of function values, best point and
                     % function value
