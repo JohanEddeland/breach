@@ -32,5 +32,7 @@ else
     P.pts(P.dim,:) = repmat(width,[1 nb]).*r+repmat(mini,[1 nb]);
 end
 
+P = Preset_traj_ref(P);
+
 
 end
