@@ -1361,7 +1361,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     this.disp_msg(['Created caching folder:' this.Sys.DiskCachingFolder],2);
                 end
             else
-                this.SysDiskCaching='';
+                this.Sys.DiskCachingFolder='';
                 error(['Couldn''t create caching folder'  this.Sys.DiskCachingFolder '.']);
             end
         end
