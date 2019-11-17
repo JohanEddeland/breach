@@ -50,7 +50,7 @@ dY = dY(idx);
 %
 
 % DY = repmat(dY/delta,[k 1]); % <-- Does NOT work in 2013b!
-DY = repmat(dY/delta,[k size(D,2)]);
+DY = repmat(dY/delta, k, 1); % <-- What about this ?
 EE = DY.*D;
 r = numel(dY)/k;
 mu = 1/r*sum(EE, 2);
