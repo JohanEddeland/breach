@@ -1163,7 +1163,11 @@ classdef BreachProblem < BreachStatus
          end
         
         function Rlog = GetLog(this,varargin)
-            Rlog = this.GetBrSet_Logged(varargin{:});
+            if isempty(this.X_log)
+                Rlog =[];
+            else
+                Rlog = this.GetBrSet_Logged(varargin{:});
+            end
         end
         
         function Rbest = GetBest(this,varargin)

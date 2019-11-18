@@ -160,7 +160,9 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             options.MaxNumTabParam = 10;
             options.InitFn = '';
             options = varargin2struct_breach(options, varargin{:});
-            options.DiskCachingRoot = '';
+            
+            global BreachGlobOpt;                        
+            options.DiskCachingRoot = [BreachGlobOpt.breach_dir filesep 'Ext' filesep 'ModelsData' filesep 'Cache'] ;
             
             this.UseDiskCaching = options.UseDiskCaching;
             this.DiskCachingRoot = options.DiskCachingRoot;
@@ -1359,8 +1361,8 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     this.disp_msg(['Created caching folder:' this.Sys.DiskCachingFolder],2);
                 end
             else
-                This.DiskCaching='';
-                error(['Couldn''t create caching folder'  This.Sys.DiskCachingFolder '.']);
+                this.Sys.DiskCachingFolder='';
+                error(['Couldn''t create caching folder'  this.Sys.DiskCachingFolder '.']);
             end
         end
         
