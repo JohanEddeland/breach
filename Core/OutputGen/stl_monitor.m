@@ -92,7 +92,7 @@ classdef stl_monitor < req_monitor
             this.rob_map = containers.Map;
             phi = this.formula;
 
-            [~,~,this.rob_map] = STL_Eval_IO_Rob(this.Sys, phi, this.P, this.P.traj{1}, 'out', 'rel', this.rob_map);
+            [~,~,this.rob_map] = STL_Eval_IO_Rob(this.Sys, phi, this.P0, this.P.traj{1}, 'out', 'rel', this.rob_map);
             this.diag_map = containers.Map;
             
             this.formula_names_map = containers.Map;
