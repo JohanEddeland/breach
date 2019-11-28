@@ -562,7 +562,7 @@ classdef BreachSamplesPlot < handle
                 end
                                 
             end
-            
+            leg = {};                
             plot_this();
             
             function plot_param()
@@ -646,37 +646,43 @@ classdef BreachSamplesPlot < handle
             
             
             function plot_num()
-                leg = {};
+                
                 if has_pos&&~isempty(xdata_pos)
-                    if has_vac&&~isempty(xdata_vac)
-                        ydata_pos = this.data.pos_pts.v_num_pos;
-                        ydata_vac = this.data.vac_pts.v_num_vac;                        
-                        this.pos_plot = bar(xdata_pos, ydata_pos ,0.3,'g');
-                        hold on                                            
-                        this.vac_plot = bar(xdata_vac+.05, ydata_vac ,0.2,'m');                        
-                        leg = {'#Satisfied', '#Vacuous Sat.'};
-                    else
-                        ydata_pos = this.data.pos_pts.v_num_pos;
-                        this.pos_plot = bar(xdata_pos, ydata_pos ,0.3,'g');
-                        hold on                                            
-                        leg = {'#Satisfied'};
-                    end
+                    bar_pos()
                 end
                 
-                hold on;
-                grid on;
                 if has_neg&&~isempty(xdata_neg)
-                    ydata_neg = this.data.neg_pts.v_num_neg;
-                    this.neg_plot = bar(xdata_neg, ydata_neg ,0.3,'r');
-                    %set(gca, 'YLim', [min(ydata_neg)-.1, max(ydata_pos)+.1],  'Ytick', ceil(min(ydata_neg)-.1):1:floor(max(ydata_pos)+.1));
-                    leg = [leg {'#Falsified'}];
+                    bar_neg();
                 end
+                
+                grid on;
                 xlabel(this.x_axis, 'Interpreter', 'None');
                 ylabel('Num. requirement falsified/satisfied');
                 set(gca, 'XTick', 1:numel(this.data.all_pts.idx));
                 legend(leg);
             end
             
+            function bar_pos()
+                if has_vac&&~isempty(xdata_vac)
+                    ydata_pos = this.data.pos_pts.v_num_pos;
+                    ydata_vac = this.data.vac_pts.v_num_vac;
+                    this.pos_plot = bar([xdata_pos xdata_pos(end)+1], [ydata_pos nan] ,0.5,'g');
+                    hold on
+                    this.vac_plot = bar([xdata_vac xdata_vac(end)+1]+.1, [ydata_vac nan],0.4,'m');
+                    leg = {'#Satisfied', '#Vacuous Sat.'};
+                else
+                    ydata_pos = this.data.pos_pts.v_num_pos;
+                    this.pos_plot = bar([xdata_pos xdata_pos(end)+1] , [ydata_pos nan] ,0.5,'g');
+                    hold on
+                    leg =[leg {'#Satisfied'}];
+                end
+            end
+            
+            function bar_neg()
+                ydata_neg = this.data.neg_pts.v_num_neg;
+                this.neg_plot = bar([xdata_neg xdata_neg(end)+1], [ydata_neg nan] ,0.5,'r');                
+                leg = [leg {'#Falsified'}];                
+            end            
             
             function plot3_num()
                 if has_pos
