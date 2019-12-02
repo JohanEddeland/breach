@@ -238,25 +238,29 @@ classdef BreachRequirement < BreachTraceSystem
                     % we change the global variable. 
                     % If there is only 1, objToUse has been initiated
                     % elsewhere. 
-                    fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction]);
+                    fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction '\n']);
                     objToUse = thisObjFunction;
                 end
-                tic
+                startTimeOfAll = tic;
                 for it = 1:num_traj
+                    currentTime = datestr(now, 'HH:MM:ss');
+                    fprintf(['*** START traj ' num2str(it) '/' num2str(num_traj) ' at ' currentTime '\n']);
                     if any(traces_vals_precond(it,:)<0)
                         traces_vals( it, :, objFunctionCounter)  = NaN;
                     else
                         time = this.P.traj{it}.time;
                         for ipre = 1:numel(this.req_monitors)
+                            startTimeOfReq = tic;
                             req = this.req_monitors{ipre};
                             [traces_vals(it, ...
                                          ipre,objFunctionCounter), traces_vals_vac(it, ipre,objFunctionCounter)]  = eval_req(this,req,it);
+                            fprintf(['  Finished req ' num2str(ipre) '/' numel(this.req_monitors) ' in ' num2str(toc(startTimeOfReq)) 's\n']);
                         end
                     end
                 end
                 
                 if numel(objFunctions) > 1
-                    fprintf([' (time: ' num2str(toc) 's)\n']);
+                    fprintf(['TOTAL time: ' num2str(toc(startTimeOfAll)) 's\n']);
                 end
             end
             this.traces_vals_precond = traces_vals_precond;
