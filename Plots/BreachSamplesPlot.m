@@ -105,8 +105,7 @@ classdef BreachSamplesPlot < handle
             
             this.data.all_pts.idx = all_pts;
             
-            %% robustnesses of each requirement
-            
+            %% robustnesses of each requirement            
             if isa(this.BrSet, 'BreachRequirement')
                 this.data.req_names = {};
                 for ir = 1:numel(this.BrSet.req_monitors)
@@ -604,8 +603,7 @@ classdef BreachSamplesPlot < handle
                 ylabel(this.y_axis, 'Interpreter', 'None');
                 zlabel(this.z_axis, 'Interpreter', 'None');
             end
-            
-            
+                        
             function plot_sum()
                 if has_pos&&~isempty(xdata_pos)
                     this.pos_plot = plot(xdata_pos,ydata_pos,'.g', 'MarkerSize', 20);
@@ -643,8 +641,7 @@ classdef BreachSamplesPlot < handle
                 ylabel(this.y_axis, 'Interpreter', 'None');
                 zlabel('Cumulative satisfactions/violations');
             end
-            
-            
+                        
             function plot_num()
                 
                 if has_pos&&~isempty(xdata_pos)
@@ -658,7 +655,7 @@ classdef BreachSamplesPlot < handle
                 grid on;
                 xlabel(this.x_axis, 'Interpreter', 'None');
                 ylabel('Num. requirement falsified/satisfied');
-                set(gca, 'XTick', 1:numel(this.data.all_pts.idx));
+                set(gca, 'XTick', 1:numel(this.data.all_pts.idx), 'XLim', [0 numel(this.data.all_pts.idx)+1]);
                 legend(leg);
             end
             
@@ -790,26 +787,33 @@ classdef BreachSamplesPlot < handle
             end
             
             top_y = uimenu(cm, 'Label', ['Change y-axis']);
+                        
             uimenu(top_y, 'Label', 'Cumulative sums of robustness','Callback',@(o,e)(this.set_y_axis('sum')));
             uimenu(top_y, 'Label', 'Number of Sat/False req.','Callback',@(o,e)(this.set_y_axis('num')));
-            
-            
+            top_req = uimenu(top_y, 'Label', 'Requirement');
+            top_var = uimenu(top_y, 'Label', 'Variable');
+                       
             for ip = 1:numel(this.data.variables)
-                uimenu(top_y, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_y_axis(this.data.variables{ip})));
+                uimenu(top_var, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_y_axis(this.data.variables{ip})));
             end
             for ir = 1:numel(this.data.req_names)
-                uimenu(top_y, 'Label', this.data.req_names{ir},'Callback',@(o,e)(this.set_y_axis(this.data.req_names{ir})));
+                uimenu(top_req, 'Label', this.data.req_names{ir},'Callback',@(o,e)(this.set_y_axis(this.data.req_names{ir})));
             end
             
             
             top_z = uimenu(cm, 'Label', ['Change z-axis']);
             uimenu(top_z, 'Label', none_z{1},'Callback',@(o,e)(this.set_z_axis(none_z{1})));
             uimenu(top_z, 'Label', 'sum','Callback',@(o,e)(this.set_z_axis('sum')));
+            
+            top_req_z = uimenu(top_z, 'Label', 'Requirement');
+            top_var_z = uimenu(top_z, 'Label', 'Variable');
+
+            
             for ip = 1:numel(this.data.variables)
-                uimenu(top_z, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_z_axis(this.data.variables{ip})));
+                uimenu(top_var_z, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_z_axis(this.data.variables{ip})));
             end
             for ir = 1:numel(this.data.req_names)
-                uimenu(top_z, 'Label', this.data.req_names{ir},'Callback',@(o,e)(this.set_z_axis(this.data.req_names{ir})));
+                uimenu(top_req_z, 'Label', this.data.req_names{ir},'Callback',@(o,e)(this.set_z_axis(this.data.req_names{ir})));
             end
             
             set(cursor_h, 'UIContextMenu', cm);
