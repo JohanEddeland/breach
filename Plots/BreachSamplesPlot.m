@@ -782,40 +782,126 @@ classdef BreachSamplesPlot < handle
             end
             top_x = uimenu(cm, 'Label', ['Change x-axis']);
             uimenu(top_x, 'Label', 'idx','Callback',@(o,e)(this.set_x_axis('idx')));
-            for ip = 1:numel(this.data.variables)
-                uimenu(top_x, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_x_axis(this.data.variables{ip})));
-            end
             
-            top_y = uimenu(cm, 'Label', ['Change y-axis']);
-                        
+            if numel(this.data.variables)<10
+                top_var = uimenu(top_x, 'Label', 'Variable');
+                for ip = 1:numel(this.data.variables)
+                    uimenu(top_var, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_x_axis(this.data.variables{ip})));
+                end
+            else
+                num_var_in_menu = 0;                   
+                top_var = [];
+                some_var_left = true;
+                while some_var_left                    
+                    var_idx_start = num_var_in_menu+1;
+                    var_idx_end= min(numel(this.data.variables),num_var_in_menu+10);
+                    some_var_left = (var_idx_end ~= numel(this.data.variables));
+                    top_var(end+1) = uimenu(top_x, 'Label', sprintf(['Variable (%d - %d)'],var_idx_start, var_idx_end));
+                    for ip = var_idx_start:var_idx_end
+                        uimenu(top_var(end), 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_x_axis(this.data.variables{ip})));
+                    end                    
+                    num_var_in_menu = var_idx_end;
+                end
+                
+            end
+                                   
+            top_y = uimenu(cm, 'Label', ['Change y-axis']);                        
             uimenu(top_y, 'Label', 'Cumulative sums of robustness','Callback',@(o,e)(this.set_y_axis('sum')));
             uimenu(top_y, 'Label', 'Number of Sat/False req.','Callback',@(o,e)(this.set_y_axis('num')));
-            top_req = uimenu(top_y, 'Label', 'Requirement');
-            top_var = uimenu(top_y, 'Label', 'Variable');
-                       
-            for ip = 1:numel(this.data.variables)
-                uimenu(top_var, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_y_axis(this.data.variables{ip})));
-            end
-            for ir = 1:numel(this.data.req_names)
-                uimenu(top_req, 'Label', this.data.req_names{ir},'Callback',@(o,e)(this.set_y_axis(this.data.req_names{ir})));
+      
+            if numel(this.data.variables)<10
+                top_var = uimenu(top_y, 'Label', 'Variable');
+                for ip = 1:numel(this.data.variables)
+                    uimenu(top_var, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_y_axis(this.data.variables{ip})));
+                end
+            else
+                num_var_in_menu = 0;                   
+                top_var = [];
+                some_var_left = true;
+                while some_var_left                    
+                    var_idx_start = num_var_in_menu+1;
+                    var_idx_end= min(numel(this.data.variables),num_var_in_menu+10);
+                    some_var_left = (var_idx_end ~= numel(this.data.variables));
+                    top_var(end+1) = uimenu(top_y, 'Label', sprintf(['Variable (%d - %d)'],var_idx_start, var_idx_end));
+                    for ip = var_idx_start:var_idx_end
+                        uimenu(top_var(end), 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_y_axis(this.data.variables{ip})));
+                    end                    
+                    num_var_in_menu = var_idx_end;
+                end
+                
             end
             
+            
+            lim = 6;
+            if numel(this.data.req_names)<lim
+                top_req_y = uimenu(top_y, 'Label', 'Requirement');
+                for ip = 1:numel(this.data.req_names)
+                    uimenu(top_req_y, 'Label', this.data.req_names{ip},'Callback',@(o,e)(this.set_y_axis(this.data.req_names{ip})));
+                end
+            else
+                num_req_in_menu = 0;                   
+                top_req_y = [];
+                some_req_left = true;                
+                while some_req_left                    
+                    req_idx_start = num_req_in_menu+1;
+                    req_idx_end= min(numel(this.data.req_names),num_req_in_menu+lim);
+                    some_req_left = (req_idx_end ~= numel(this.data.req_names));
+                    top_req_y(end+1) = uimenu(top_y, 'Label', sprintf(['Requirement (%d - %d)'],req_idx_start, req_idx_end));
+                    for ip = req_idx_start:req_idx_end
+                        uimenu(top_req_y(end), 'Label', this.data.req_names{ip},'Callback',@(o,e)(this.set_y_axis(this.data.req_names{ip})));
+                    end                    
+                    num_req_in_menu = req_idx_end;
+                end                
+            end           
             
             top_z = uimenu(cm, 'Label', ['Change z-axis']);
             uimenu(top_z, 'Label', none_z{1},'Callback',@(o,e)(this.set_z_axis(none_z{1})));
             uimenu(top_z, 'Label', 'sum','Callback',@(o,e)(this.set_z_axis('sum')));
             
-            top_req_z = uimenu(top_z, 'Label', 'Requirement');
-            top_var_z = uimenu(top_z, 'Label', 'Variable');
-
-            
-            for ip = 1:numel(this.data.variables)
-                uimenu(top_var_z, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_z_axis(this.data.variables{ip})));
+            if numel(this.data.variables)<10
+                top_var_z = uimenu(top_z, 'Label', 'Variable');
+                for ip = 1:numel(this.data.variables)
+                    uimenu(top_var_z, 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_z_axis(this.data.variables{ip})));
+                end
+            else
+                num_var_in_menu = 0;                   
+                top_var_z = [];
+                some_var_left = true;
+                while some_var_left                    
+                    var_idx_start = num_var_in_menu+1;
+                    var_idx_end= min(numel(this.data.variables),num_var_in_menu+10);
+                    some_var_left = (var_idx_end ~= numel(this.data.variables));
+                    top_var_z(end+1) = uimenu(top_z, 'Label', sprintf(['Variable (%d - %d)'],var_idx_start, var_idx_end));
+                    for ip = var_idx_start:var_idx_end
+                        uimenu(top_var_z(end), 'Label', this.data.variables{ip},'Callback',@(o,e)(this.set_z_axis(this.data.variables{ip})));
+                    end                    
+                    num_var_in_menu = var_idx_end;
+                end
+                
             end
-            for ir = 1:numel(this.data.req_names)
-                uimenu(top_req_z, 'Label', this.data.req_names{ir},'Callback',@(o,e)(this.set_z_axis(this.data.req_names{ir})));
-            end
             
+            lim = 6; 
+            if numel(this.data.req_names)<lim
+                top_req_z = uimenu(top_z, 'Label', 'Requirement');
+                for ip = 1:numel(this.data.req_names)
+                    uimenu(top_req_z, 'Label', this.data.req_names{ip},'Callback',@(o,e)(this.set_z_axis(this.data.req_names{ip})));
+                end
+            else
+                num_req_in_menu = 0;                   
+                top_req_z = [];
+                some_req_left = true;                
+                while some_req_left                    
+                    req_idx_start = num_req_in_menu+1;
+                    req_idx_end= min(numel(this.data.req_names),num_req_in_menu+lim);
+                    some_req_left = (req_idx_end ~= numel(this.data.req_names));
+                    top_req_z(end+1) = uimenu(top_z, 'Label', sprintf(['Requirement (%d - %d)'],req_idx_start, req_idx_end));
+                    for ip = req_idx_start:req_idx_end
+                        uimenu(top_req_z(end), 'Label', this.data.req_names{ip},'Callback',@(o,e)(this.set_z_axis(this.data.req_names{ip})));
+                    end                    
+                    num_req_in_menu = req_idx_end;
+                end                
+            end
+                                                
             set(cursor_h, 'UIContextMenu', cm);
             set(this.ax, 'UIContextMenu', cm);
             set(this.Fig, 'UIContextMenu', cm);
