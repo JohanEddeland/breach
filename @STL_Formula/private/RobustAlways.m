@@ -65,25 +65,13 @@ end
 rho = min(valarray(1:end));
 
 if rho < 0
-    % The spec fails - we will integrate over the faulty intervals
-    %     timesLessThanZero = time_values(valarray < 0);
-    %     valLessThanZero = valarray(valarray < 0);
-    %
-    %     partialRob = 0; % Summing variable
-    %     for k = 1:numel(timesLessThanZero)-1
-    %         partialRob = partialRob + valLessThanZero(k)*(timesLessThanZero(k+1) - timesLessThanZero(k));
-    %     end
-    partialRob = 0;
-    for k = 1:numel(valarray)-1
-        if valarray(k) < 0
-            partialRob = partialRob + valarray(k)*(time_values(k+1) - time_values(k));
-        end
-    end
-    
-    % Add the last time point as well (if it fails)
-    if valarray(end) < 0
-        partialRob = partialRob + valarray(end)*(time_values(end) - time_values(end-1));
-    end
+    % We are trying to speed up the process using vectorized calculations!
+    timeDiff = diff(time_values);
+    timeDiff = [timeDiff timeDiff(end)]; % Add last timeDiff element again
+    timeDiffLessThanZero = timeDiff(valarray < 0);
+    valLessThanZero = valarray(valarray < 0);
+    partialRobNew = timeDiffLessThanZero.*valLessThanZero;
+    partialRob = sum(partialRobNew);
     
     % Assert that the partialRob is negative - otherwise our additive
     % semantics are not sound with regards to the standard semantics
@@ -95,17 +83,12 @@ else
         % Avoid division by zero: Just set the robustness to zero
         partialRob = 0;
     else
-        % Do the actual calculations
-        % Note that all values in valarray are strictly positive
-        partialRob = 0;
-        for k = 1:numel(valarray)-1
-            partialRob = partialRob + (1/valarray(k))*(time_values(k+1) - time_values(k));
-        end
-        % Add the last time point as well
-        partialRob = partialRob + (1/valarray(end))*(time_values(end) - time_values(end-1));
-        
-        % Calculate the reciprocal
-        partialRob = 1/partialRob;
+        % We are trying to speed up the process using vectorized calculations!
+        timeDiff = diff(time_values);
+        timeDiff = [timeDiff timeDiff(end)]; % Add last timeDiff element again
+        reciprocalValues = 1./valarray;
+        partialRobNew = sum(timeDiff.*reciprocalValues);
+        partialRob = 1/partialRobNew;
     end
 end
 end
