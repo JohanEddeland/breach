@@ -587,6 +587,9 @@ classdef BreachProblem < BreachStatus
                     if nargin < 2
                         % No startSample given
                         startSample = testronGetNewSample([this.lb this.ub]);
+                    else
+                        % Start sample is already given in the variable
+                        % startSample as an input to this function
                     end
                     x = startSample';
                     % starting points in [u,v]
