@@ -203,13 +203,15 @@ classdef stl_monitor < req_monitor
                 end
             end
             samples = implicant.getSignificantSamples();
-            for j=1:length(samples)
-                sample = samples(j);
+            %for j=1:length(samples)
+            if ~isempty(samples)   
+                sample = samples(1);
                 hold on;
-                plot(sample.time, sample.value, 'x');
+                plot(sample.time, sample.value, 'x', 'Color',color);            
             end
             t0 = this.P.traj{1}.time;
             set(ax, 'XLim', [0 t0(end)]);
+            
         end
         
         function init_tXp(this, t, X, p)
