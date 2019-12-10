@@ -245,6 +245,7 @@ classdef BreachRequirement < BreachTraceSystem
                 for it = 1:num_traj
                     currentTime = datestr(now, 'HH:MM:ss');
                     fprintf(['*** START traj ' num2str(it) '/' num2str(num_traj) ' at ' currentTime '\n']);
+                    execTimesForThisReq = -Inf(1, numel(this.req_monitors));
                     if any(traces_vals_precond(it,:)<0)
                         traces_vals( it, :, objFunctionCounter)  = NaN;
                     else
@@ -254,9 +255,24 @@ classdef BreachRequirement < BreachTraceSystem
                             req = this.req_monitors{ipre};
                             [traces_vals(it, ...
                                          ipre,objFunctionCounter), traces_vals_vac(it, ipre,objFunctionCounter)]  = eval_req(this,req,it);
-                            fprintf(['  Finished req ' num2str(ipre) '/' numel(this.req_monitors) ' in ' num2str(toc(startTimeOfReq)) 's\n']);
+                            %fprintf(['  Finished req ' num2str(ipre) '/' numel(this.req_monitors) ' in ' num2str(toc(startTimeOfReq)) 's\n']);
+                            execTimesForThisReq(ipre) = toc(startTimeOfReq);
                         end
                     end
+                    % Finished the traj
+                    % Display the nSlowest slowest specifications
+                    nSlowest = 5;
+                    fprintf(['  Finished traj, ' num2str(nSlowest) ' slowest specs (out of ' num2str(numel(this.req_monitors)) '): ']);
+                    [sortedExecTimes, sortedSpecIndex] = sort(execTimesForThisReq, 'descend');
+                    for slowestCounter = 1:nSlowest
+                        thisIndex = sortedSpecIndex(slowestCounter);
+                        thisTime = sortedExecTimes(slowestCounter);
+                        fprintf([num2str(thisIndex) ' (' num2str(thisTime) 's)']);
+                        if slowestCounter < nSlowest
+                            fprintf(', ');
+                        end
+                    end
+                    fprintf('\n');
                 end
                 
                 if numel(objFunctions) > 1
