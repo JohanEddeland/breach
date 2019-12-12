@@ -179,8 +179,10 @@ classdef BreachSignalsPlot < handle
                         lc(end+1) = c(idx);
                         patch_idx = numel(lc);
                         st{end+1} = 'F';
-                        if isequal(c(idx).Color, [1 0 0])
+                        if isequal(c(idx).FaceColor, [1 0 0])
                             status = 0;
+                        else
+                            status = 1; 
                         end
                     end
                     num_patch = num_patch+1;
