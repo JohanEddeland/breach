@@ -262,14 +262,16 @@ classdef BreachRequirement < BreachTraceSystem
                     % Finished the traj
                     % Display the nSlowest slowest specifications
                     nSlowest = 5;
-                    fprintf(['  Finished traj, ' num2str(nSlowest) ' slowest specs (out of ' num2str(numel(this.req_monitors)) '): ']);
-                    [sortedExecTimes, sortedSpecIndex] = sort(execTimesForThisReq, 'descend');
-                    for slowestCounter = 1:nSlowest
-                        thisIndex = sortedSpecIndex(slowestCounter);
-                        thisTime = sortedExecTimes(slowestCounter);
-                        fprintf([num2str(thisIndex) ' (' num2str(thisTime) 's)']);
-                        if slowestCounter < nSlowest
-                            fprintf(', ');
+                    if numel(execTimesForThisReq) > nSlowest
+                        fprintf(['  Finished traj, ' num2str(nSlowest) ' slowest specs (out of ' num2str(numel(this.req_monitors)) '): ']);
+                        [sortedExecTimes, sortedSpecIndex] = sort(execTimesForThisReq, 'descend');
+                        for slowestCounter = 1:nSlowest
+                            thisIndex = sortedSpecIndex(slowestCounter);
+                            thisTime = sortedExecTimes(slowestCounter);
+                            fprintf([num2str(thisIndex) ' (' num2str(thisTime) 's)']);
+                            if slowestCounter < nSlowest
+                                fprintf(', ');
+                            end
                         end
                     end
                     fprintf('\n');
