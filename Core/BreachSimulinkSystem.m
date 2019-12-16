@@ -807,6 +807,10 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             if strcmp(fastRestart, 'off')
                 clear mex;
             end
+            
+            % Clear the temp Simulink storage, otherwise a huge temporary
+            % file (like 100GB) will be created for many runs. 
+            Simulink.sdi.clear;
             % END JOHAN ADDED
             
             mdl = Sys.mdl;
