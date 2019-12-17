@@ -1,7 +1,5 @@
 *.asv
 *.autosave
-*.mexmaci64
-*.mexw64
 *.o
 *.obj
 *_breach.slx
