@@ -321,7 +321,8 @@ classdef BreachSet < BreachStatus
                 if this.hasTraj()
                     traj= this.P.traj;
                     saved_traj = true;
-                 end
+                    saved_Xf = this.P.Xf;
+                end
                 idx = N2Nn(2, [num_pts num_values]);
                 old_pts = this.P.pts;
                 this.P = Sselect(SPurge(this.P),1);
@@ -330,6 +331,7 @@ classdef BreachSet < BreachStatus
                 this.P.selected = zeros(1, size(idx, 2));
                 if saved_traj
                     this.P.traj = traj;
+                    this.P.Xf = saved_Xf;
                 end
                 this.P = SetParam(this.P, params, values(:, idx(2,:)));
             else  % legacy, i.e., not combine version

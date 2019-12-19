@@ -110,7 +110,7 @@ classdef BreachRequirement < BreachTraceSystem
             this.P = SPurge(this.P);
             if size(this.P.pts,2)>1
                this.P.pts = unique(this.P.pts', 'rows')';
-               this.P.epsi = this.P.epsi(:,1:size(this.P.pts,2));               
+               this.P.epsi = this.P.epsi(:,1:size(this.P.pts,2));                  
             end
             this.P.selected = zeros(1, size(this.P.pts,2));
             this.P = Preset_traj_ref(this.P);
@@ -185,38 +185,45 @@ classdef BreachRequirement < BreachTraceSystem
         function [traces_vals, traces_vals_precond, traces_vals_vac] =evalAllTraces(this,varargin)
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
-            this.getBrSet(varargin{:});
-            num_traj = numel(this.P.traj);
-            traces_vals = nan(num_traj, numel(this.req_monitors));
-            traces_vals_vac = nan(num_traj, numel(this.req_monitors));                    
-            traces_vals_precond = nan(num_traj, numel(this.precond_monitors));
-            
-            % eval pre conditions
-            if ~isempty(this.precond_monitors)
+            new= this.getBrSet(varargin{:});
+            if new
+                num_traj = numel(this.P.traj);
+                traces_vals = nan(num_traj, numel(this.req_monitors));
+                traces_vals_vac = nan(num_traj, numel(this.req_monitors));
+                traces_vals_precond = nan(num_traj, numel(this.precond_monitors));
+                
+                % eval pre conditions
+                if ~isempty(this.precond_monitors)
+                    for it = 1:num_traj
+                        for ipre = 1:numel(this.precond_monitors)
+                            req = this.precond_monitors{ipre};
+                            traces_vals_precond(it, ipre)  = eval_req(this,req,it);
+                        end
+                    end
+                end
+                
+                % eval requirement
                 for it = 1:num_traj
-                    for ipre = 1:numel(this.precond_monitors)
-                        req = this.precond_monitors{ipre};
-                        traces_vals_precond(it, ipre)  = eval_req(this,req,it);
+                    if any(traces_vals_precond(it,:)<0)
+                        traces_vals(it, :)  = NaN;
+                    else
+                        time = this.P.traj{it}.time;
+                        for ipre = 1:numel(this.req_monitors)
+                            req = this.req_monitors{ipre};
+                            [traces_vals(it, ipre), traces_vals_vac(it, ipre)]  = eval_req(this,req,it);
+                        end
                     end
                 end
+                this.traces_vals_precond = traces_vals_precond;
+                this.traces_vals_vac = traces_vals_vac;
+                this.traces_vals = traces_vals;
+            else
+                traces_vals_precond = this.traces_vals_precond;
+                traces_vals_vac = this.traces_vals_vac;
+                traces_vals = this.traces_vals;
+                
+                
             end
-            
-            % eval requirement
-            for it = 1:num_traj
-                if any(traces_vals_precond(it,:)<0)
-                    traces_vals(it, :)  = NaN;
-                else
-                    time = this.P.traj{it}.time;
-                    for ipre = 1:numel(this.req_monitors)
-                        req = this.req_monitors{ipre};
-                        [traces_vals(it, ipre), traces_vals_vac(it, ipre)]  = eval_req(this,req,it);
-                    end
-                end
-            end
-            this.traces_vals_precond = traces_vals_precond;
-            this.traces_vals_vac = traces_vals_vac;
-            this.traces_vals = traces_vals;
-                        
         end
         
         function F = PlotDiagnostics(this, idx_req_monitors, itraj)
@@ -701,10 +708,8 @@ classdef BreachRequirement < BreachTraceSystem
             summary = this.GetSummary(options.IncludeSignals, options.IncludeParams);
             if ~isempty(options.AddWorkflowNum);
                 summary.workflow = options.AddWorkflowNum;
-            end
-            
-            
-            
+            end            
+                        
             summary_filename = [folder_name filesep 'summary'];
             tr = this.ExportTraces(options.IncludeSignals, options.IncludeParams, 'WriteToFolder', [folder_name filesep 'traces']);
             summary.traces_list = cell(1,numel(tr));
@@ -852,7 +857,8 @@ classdef BreachRequirement < BreachTraceSystem
     %% Protected methods
     methods (Access=protected)
         
-        function  getBrSet(this, varargin)
+        function  new = getBrSet(this, varargin)
+            new = true;
             switch numel(varargin)
                 case 0   %  uses this
                     if ~isempty(this.BrSet)
@@ -922,8 +928,15 @@ classdef BreachRequirement < BreachTraceSystem
             if isa(B,'struct')   % reading one struct obtained from a SaveResult command
                 B = BreachTraceSystem(B);
             end  
-            
+                                                
             % We got B, checks whether it contains necessary signals
+            if isequal(B, this.BrSet)&&this.hasTraj() % same B and requirement traj computed
+                new= false;
+                return;
+            else
+                this.ResetEval(); 
+            end
+                            
             this.BrSet = B; 
             [ifound, ~, ifoundB, ~ ] = this.FindSignalsIdx(this.signals_in);
             if ~all(ifound|ifoundB)
@@ -932,7 +945,6 @@ classdef BreachRequirement < BreachTraceSystem
             end
             
             % checks parameters in B and in Req
-            this.BrSet = B;
             paramB = this.BrSet.GetParamList();
             idxR_paramR = this.P.DimX+2:this.P.DimP;
             paramR = this.P.ParamList(idxR_paramR);
@@ -940,7 +952,7 @@ classdef BreachRequirement < BreachTraceSystem
             idxB_paramR_in_B = FindParam(B.P, paramR_in_B);
             idxR_paramR_in_B = FindParam(this.P, paramR_in_B);
             paramR_wo_B = setdiff( paramR, paramB); % parameters in R that are not in B - need to be combined
-            
+                                    
             % if this has more than one value, needs to combine them with
             % those of B
             multiple_paramR_vals  = size(this.P.pts,2)>1;
@@ -998,17 +1010,10 @@ classdef BreachRequirement < BreachTraceSystem
             end
             
             B.Sim();
-            this.BrSet = B;
             
             % initialize or reset traces
             num_pts = size(B.P.pts,2);
-            
-            % Eval reset and recompute - not so much as Sim()
-            if this.hasTraj()
-                this.ResetParamSet();
-            end
-            this.P = Sselect(this.P,1);
-            
+                        
             if isfield(this.BrSet.P,'traj_ref')
                 itrajs = B.P.traj_ref;
             else
