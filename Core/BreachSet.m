@@ -2078,10 +2078,15 @@ classdef BreachSet < BreachStatus
         function Reset(this)
             % BreachSet.Reset()
             
-            this.P = Sselect(this.P,1);
+            this.P = Sselect(this.P,1);            
+            p_req  = this.P.pts(this.P.DimP+1:end,1);
+            
             this.P = CreateParamSet(this.P);
             try
                 this.P.pts = this.Sys.p;
+                if ~isempty(p_req)
+                   this.P.pts = [this.P.pts; p_req];
+                end
                 % Add property params
                 props = this.Specs.values;
                 for i=1:numel(props)
