@@ -45,7 +45,7 @@ classdef BreachSignalsPlot < handle
             if numel(this.Axes)>0
                 Xlim = get(this.Axes(1),'XLim');
             end
-            for ia = 1:num_ax_old;
+            for ia = 1:num_ax_old
                 if ia < pos
                     subplot(num_ax_old+1, 1, ia, this.Axes(ia))
                 else
@@ -137,7 +137,7 @@ classdef BreachSignalsPlot < handle
            
         function PlotDiagnostics(this, req)
             req.plot_full_diagnostics(this);
-            for iax = 1:numel(this.Axes)
+            for ia = 1:numel(this.Axes)
                 this.update_legend(this.Axes(ia));
             end            
         end

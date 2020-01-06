@@ -704,6 +704,9 @@ classdef BreachProblem < BreachStatus
         %% Objective wrapper        
         
         function [obj, cval] = objective_fn(this,x)
+            % reset this.Spec
+            this.Spec.ResetEval();
+       
             % For falsification, default objective_fn is mostly robust satisfaction of the least
             this.robust_fn(x);
             robs = this.Spec.traces_vals;
@@ -739,8 +742,6 @@ classdef BreachProblem < BreachStatus
         
         
         function [fval, cval] = objective_wrapper(this,x)
-            % reset this.Spec
-            this.Spec.ResetEval();
             
             % objective_wrapper calls the objective function and wraps some bookkeeping                        
              if size(x,1) ~= numel(this.params)
