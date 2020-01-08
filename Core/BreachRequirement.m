@@ -174,8 +174,11 @@ classdef BreachRequirement < BreachTraceSystem
             % conjunction)
             
             % Collect traces from context and eval them
-            [traces_vals, traces_vals_precond, traces_vals_vac] = this.evalAllTraces(varargin{:});
-            
+            if isfield(this.Sys, 'use_parallel')&&this.Sys.use_parallel
+                [traces_vals, traces_vals_precond, traces_vals_vac] = this.parevalAllTraces(varargin{:});
+            else
+                [traces_vals, traces_vals_precond, traces_vals_vac] = this.evalAllTraces(varargin{:});
+            end
             % A BreachRequirement must return a single value
             global_val = min(min(traces_vals));
             global_precond_val = min(min(traces_vals_precond));
@@ -207,9 +210,52 @@ classdef BreachRequirement < BreachTraceSystem
                     if any(traces_vals_precond(it,:)<0)
                         traces_vals(it, :)  = NaN;
                     else
-                        time = this.P.traj{it}.time;
                         for ipre = 1:numel(this.req_monitors)
                             req = this.req_monitors{ipre};
+                            [traces_vals(it, ipre), traces_vals_vac(it, ipre)]  = eval_req(this,req,it);
+                        end
+                    end
+                end
+                this.traces_vals_precond = traces_vals_precond;
+                this.traces_vals_vac = traces_vals_vac;
+                this.traces_vals = traces_vals;
+            else
+                traces_vals_precond = this.traces_vals_precond;
+                traces_vals_vac = this.traces_vals_vac;
+                traces_vals = this.traces_vals;
+            end
+        end
+        
+        function [traces_vals, traces_vals_precond, traces_vals_vac] =parevalAllTraces(this,varargin)
+            % BreachRequirement.evalAllTraces collect traces and apply
+            % evalTrace
+            new= this.getBrSet(varargin{:});
+            if new
+                num_traj = numel(this.P.traj);
+                traces_vals = nan(num_traj, numel(this.req_monitors));
+                traces_vals_vac = nan(num_traj, numel(this.req_monitors));
+                traces_vals_precond = nan(num_traj, numel(this.precond_monitors));
+                
+                % eval pre conditions
+                num_precond_monitors = numel(this.precond_monitors);
+                if ~isempty(this.precond_monitors)
+                    for ipre = 1:num_precond_monitors
+                        req = this.precond_monitors{ipre};
+                        parfor it = 1:num_traj
+                            traces_vals_precond(it, ipre)  = eval_req(this,req,it);
+                        end
+                    end
+                end
+                
+                
+                % eval requirement
+                num_monitors = numel(this.req_monitors);
+                for ipre = 1:num_monitors
+                    req = this.req_monitors{ipre};                            
+                    parfor it = 1:num_traj
+                        if any(traces_vals_precond(it,:)<0)
+                            traces_vals(it, ipre)  = NaN;
+                        else
                             [traces_vals(it, ipre), traces_vals_vac(it, ipre)]  = eval_req(this,req,it);
                         end
                     end
@@ -1061,7 +1107,45 @@ classdef BreachRequirement < BreachTraceSystem
             end
             
         end
- 
+
+         
+        function  [val, val_vac, traj] = pareval_req(this, req, traj, it)
+        % parallel version     
+            
+            val_vac = NaN;            
+            time = traj{it}.time;                        
+            idx_sig_req = FindParam(this.P, req.signals);
+            idx_par_req = FindParam(this.P, req.params);
+            p_in = traj.param(1, idx_par_req)';
+            if ~isempty(req.signals_in)
+                Xin = this.GetSignalValues(req.signals_in, it);
+            else
+                Xin = [];
+            end
+            % checks if a signal is missing (need postprocess)
+            while any(isnan(Xin))
+                % should do only one iteration if postprocessing function are
+                % properly ordered following dependency
+                for ipp = 1:numel(this.postprocess_signal_gens)
+                    psg  = this.postprocess_signal_gens{ipp};
+                    Xpp_in = this.GetSignalValues(psg.signals_in, it);
+                    idx_param_pp_in = FindParam(this.P, psg.params);
+                    idx_Xout = FindParam(this.P, psg.signals);
+                    param_pp_in = this.P.traj{it}.param(1, idx_param_pp_in);
+                    [~, this.P.traj{it}.X(idx_Xout,:)]  = this.postprocessSignals(this.postprocess_signal_gens{ipp},time, Xpp_in, param_pp_in);
+                end
+                Xin = this.GetSignalValues(req.signals_in, it);
+            end
+            if ~isempty(idx_sig_req)
+                [val ,traj.time, Xout, val_vac] ...
+                    = this.evalRequirement(req, time, Xin, p_in);
+                traj.X( idx_sig_req,:) = Xout;
+            else
+                [val, ~, ~, val_vac]  = this.evalRequirement(req, time, Xin, p_in);
+            end
+        end
+
+        
         function  [val, val_vac] = eval_req(this, req, it)
             val_vac = NaN;
             
