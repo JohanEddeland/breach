@@ -221,8 +221,6 @@ classdef BreachRequirement < BreachTraceSystem
                 traces_vals_precond = this.traces_vals_precond;
                 traces_vals_vac = this.traces_vals_vac;
                 traces_vals = this.traces_vals;
-                
-                
             end
         end
         
@@ -503,18 +501,23 @@ classdef BreachRequirement < BreachTraceSystem
         end
                 
         %% Display
-        function st = disp(this)
+        function varargout = disp(this)
             signals_in_st = cell2mat(cellfun(@(c) (['''' c ''', ']), this.signals_in, 'UniformOutput', false));
             signals_in_st = ['{' signals_in_st(1:end-2) '}'];
-            st = sprintf('BreachRequirement object for signal(s): %s\n', signals_in_st);
-            if nargout == 0
-                fprintf(st);
-            end
             summary = this.GetStatement();
-            disp(summary.statement);
+            
+            st = sprintf('BreachRequirement object for signal(s): %s. %s\n', signals_in_st, summary.statement);
+            
+            if nargout == 0
+                varargout = {};
+                fprintf(st);
+            else
+                varargout{1} = st;
+            end                      
+            
         end
         
-        function st = PrintFormula(this)
+        function varargout = PrintFormula(this)
             st = '';
             if ~isempty(this.precond_monitors)
                 st = sprintf([st '--- PRECONDITIONS ---\n']);
@@ -528,9 +531,17 @@ classdef BreachRequirement < BreachTraceSystem
                 st = [st  this.req_monitors{ifo}.disp() sprintf('\n')];
             end
             st = sprintf([st '\n']);
+        
+            if nargout == 0
+                varargout = {};
+                fprintf(st);
+            else
+                varargout{1} = st;
+            end
+               
         end
         
-        function st = PrintSignals(this)
+        function varargout = PrintSignals(this)
             st = sprintf('---- SIGNALS IN ----\n');
             for isig = 1:numel(this.signals_in)
                 sig = this.signals_in{isig};
@@ -560,20 +571,29 @@ classdef BreachRequirement < BreachTraceSystem
                 st = [st this.PrintAliases() '\n'];
             end
             
-            if nargout==0
+            if nargout == 0
+                varargout = {};
                 fprintf(st);
+            else
+                varargout{1} = st;
             end
+            
         end
         
-        function st = PrintAll(this)
+        function varargout = PrintAll(this)
             st =this.PrintFormula();
             st = sprintf([st this.PrintSignals()]);
             st = sprintf([st this.PrintParams()]);
-            if nargout==0
+            
+             if nargout == 0
+                varargout = {};
                 fprintf(st);
-            end
+            else
+                varargout{1} = st;
+             end
+             
         end
-        
+                                
         function  atts = get_signal_attributes(this, sig)
             % returns nature to be included in signature
             % should req_input, additional_test_data_signal,
@@ -747,7 +767,8 @@ classdef BreachRequirement < BreachTraceSystem
             end
         end
         
-        function st = PrintAliases(this)
+        function varargout = PrintAliases(this)
+            varargout = {};
             st='';
             if ~isempty(this.AliasMap)
                 st = sprintf('---- ALIASES ----\n');
@@ -784,12 +805,33 @@ classdef BreachRequirement < BreachTraceSystem
                 st = sprintf([st '\n']);
             end
             
-            if nargout==0&&~isempty(st)
-                fprintf(st);
+            if ~isempty(st)
+                if nargout == 0
+                    varargout = {};
+                    fprintf(st);
+                else
+                    varargout{1} = st;
+                end
             end
             
         end
+                           
+        function Concat(this,other,fast)
+            if nargin<=2
+                fast = false;
+            end
+            this.P = SConcat(this.P, other.P, fast);
+            % wild guess:
+            this.P = SetParam(this.P, this.P.DimX+1,this.P.traj_ref);
             
+            this.traces_vals_precond = [this.traces_vals_precond ; other.traces_vals_precond]; 
+            this.traces_vals = [this.traces_vals ; other.traces_vals]; 
+            this.traces_vals_vac = [this.traces_vals_vac ; other.traces_vals_vac]; 
+            
+            this.val= min([ this.val other.val]);
+            
+        end
+        
         function sigs_in = get_signals_in(this)
             sigs_in = {};
             all_sigs_in =  {};
@@ -832,24 +874,7 @@ classdef BreachRequirement < BreachTraceSystem
             end
             
         end
-        
-        
-        function Concat(this,other,fast)
-            if nargin<=2
-                fast = false;
-            end
-            this.P = SConcat(this.P, other.P, fast);
-            % wild guess:
-            this.P = SetParam(this.P, this.P.DimX+1,this.P.traj_ref);
-            
-            this.traces_vals_precond = [this.traces_vals_precond ; other.traces_vals_precond]; 
-            this.traces_vals = [this.traces_vals ; other.traces_vals]; 
-            this.traces_vals_vac = [this.traces_vals_vac ; other.traces_vals_vac]; 
-            
-            this.val= min([ this.val other.val]);
-            
-        end
-        
+
         
     end
     

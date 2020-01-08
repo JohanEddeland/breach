@@ -76,9 +76,7 @@ classdef BreachSignalsPlot < handle
             set(h,'Motion','horizontal','Enable','off');
         
         end
-               
-        
-        
+                              
         function DeleteAxes(this, pos)
             % DeleteAxe Remove axe  at specified position
             
@@ -133,15 +131,13 @@ classdef BreachSignalsPlot < handle
             this.update_legend(ax);
             
         end
-        
-           
+                   
         function PlotDiagnostics(this, req)
             req.plot_full_diagnostics(this);
             for ia = 1:numel(this.Axes)
                 this.update_legend(this.Axes(ia));
             end            
         end
-
         
         function int_false= HighlightFalse(this, sig, ax,inv)
             if ~exist('ax', 'var')||isempty(ax)
@@ -165,8 +161,7 @@ classdef BreachSignalsPlot < handle
             this.update_legend(ax);
             
         end
-      
-        
+              
           function update_legend(this, ax)
             l = legend('-DynamicLegend');
             c = flipud(get(ax, 'Children'));

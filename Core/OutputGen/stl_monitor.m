@@ -244,7 +244,7 @@ classdef stl_monitor < req_monitor
             end
         end
         
-        function st = disp(this)
+        function varargout = disp(this)
             phi = this.formula;
             st = sprintf(['%s := %s\n'], get_id(phi), disp(phi,1));
             
@@ -262,10 +262,14 @@ classdef stl_monitor < req_monitor
                 end
                 st = [st st_pred];
             end
-            
+     
             if nargout == 0
+                varargout = {};
                 fprintf(st);
-            end
+            else
+                varargout{1} = st;
+            end            
+            
         end
     end
    

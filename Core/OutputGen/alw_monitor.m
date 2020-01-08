@@ -34,7 +34,7 @@ classdef alw_monitor < stl_monitor
             v = min(Xout(end,:));
         end
         
-        function st = disp(this)
+        function varargout = disp(this)
             phi = this.subphi;
             st = sprintf(['%s := alw_%s (%s)\n'], this.formula_id,this.interval,  disp(phi,1));
             
@@ -45,10 +45,13 @@ classdef alw_monitor < stl_monitor
                     st =   sprintf([ st '%s := %s \n' ], get_id(predicates(ip)), disp(predicates(ip)));
                 end
             end
-            
+     
             if nargout == 0
+                varargout = {};
                 fprintf(st);
-            end
+            else
+                varargout{1} = st;
+            end            
      
         end
         
