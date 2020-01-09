@@ -253,11 +253,15 @@ classdef stl_monitor < req_monitor
                 preds = STL_ExtractPredicates(phi);
                 for ip = 1:numel(preds)
                     id = get_id(preds(ip));
-                    if STL_CheckID(id)
-                        if isempty(st_pred)
-                            st_pred = '  where \n';
+                    status(ip)= STL_CheckID(id);
+                end
+                
+                if any(status==1)
+                    st_pred = '  where \n';
+                    for ip = 1:numel(preds)
+                        if status(ip)==1
+                            st_pred =   sprintf([ st_pred '%s := %s \n' ],id,disp(preds(ip)));
                         end
-                        st_pred =   sprintf([ st_pred '%s := %s \n' ],id,disp(preds(ip)));
                     end
                 end
                 st = [st st_pred];

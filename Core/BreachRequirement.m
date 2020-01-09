@@ -594,11 +594,14 @@ classdef BreachRequirement < BreachTraceSystem
                 st = [st sprintf('%s %s\n', sig, this.get_signal_attributes_string(sig))];
             end
             st = sprintf([st '\n']);
-            st= sprintf([st '---- SIGNALS  OUT ----\n']);
-            for isig = 1:this.P.DimX
-                st = [st sprintf('%s %s\n', this.P.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}))];
+            
+            if this.P.DimX>0
+                st= sprintf([st '---- SIGNALS  OUT ----\n']);
+                for isig = 1:this.P.DimX
+                    st = [st sprintf('%s %s\n', this.P.ParamList{isig}, this.get_signal_attributes_string(this.P.ParamList{isig}))];
+                end
+                st = sprintf([ st '\n']);
             end
-            st = sprintf([ st '\n']);
             
             if ~isempty(this.postprocess_signal_gens)
                 for iog = 1:numel(this.postprocess_signal_gens)
