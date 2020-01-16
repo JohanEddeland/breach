@@ -768,6 +768,8 @@ classdef BreachProblem < BreachStatus
                     xbest = [];
                     fbest = Inf;
                     
+                    printFlag = 1;
+                    
                     for iterationCounter = 1:this.max_obj_eval
                         % Sample from uniform random distribution between
                         % this.lb and this.ub
@@ -776,14 +778,29 @@ classdef BreachProblem < BreachStatus
                         % Calculate robustness
                         rob = this.objective(x);
                         
+                        if iterationCounter == 1
+                            disp(['Initial robustness value: ' num2str(rob)]);
+                        end
+                        
+                        
+                        
                         % Store if it's best
                         if rob < fbest
                             xbest = x;
                             fbest = rob;
+                            
+                            if iterationCounter > 1
+                                disp([num2str(iterationCounter) ': NEW BEST: ' num2str(fbest)]);
+                            end
+                        end
+                        
+                        if mod(iterationCounter, 10)==0 && ~this.stopping
+                            fprintf([num2str(iterationCounter) ': Rob: ' num2str(rob) '\t\tBEST:' num2str(fbest) '\n']);
                         end
                         
                         % Exit if robustness negative
                         if rob < 0
+                            disp(['FALSIFIED at sample ' num2str(iterationCounter) '!']);
                             break
                         end
                     end
