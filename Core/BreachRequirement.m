@@ -244,7 +244,9 @@ classdef BreachRequirement < BreachTraceSystem
                 startTimeOfAll = tic;
                 for it = 1:num_traj
                     currentTime = datestr(now, 'HH:MM:ss');
-                    fprintf(['*** START traj ' num2str(it) '/' num2str(num_traj) ' at ' currentTime '\n']);
+                    if num_traj > 300
+                        fprintf(['*** START traj ' num2str(it) '/' num2str(num_traj) ' at ' currentTime '\n']);
+                    end
                     execTimesForThisReq = -Inf(1, numel(this.req_monitors));
                     if any(traces_vals_precond(it,:)<0)
                         traces_vals( it, :, objFunctionCounter)  = NaN;
