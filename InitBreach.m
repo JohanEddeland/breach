@@ -1,5 +1,9 @@
-function InitBreach(br_dir, force_init)
+function InitBreach(br_dir, force_init, varargin)
 % InitBreach  initializes Breach, in particular adding paths to Breach directories
+opt.verbose = 1;
+opt.init_from_breachflows= false;
+opt = varargin2struct(opt, varargin{:});
+
 
 %% checks if global configuration variable is defined
 global BreachGlobOpt
@@ -35,7 +39,7 @@ if  nb_dir>1
                 rm_path_list = [rm_path_list all_paths{ii}];
             end
         end
-        if ~isempty(rm_path_list)
+        if ~isempty(rm_path_list)&&opt.verbose>=1
             disp(['Warning: removing paths in ' br_old_dir]);
             rmpath(rm_path_list{:});
             disp(' ');
@@ -54,7 +58,9 @@ if ~exist( [br_dir filesep 'Ext' filesep 'ModelsData' filesep 'ParallelTemp'], '
     mkdir([br_dir filesep 'Ext' filesep 'ModelsData' filesep 'ParallelTemp']);
 end
 %% Init
-disp(['Initializing Breach from folder ' br_dir '...']);
+if opt.verbose>=1
+    disp(['Initializing Breach from folder ' br_dir '...']);
+end
 
 id = 'MATLAB:dispatcher:nameConflict';
 warning('off',id);
@@ -103,7 +109,7 @@ addpath(list_path{:});
 cd(cdr);
 
 %% Lookfor extensions
-if exist('InitBreachFlows', 'file')
+if exist('InitBreachFlows', 'file')&&~opt.init_from_breachflows
     InitBreachFlows;
 end
 
