@@ -612,7 +612,7 @@ classdef BreachProblem < BreachStatus
                     ncall0 = npoint;   % function call counter
                     params = struct('bounds',{u,v},'nreq',nreq,'p',p); % input structure
                     % repeated calls to Snobfit
-                    bestForPrint = f(1);
+                    bestForPrint = Inf;
                     printFlag = 1;
                     while ncall0 < ncall % repeat till ncall function values are reached
                         % (if the stopping criterion is not fulfilled first)
@@ -636,12 +636,14 @@ classdef BreachProblem < BreachStatus
                             totalCounter = ncall0 + j;
                             if f(j,1) < bestForPrint
                                 bestForPrint = f(j,1);
-                                disp([num2str(totalCounter) ': NEW BEST: ' num2str(bestForPrint)]);
+                                if ncall0 > npoint
+                                    disp([num2str(totalCounter) ': NEW BEST: ' num2str(bestForPrint)]);
+                                end
                                 if bestForPrint < 0
                                     disp(['FALSIFIED at sample ' num2str(totalCounter) '!']); 
                                     printFlag = 0;
                                 end
-                            elseif mod(totalCounter, 10)==0 && printFlag
+                            elseif mod(totalCounter, 10)==0 && printFlag && ~this.stopping
                                 fprintf([num2str(totalCounter) ': Rob: ' num2str(f(j,1)) '\t\tBEST:' num2str(bestForPrint) '\n']);
                             end
                         end
