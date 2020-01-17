@@ -633,7 +633,7 @@ classdef BreachProblem < BreachStatus
                             % computation of the (perturbed) function values at the suggested points
                             
                             % Display
-                            totalCounter = ncall0 + j;
+                            totalCounter = ncall0 + j - 1;
                             if f(j,1) < bestForPrint
                                 bestForPrint = f(j,1);
                                 if ncall0 > npoint
