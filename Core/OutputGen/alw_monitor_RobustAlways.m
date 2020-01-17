@@ -4,6 +4,9 @@ indicesToRemove = [];
 time_values = time_values - I___(1);
 I___ = I___ - I___(1);
 
+startIdxNew = 1;
+endIdxNew = 1;
+
 for valIndex = 1:length(valarray)
     thisTime = time_values(valIndex);
     
@@ -13,21 +16,43 @@ for valIndex = 1:length(valarray)
     % End time is startTime + second element of I___
     endTime = startTime + I___(2);
     
-    timeIntervalIndex = find(time_values >= startTime & time_values <= endTime);
+%     timeIntervalIndex = find(time_values >= startTime & time_values <= endTime);
     
-    partialTime = time_values(timeIntervalIndex);
-    partialValarray = valarray(timeIntervalIndex);
+%     partialTime = time_values(timeIntervalIndex);
+%     partialValarray = valarray(timeIntervalIndex);
     
-    if isempty(partialTime)
-        % There is no signal in the time we are looking at
-        % We have to find the signal value from the point defined before
-        % this one
-        timeIntervalIndex = find(time_values <= endTime, 1, 'last');
-        partialTime = time_values(timeIntervalIndex);
-        partialValarray = valarray(timeIntervalIndex);
+    % New getting partialTime and partialValarray
+    for startCounter = startIdxNew:numel(time_values)
+        if time_values(startCounter) >= startTime
+            startIdxNew = startCounter;
+            break;
+        end
     end
     
-    partialRob = PartialRobustAlways(partialTime, partialValarray);
+    for endCounter = endIdxNew:numel(time_values)
+        if time_values(endCounter) > endTime
+            endIdxNew = endCounter - 1;
+            break;
+        elseif endCounter == numel(time_values) && time_values(endCounter) <= endTime
+            endIdxNew = endCounter;
+        end
+    end
+    
+    timeIntervalIndexNew = startIdxNew:endIdxNew;
+    partialTimeNew = time_values(timeIntervalIndexNew);
+    partialValarrayNew = valarray(timeIntervalIndexNew);
+%     assert(all(timeIntervalIndex == timeIntervalIndexNew));
+    
+%     if isempty(partialTime)
+%         % There is no signal in the time we are looking at
+%         % We have to find the signal value from the point defined before
+%         % this one
+%         timeIntervalIndex = find(time_values <= endTime, 1, 'last');
+%         partialTime = time_values(timeIntervalIndex);
+%         partialValarray = valarray(timeIntervalIndex);
+%     end
+    
+    partialRob = PartialRobustAlways(partialTimeNew, partialValarrayNew);
     
     % Check if we can reduce the size of time_values and valarray by
     % removing this element (if it is the same as the element before
