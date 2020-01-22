@@ -92,7 +92,7 @@ classdef stl_monitor < req_monitor
             this.rob_map = containers.Map;
             phi = this.formula;
 
-            [~,~,this.rob_map] = STL_Eval_IO_Rob(this.Sys, phi, this.P, this.P.traj{1}, 'out', 'rel', this.rob_map);
+            [~,~,this.rob_map] = STL_Eval_IO_Rob(this.Sys, phi, this.P0, this.P.traj{1}, 'out', 'rel', this.rob_map);
             this.diag_map = containers.Map;
             
             this.formula_names_map = containers.Map;
@@ -140,17 +140,28 @@ classdef stl_monitor < req_monitor
             end
             
             subs = STL_Break(phi); 
+            plotted = {};
             for is = numel(subs):-1:1
                 subphi = subs(is);
-                h = F.AddAxes();
-                this.plot_implicant(h, get_id(subphi));
+                id = get_id(subphi);
+                implicant = this.diag_map(id);
+                
+                if ~isempty(implicant.Intervals)&&~ismember(id, plotted)
+                    h = F.AddAxes();
+                    this.plot_implicant(h, id);
+                    plotted = [plotted id];
+                end
             end
             
             for is = 1:numel(this.signals_in)
-                h = F.AddAxes();
-                this.plot_implicant(h, this.signals_in{is});
+                id = this.signals_in{is};
+                implicant = this.diag_map(id);
+                if ~isempty(implicant.Intervals)&&~ismember(id, plotted) 
+                    h = F.AddAxes();
+                    this.plot_implicant(h, id);                    
+                    plotted = [plotted id];
+                end
             end
-                
         end
            
         function plot_implicant(this, ax, id)
@@ -192,13 +203,15 @@ classdef stl_monitor < req_monitor
                 end
             end
             samples = implicant.getSignificantSamples();
-            for j=1:length(samples)
-                sample = samples(j);
+            %for j=1:length(samples)
+            if ~isempty(samples)   
+                sample = samples(1);
                 hold on;
-                plot(sample.time, sample.value, 'x');
+                plot(sample.time, sample.value, 'x', 'Color',color);            
             end
             t0 = this.P.traj{1}.time;
             set(ax, 'XLim', [0 t0(end)]);
+            
         end
         
         function init_tXp(this, t, X, p)
@@ -231,7 +244,7 @@ classdef stl_monitor < req_monitor
             end
         end
         
-        function st = disp(this)
+        function varargout = disp(this)
             phi = this.formula;
             st = sprintf(['%s := %s\n'], get_id(phi), disp(phi,1));
             
@@ -240,19 +253,27 @@ classdef stl_monitor < req_monitor
                 preds = STL_ExtractPredicates(phi);
                 for ip = 1:numel(preds)
                     id = get_id(preds(ip));
-                    if STL_CheckID(id)
-                        if isempty(st_pred)
-                            st_pred = '  where \n';
+                    status(ip)= STL_CheckID(id);
+                end
+                
+                if any(status==1)
+                    st_pred = '  where \n';
+                    for ip = 1:numel(preds)
+                        if status(ip)==1
+                            st_pred =   sprintf([ st_pred '%s := %s \n' ],id,disp(preds(ip)));
                         end
-                        st_pred =   sprintf([ st_pred '%s := %s \n' ],id,disp(preds(ip)));
                     end
                 end
                 st = [st st_pred];
             end
-            
+     
             if nargout == 0
+                varargout = {};
                 fprintf(st);
-            end
+            else
+                varargout{1} = st;
+            end            
+            
         end
     end
    

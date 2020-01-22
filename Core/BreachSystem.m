@@ -173,8 +173,7 @@ classdef BreachSystem < BreachSet
                 this.P =P;
             else
                 error('Argument should a Breach legacy parameter structure.');
-            end
-            
+            end            
         end
         
         function ResetSampling(this)
@@ -983,7 +982,7 @@ classdef BreachSystem < BreachSet
         end
         
         %% Printing
-        function st = PrintSpecs(this)
+        function varargout = PrintSpecs(this)
             st= sprintf('--- SPECIFICATIONS ---\n');
             keys = this.Specs.keys;
             for is = 1:numel(keys)
@@ -1000,25 +999,34 @@ classdef BreachSystem < BreachSet
                 st= sprintf([st '\n']);
             end
             st = sprintf([st ' \n']);
+        
             if nargout == 0
+                varargout = {};
                 fprintf(st);
+            else
+                varargout{1} = st;
             end
+            
+            
         end
         
-        function st = PrintAll(this)
+        function varargout = PrintAll(this)
             this.UpdateSignalRanges();
             st = this.PrintSignals();
             st = sprintf([st  this.PrintParams()]);
             if ~isempty(this.Specs)
                 st = [st this.PrintSpecs()];
-            end
+            end                     
             
             if nargout == 0
+                varargout = {};
                 fprintf(st);
+            else
+                varargout{1} = st;
             end
         end
         
-        function st = disp(this)
+        function varargout = disp(this)
             if isfield(this.P, 'traj')
                 nb_traj = numel(this.P.traj);
             else
@@ -1027,9 +1035,13 @@ classdef BreachSystem < BreachSet
             
             st = ['BreachSystem ' this.Sys.name '. It contains ' num2str(this.GetNbParamVectors()) ' samples and ' num2str(nb_traj) ' unique traces.'];
             
-            if nargout ==0
-                disp(st);
+            if nargout == 0
+                varargout = {};
+                fprintf(st);
+            else
+                varargout{1} = st;
             end
+            
         end
         
         function assignin_ws_p0(this)
