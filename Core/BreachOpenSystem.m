@@ -355,6 +355,8 @@ classdef BreachOpenSystem < BreachSystem
                   dom = str2num(dom); %#ok<ST2NM>
               elseif iscell(dom)
                  dom = cell2mat(dom);
+              elseif size(cfg.domains,2)==2
+                  dom = [cfg.domains{ip,1}, cfg.domains{ip,2}];
               end
               
               if isfield(cfg,'values')

@@ -442,6 +442,39 @@ switch(phi.type)
         end
 
         
+            case 'once'
+        I___ = eval(phi.interval);
+        I___ = max([I___; 0 0]);
+        I___(1) = min(I___(1), I___(2));
+        
+        next_interval = interval-[I___(1)+I___(2), I___(1)];
+        next_interval(1) = max(0, next_interval(1));                
+        [valarray1, time_values1] = GetValues(Sys, phi.phi, P, traj, partition, relabs, next_interval, robustness_map);           
+        
+        Tend__ =  time_values1(end);
+        past_time_values1 = fliplr(Tend__-time_values1);
+        past_valarray1 = fliplr(valarray1);
+        [past_time_values, past_valarray] = RobustEv(past_time_values1, past_valarray1, I___);
+        time_values = Tend__-fliplr(past_time_values);
+        valarray = fliplr(past_valarray);
+        
+    case 'historically'
+        I___ = eval(phi.interval);
+        I___ = max([I___; 0 0]);
+        I___(1) = min(I___(1), I___(2));
+        
+        next_interval = interval-[I___(1)+I___(2), I___(1)];
+        next_interval(1) = max(0, next_interval(1));                
+        [valarray1, time_values1] = GetValues(Sys, phi.phi, P, traj, partition, relabs, next_interval, robustness_map);   
+
+        Tend__ =  time_values1(end);
+        past_time_values1 = fliplr(Tend__-time_values1);
+        past_valarray1 = fliplr(valarray1);
+        [past_time_values, past_valarray] = RobustEv(past_time_values1, -past_valarray1, I___);
+        time_values = Tend__-fliplr(past_time_values);
+        valarray = fliplr(-past_valarray);
+   
+        
     case 'until'
         I___ = eval(phi.interval);
         I___ = max([I___; 0 0]);
@@ -509,7 +542,11 @@ end
 % first time instant
 ind_ti = find(traj.time>=interval(1),1);
 if isempty(ind_ti)
-    time_values = [traj.time(1,end) traj.time(1,end)+1];
+    if ~isempty(traj.time)
+        time_values = [traj.time(1,end) traj.time(1,end)+1];
+    else
+        time_values = [];
+    end    
     return
 end
 

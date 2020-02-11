@@ -1982,13 +1982,13 @@ classdef BreachSet < BreachStatus
                     end
                 end
                 st = sprintf([st '\n']);
-                if nargout == 0
-                    varargout = {};
-                    fprintf(st);
-                else
-                    varargout{1} = st;
-                end
             end
+            if nargout == 0
+                varargout = {};
+                fprintf(st);
+            else
+                varargout{1} = st;
+            end            
         end
                 
         function st = get_signal_attributes_string(this, sig) 

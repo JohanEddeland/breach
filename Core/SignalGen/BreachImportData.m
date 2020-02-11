@@ -231,7 +231,7 @@ classdef BreachImportData < BreachSignalGen
                 nb_traj = 0;
             end
             
-            st = ['BreachImportData ' this.whoamI '. It contains ' num2str(this.GetNbParamVectors()) ' samples and ' num2str(nb_traj) ' unique traces.'];
+            st = ['BreachImportData ' this.whoamI '. It contains ' num2str(this.GetNbParamVectors()) ' samples and ' num2str(nb_traj) ' unique traces.\n'];
             
             
             if nargout == 0
