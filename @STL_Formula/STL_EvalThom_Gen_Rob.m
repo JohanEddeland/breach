@@ -442,7 +442,7 @@ switch(phi.type)
         end
 
         
-            case 'once'
+    case 'once'
         I___ = eval(phi.interval);
         I___ = max([I___; 0 0]);
         I___(1) = min(I___(1), I___(2));
@@ -454,7 +454,26 @@ switch(phi.type)
         Tend__ =  time_values1(end);
         past_time_values1 = fliplr(Tend__-time_values1);
         past_valarray1 = fliplr(valarray1);
-        [past_time_values, past_valarray] = RobustEv(past_time_values1, past_valarray1, I___);
+        
+        switch objToUse
+            case 'vbool'
+                [past_time_values, past_valarray] = RobustAlways(past_time_values1, past_valarray1, I___);  
+                past_valarray = -past_valarray;
+            case 'standard'
+                [past_time_values, past_valarray] = RobustEv(past_time_values1, past_valarray1, I___);  
+            case 'vbool_v1'
+                [past_time_values, past_valarray] = RobustAlways_v1(past_time_values1, past_valarray1, I___);  
+                past_valarray = -past_valarray;
+            case 'MARV'
+                % On this level, MARV is just standard robustness, since
+                % MARV only applies to top-level "always"-operator.
+                [past_time_values, past_valarray] = RobustEv(past_time_values1, past_valarray1, I___);  
+            case 'constant'
+                [past_time_values, past_valarray] = RobustEv(past_time_values1, past_valarray1, I___);  
+            otherwise
+                error('Unknown objective function!');
+        end
+        
         time_values = Tend__-fliplr(past_time_values);
         valarray = fliplr(past_valarray);
         
@@ -470,7 +489,24 @@ switch(phi.type)
         Tend__ =  time_values1(end);
         past_time_values1 = fliplr(Tend__-time_values1);
         past_valarray1 = fliplr(valarray1);
-        [past_time_values, past_valarray] = RobustEv(past_time_values1, -past_valarray1, I___);
+        
+        switch objToUse
+            case 'vbool'
+                [past_time_values, past_valarray] = RobustAlways(past_time_values1, past_valarray1, I___);  
+            case 'standard'
+                [past_time_values, past_valarray] = RobustEv(past_time_values1, -past_valarray1, I___);  
+            case 'vbool_v1'
+                [past_time_values, past_valarray] = RobustAlways_v1(past_time_values1, past_valarray1, I___);  
+            case 'MARV'
+                % On this level, MARV is just standard robustness, since
+                % MARV only applies to top-level "always"-operator.
+                [past_time_values, past_valarray] = RobustEv(past_time_values1, -past_valarray1, I___);  
+            case 'constant'
+                [past_time_values, past_valarray] = RobustEv(past_time_values1, -past_valarray1, I___);  
+            otherwise
+                error('Unknown objective function!');
+        end
+        
         time_values = Tend__-fliplr(past_time_values);
         valarray = fliplr(-past_valarray);
    
