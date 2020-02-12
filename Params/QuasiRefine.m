@@ -89,13 +89,7 @@ else % all optional parameters
 end
 
 % JOHAN CHANGE
-if 1
-    disp('QuasiRefine.m: Changing algorithm to TestronRefine (random sampling)');
-    algo = 'testron';
-else
-    disp('QuasiRefine.m: No longer changing algorithm to TestronRefine (edit QuasiRefine.m if we wish to change algorithm)');
-end
-
+disp('QuasiRefine.m: No longer changing algorithm to TestronRefine (use PseudoRandomSample instead of QuasiRandomSample for that)');
 % END JOHAN CHANGE
 
 if(strcmpi(algo,'sobol') && numel(P.dim)>40)
@@ -111,10 +105,6 @@ if strcmpi(algo,'sobol')
     else
         P = SobolRefine(P, nb, step);
     end
-% JOHAN CHANGE
-elseif strcmpi(algo,'testron')
-    P = TestronRefine(P, nb, step);
-% END JOHAN CHANGE
 else % default = halton
     if(strictlyInside)
         P = HaltonRefine(P, nb, step, 'strictlyInside');
