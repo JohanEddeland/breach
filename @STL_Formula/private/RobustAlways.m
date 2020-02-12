@@ -36,6 +36,12 @@ for valIndex = 1:length(valarray)
         end
     end
     
+    % There is no point beyond the start point
+    % => Set end index to same as start index
+    if endIdxNew < startIdxNew
+        endIdxNew = startIdxNew;
+    end
+    
     timeIntervalIndexNew = startIdxNew:endIdxNew;
     partialTimeNew = time_values(timeIntervalIndexNew);
     partialValarrayNew = valarray(timeIntervalIndexNew);
