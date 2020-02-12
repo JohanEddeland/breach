@@ -188,7 +188,7 @@ classdef BreachRequirement < BreachTraceSystem
         function [traces_vals, traces_vals_precond, traces_vals_vac] =evalAllTraces(this,varargin)
             % TESTRON: Add extra (optional) argument with objective
             % functions when running global sensitivity experiments
-            if nargin > 2
+            if nargin > 2 && iscell(varargin{2}) && ischar(varargin{2}{1})
                 % varargin{0} is the BreachSimulinkSystem
                 % varargin{1} is a cell array of objective functions
                 % (strings)
@@ -276,8 +276,8 @@ classdef BreachRequirement < BreachTraceSystem
                                     fprintf(', ');
                                 end
                             end
+                            fprintf('\n');
                         end
-                        fprintf('\n');
                     end
                     
                     if numel(objFunctions) > 1
