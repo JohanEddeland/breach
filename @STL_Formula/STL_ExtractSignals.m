@@ -18,7 +18,7 @@ signals = {};
 for im=1:numel(matches)
     signals{end+1} = tokens{im}{1};
 end
-sreserved = {'alw_', 'ev_','until_'};
+sreserved = {'alw_', 'ev_','until_', 'once_', 'hist_'};
 signals = setdiff(signals, sreserved);
 
 
