@@ -1168,6 +1168,18 @@ classdef BreachSet < BreachStatus
             this.CheckinDomainParam();
             this.ApplyParamGens();
         end
+        
+        function PseudoRandomSample(this, nb_sample)
+            % Pseudo-random sampling
+            
+            this.ResetParamSet();
+            
+            newP = TestronRefine(this.P, nb_sample);
+            
+            this.P = newP;          
+            this.CheckinDomainParam();
+            this.ApplyParamGens();
+        end
                 
         %% Concatenation, ExtractSubset - needs some additional compatibility checks...
         function Concat(this, other, fast)
