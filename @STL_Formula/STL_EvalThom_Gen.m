@@ -100,15 +100,15 @@ for ii=1:numTrajs % we loop on every traj in case we check more than one
         [val, time_values] = GetValues(Sys, phi, Pii, traj, partition, relabs, interval);
         
         try
-            if(numel(t)==1) % we handle singular times
-                val__{ii} = val(1);
-            else
+ %           if(numel(t)==1) % we handle singular times
+ %               val__{ii} = val(1);
+ %           else
                 if isfield(BreachGlobOpt, 'disable_robust_linear_interpolation')&&BreachGlobOpt.disable_robust_linear_interpolation
                     val__{ii} = interp1(time_values, val, t, 'previous');
                 else
                     val__{ii} = interp1(time_values, val, t);
                 end
-            end
+%            end
         catch % if val is empty
             val__{ii} = NaN(1,numel(t));
         end
@@ -412,8 +412,7 @@ switch(phi.type)
                 error('Unknown objective function!');
         end
         [time_values, valarray] = RobustEv(time_values1, valarray1, I___);
-    
-    
+        
     case 'once'
         I___ = eval(phi.interval);
         I___ = max([I___; 0 0]);
@@ -448,7 +447,9 @@ switch(phi.type)
         end
         
         time_values = Tend__-fliplr(past_time_values);
-        valarray = fliplr(past_valarray);
+        valarray = fliplr(past_valarray);        
+        valarray = [valarray(2:end) valarray(end)]; % shift to go from previous interp to next interp due to time flipping
+                                                    % (be damn if I understand this comment even two days from now)
         
     case 'historically'
         I___ = eval(phi.interval);
@@ -483,6 +484,8 @@ switch(phi.type)
         
         time_values = Tend__-fliplr(past_time_values);
         valarray = fliplr(-past_valarray);
+        valarray = [valarray(2:end) valarray(end)]; % shift to go from previous interp to next interp due to time flipping 
+                                                    % (be damn if I understand this comment even two days from now)
    
     case 'until'
         I___ = eval(phi.interval);

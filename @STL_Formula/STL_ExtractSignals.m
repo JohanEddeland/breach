@@ -35,7 +35,7 @@ if nargout>1
         end
     end
     
-    reserved = [ sreserved signals  {'alw', 'ev', 'and', 'or', '=>', 'not', 'until', 't', ...
+    reserved = [ sreserved signals  {'alw', 'ev','once', 'hist','and', 'or', '=>', 'not', 'until', 't', ...
         'abs', 'sin', 'cos', 'exp','tan', 'norm','sqrt'}];
     params = setdiff(params, reserved);
     params = unique(params);
