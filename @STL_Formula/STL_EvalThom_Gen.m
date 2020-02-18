@@ -292,7 +292,7 @@ switch(phi.type)
         [past_time_values, past_valarray] = RobustEv(past_time_values1, -past_valarray1, I___);
         % Flipping back
         time_values = fliplr(Tend__-[past_time_values Tend__]);
-        valarray = fliplr([past_valarray(1) past_valarray]);        
+        valarray = -fliplr([past_valarray(1) past_valarray]);        
         
     case 'until'
         I___ = eval(phi.interval);
