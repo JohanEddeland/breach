@@ -423,9 +423,11 @@ switch(phi.type)
         
         [valarray1, time_values1] = GetValues(Sys, phi.phi, P, traj, partition, relabs, next_interval);
         
-        Tend__ =  time_values1(end);
-        past_time_values1 = fliplr(Tend__-time_values1);
-        past_valarray1 = fliplr(valarray1);
+        % Flipping time, taking into account constant interpolation with
+        % previous 
+        Tend__ =  time_values1(end)+1; 
+        past_time_values1 = fliplr(Tend__-[time_values1 Tend__]);
+        past_valarray1 =    fliplr([valarray1(1) valarray1]);
         
         switch objToUse
             case 'vbool'
@@ -446,10 +448,9 @@ switch(phi.type)
                 error('Unknown objective function!');
         end
         
-        time_values = Tend__-fliplr(past_time_values);
-        valarray = fliplr(past_valarray);        
-        valarray = [valarray(2:end) valarray(end)]; % shift to go from previous interp to next interp due to time flipping
-                                                    % (be damn if I understand this comment even two days from now)
+        % Flipping back 
+        time_values = fliplr(Tend__-[past_time_values Tend__]);
+        valarray = fliplr([past_valarray(1) past_valarray]);   
         
     case 'historically'
         I___ = eval(phi.interval);
@@ -461,9 +462,11 @@ switch(phi.type)
                 
         [valarray1, time_values1] = GetValues(Sys, phi.phi, P, traj, partition, relabs, next_interval);   
         
-        Tend__ =  time_values1(end);
-        past_time_values1 = fliplr(Tend__-time_values1);
-        past_valarray1 = fliplr(valarray1);
+        % Flipping time, taking into account constant interpolation with
+        % previous 
+        Tend__ =  time_values1(end)+1; 
+        past_time_values1 = fliplr(Tend__-[time_values1 Tend__]);
+        past_valarray1 =    fliplr([valarray1(1) valarray1]);  
         
         switch objToUse
             case 'vbool'
@@ -482,10 +485,9 @@ switch(phi.type)
                 error('Unknown objective function!');
         end
         
-        time_values = Tend__-fliplr(past_time_values);
-        valarray = fliplr(-past_valarray);
-        valarray = [valarray(2:end) valarray(end)]; % shift to go from previous interp to next interp due to time flipping 
-                                                    % (be damn if I understand this comment even two days from now)
+        % Flipping back
+        time_values = fliplr(Tend__-[past_time_values Tend__]);
+        valarray = fliplr([past_valarray(1) past_valarray]);   
    
     case 'until'
         I___ = eval(phi.interval);
