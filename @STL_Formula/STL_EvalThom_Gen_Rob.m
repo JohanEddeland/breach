@@ -514,7 +514,7 @@ switch(phi.type)
         
         % Flipping back
         time_values = fliplr(Tend__-[past_time_values Tend__]);
-        valarray = fliplr([past_valarray(1) past_valarray]);   
+        valarray = -fliplr([past_valarray(1) past_valarray]);        
         
     case 'until'
         I___ = eval(phi.interval);
