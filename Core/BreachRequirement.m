@@ -196,7 +196,9 @@ classdef BreachRequirement < BreachTraceSystem
                 % that is, it contains the string 'standard'
                 IndexC = strfind(varargin{2}, 'standard');
                 Index = find(not(cellfun('isempty',IndexC)));
-                if Index
+                IndexC2 = strfind(varargin{2}, 'vbool');
+                Index2 = find(not(cellfun('isempty',IndexC2)));
+                if ~isempty(Index) || ~isempty(Index2)
                     % varargin{2} contains a list of objective functions to
                     % use for global sensitivity analysis
                     objFunctions = varargin{2};
