@@ -92,6 +92,14 @@ classdef BreachProblem < BreachStatus
         x_best
         obj_best   = inf
         log_traces = true
+        
+        % We can define the average robustness of the specification(s)
+        % This is intended to be used for normaliazation
+        % e.g. if we have two specs and the avg robustness values are 
+        % [1 1000], we will in objective_wrapper divide the second specs
+        % robustness by 1000 before passing it to the solver, in an effort
+        % to keep the robustness values "equal"
+        avgRobForNormalization
     end
     
     % misc options
@@ -165,6 +173,9 @@ classdef BreachProblem < BreachStatus
                 if ~isa(phi, 'BreachRequirement')
                     phi = BreachRequirement(phi);
                 end
+                
+                % Initialize avg robustness to be used for normalization
+                this.avgRobForNormalization = ones(numel(phi.req_monitors), 1);
                 
                 this.R0 = phi.copy();
                 this.Spec = phi;
@@ -1083,6 +1094,10 @@ classdef BreachProblem < BreachStatus
                             % calling actual objective function
                             [fval(:,iter), cval(:,iter)] = fun(iter);
                             
+                            % Normalize the function value based on average
+                            % robustness stated
+                            fval(:, iter) = fval(:, iter)./this.avgRobForNormalization;
+                            
                             % logging and updating best
                             this.time_spent = toc(this.time_start);
                             this.LogX(x(:, iter), fval(:,iter), cval(:,iter));
@@ -1103,8 +1118,12 @@ classdef BreachProblem < BreachStatus
                         fval(:,idx) = value;
                         cval(:,idx) = cvalue;
                         
+                        % Normalize the function value based on average
+                        % robustness stated
+                        fval(:, iter) = fval(:, iter)./this.avgRobForNormalization;
+                        
                         this.time_spent = toc(this.time_start);
-
+                        
                         this.LogX(x(:, idx), fval(:,idx), cval(:,idx));
                         
                         if this.stopping()
