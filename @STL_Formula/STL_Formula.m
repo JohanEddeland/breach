@@ -53,7 +53,7 @@ function [phi, phistruct] = STL_Formula(varargin)
 %See also STL_ReadFile
 %
 
-evalin('base','InitBreach');
+InitBreach;
 
 global BreachGlobOpt
 
