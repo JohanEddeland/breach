@@ -235,6 +235,8 @@ classdef BreachRequirement < BreachTraceSystem
                 end
                 
                 % eval requirement
+                startTimeOfAllObjFunctions = tic;
+                execTimesForThisReq = zeros(1, numel(this.req_monitors));
                 for objFunctionCounter = 1:numel(objFunctions)
                     thisObjFunction = objFunctions{objFunctionCounter};
                     if numel(objFunctions) > 1
@@ -245,13 +247,13 @@ classdef BreachRequirement < BreachTraceSystem
                         fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction '\n']);
                         objToUse = thisObjFunction;
                     end
-                    startTimeOfAll = tic;
+                    startTimeOfAllTrajs = tic;
                     for it = 1:num_traj
                         currentTime = datestr(now, 'HH:MM:ss');
-                        if num_traj > 300
+                        if num_traj > 300 && (mod(it, 100) == 0)
                             fprintf(['*** START traj ' num2str(it) '/' num2str(num_traj) ' at ' currentTime '\n']);
                         end
-                        execTimesForThisReq = -Inf(1, numel(this.req_monitors));
+                        
                         if any(traces_vals_precond(it,:)<0)
                             traces_vals( it, :, objFunctionCounter)  = NaN;
                         else
@@ -261,31 +263,35 @@ classdef BreachRequirement < BreachTraceSystem
                                 [traces_vals(it, ...
                                     ipre,objFunctionCounter), traces_vals_vac(it, ipre,objFunctionCounter)]  = eval_req(this,req,it);
                                 %fprintf(['  Finished req ' num2str(ipre) '/' numel(this.req_monitors) ' in ' num2str(toc(startTimeOfReq)) 's\n']);
-                                execTimesForThisReq(ipre) = toc(startTimeOfReq);
+                                execTimesForThisReq(ipre) = execTimesForThisReq(ipre) + toc(startTimeOfReq);
                             end
                         end
                         % Finished the traj
-                        % Display the nSlowest slowest specifications
-                        nSlowest = 5;
-                        if numel(execTimesForThisReq) > nSlowest
-                            fprintf(['  Finished traj, ' num2str(nSlowest) ' slowest specs (out of ' num2str(numel(this.req_monitors)) '): ']);
-                            [sortedExecTimes, sortedSpecIndex] = sort(execTimesForThisReq, 'descend');
-                            for slowestCounter = 1:nSlowest
-                                thisIndex = sortedSpecIndex(slowestCounter);
-                                thisTime = sortedExecTimes(slowestCounter);
-                                fprintf([num2str(thisIndex) ' (' num2str(thisTime) 's)']);
-                                if slowestCounter < nSlowest
-                                    fprintf(', ');
-                                end
+                        
+                    end
+                    
+                    % Display the nSlowest slowest specifications
+                    nSlowest = 5;
+                    if numel(execTimesForThisReq) > nSlowest
+                        fprintf(['  Finished traj, ' num2str(nSlowest) ' slowest specs (out of ' num2str(numel(this.req_monitors)) '): ']);
+                        [sortedExecTimes, sortedSpecIndex] = sort(execTimesForThisReq, 'descend');
+                        for slowestCounter = 1:nSlowest
+                            thisIndex = sortedSpecIndex(slowestCounter);
+                            thisTime = sortedExecTimes(slowestCounter);
+                            fprintf([num2str(thisIndex) ' (' num2str(thisTime) 's)']);
+                            if slowestCounter < nSlowest
+                                fprintf(', ');
                             end
-                            fprintf('\n');
                         end
+                        fprintf('\n');
                     end
-                    
                     if numel(objFunctions) > 1
-                        fprintf(['TOTAL time: ' num2str(toc(startTimeOfAll)) 's\n']);
+                        fprintf(['TOTAL time of all trajs: ' num2str(toc(startTimeOfAllTrajs)) 's\n']);
                     end
                     
+                end
+                if numel(objFunctions) > 1
+                    fprintf(['TOTAL time of all objective functions: ' num2str(toc(startTimeOfAllObjFunctions)) 's\n']);
                 end
                 this.traces_vals_precond = traces_vals_precond;
                 this.traces_vals_vac = traces_vals_vac;
