@@ -43,11 +43,26 @@ classdef stl_monitor < req_monitor
             
         end
         
+        function set_in_signal_names(this, sigs)
+           this.formula = set_in_signal_names(this.formula,sigs,1);
+        end
+        
+        function set_out_signal_names(this, sigs)
+           this.formula = set_out_signal_names(this.formula,sigs,1);
+        end        
+        
+        function sigs_in = get_in_signal_names(this)            
+            sigs_in = get_in_signal_names(this.formula);
+        end
+        
+        function sigs_out = get_out_signal_names(this)            
+           sigs_out = get_out_signal_names(this.formula);
+        end
+        
+                
         function status = set_mode(this, flag1, flag2)            
             input_signals = get_in_signal_names(this.formula);
             if ~isempty(input_signals)
-                
-                
                 switch flag1
                     case {'in','out'}
                         this.inout = flag1;
