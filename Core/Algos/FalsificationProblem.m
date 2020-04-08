@@ -169,7 +169,7 @@ classdef FalsificationProblem < BreachProblem
             if ~isempty(i_false)
                 this.X_false = [this.X_false x(:,i_false)];
                 this.obj_false = [this.obj_false fval(:,i_false)];
-                if (this.log_traces)&&~this.use_parallel&&~(this.BrSet.UseDiskCaching)  % FIXME - logging flags and methods need be revised
+                if (this.log_traces)%&&~this.use_parallel&&~(this.BrSet.UseDiskCaching)  % FIXME - logging flags and methods need be revised
                     if isempty(this.BrSet_False)
                         if ~isempty(this.Spec.BrSet)
                             this.BrSet_False = this.Spec.BrSet.copy();

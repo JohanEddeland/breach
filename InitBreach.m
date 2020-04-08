@@ -1,20 +1,17 @@
 function InitBreach(br_dir, force_init, varargin)
 % InitBreach  initializes Breach, in particular adding paths to Breach directories
-opt.verbose = 1;
-opt.init_from_breachflows= false;
-opt = varargin2struct(opt, varargin{:});
 
 
 %% checks if global configuration variable is defined
 global BreachGlobOpt
 
-if ~exist('br_dir', 'var')||isempty(br_dir)
-    br_dir = which('InstallBreach');
-    br_dir = fileparts(br_dir);
-end
-
 if nargin<2
     force_init = false;
+end
+
+if ~exist('br_dir', 'var')||isempty(br_dir)
+    br_dir = which('InstallBreach');
+    br_dir = fileparts(br_dir);    
 end
 
 if ~force_init && isfield(BreachGlobOpt, 'breach_dir')
@@ -22,6 +19,15 @@ if ~force_init && isfield(BreachGlobOpt, 'breach_dir')
         return; % OK InitBreach has been run before
     end
 end
+
+
+addpath([br_dir filesep 'Core' filesep 'm_src']);
+opt.verbose = 1;
+opt.init_from_breachflows= false;
+opt = varargin2struct_breach(opt, varargin{:});
+
+
+
 
 
 %% remove old path, if any

@@ -330,7 +330,7 @@ classdef BreachProblem < BreachStatus
                 'rand_seed', 1,...
                 'num_rand_samples', 100 ...   % arbitrary - should be dim-dependant?  
             );
-            solver_opt= varargin2struct(solver_opt, varargin{:});
+            solver_opt= varargin2struct_breach(solver_opt, varargin{:});
         
             this.solver = 'random';
             this.solver_options = solver_opt; 
@@ -1161,7 +1161,7 @@ classdef BreachProblem < BreachStatus
                 this.X_log = [this.X_log x];
                 this.obj_log = [this.obj_log fval];
                 
-                if (this.log_traces)&&~(this.use_parallel)&&~(this.BrSet.UseDiskCaching) % FIXME - logging flags and methods need be revised
+                if (this.log_traces)%&&~(this.use_parallel)&&~(this.BrSet.UseDiskCaching) % FIXME - logging flags and methods need be revised
                     if isempty(this.BrSet_Logged)
                         this.BrSet_Logged = this.BrSys.copy();
                         this.R_log = this.Spec.copy();
