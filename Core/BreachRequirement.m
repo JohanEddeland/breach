@@ -217,6 +217,7 @@ classdef BreachRequirement < BreachTraceSystem
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
             global objToUse;
+            objToUse = objFunctions{1};
             new= this.getBrSet(varargin{:});
             if new
                 num_traj = numel(this.P.traj);
