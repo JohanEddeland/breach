@@ -217,6 +217,7 @@ classdef BreachRequirement < BreachTraceSystem
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
             global objToUse;
+            objToUse = objFunctions{1};
             new= this.getBrSet(varargin{:});
             if new
                 num_traj = numel(this.P.traj);
@@ -250,7 +251,7 @@ classdef BreachRequirement < BreachTraceSystem
                     startTimeOfAllTrajs = tic;
                     for it = 1:num_traj
                         currentTime = datestr(now, 'HH:MM:ss');
-                        if num_traj > 300 && (mod(it, 100) == 0)
+                        if num_traj > 30 && (mod(it, 10) == 0)
                             fprintf(['*** START traj ' num2str(it) '/' num2str(num_traj) ' at ' currentTime '\n']);
                         end
                         
@@ -272,13 +273,13 @@ classdef BreachRequirement < BreachTraceSystem
                     
                     % Display the nSlowest slowest specifications
                     nSlowest = 5;
-                    if numel(execTimesForThisReq) > nSlowest
-                        fprintf(['  Finished traj, ' num2str(nSlowest) ' slowest specs (out of ' num2str(numel(this.req_monitors)) '): ']);
+                    if (numel(execTimesForThisReq) > nSlowest) && (num_traj > 30)
+                        fprintf(['  Finished all trajs, ' num2str(nSlowest) ' slowest specs (out of ' num2str(numel(this.req_monitors)) '): ']);
                         [sortedExecTimes, sortedSpecIndex] = sort(execTimesForThisReq, 'descend');
                         for slowestCounter = 1:nSlowest
                             thisIndex = sortedSpecIndex(slowestCounter);
                             thisTime = sortedExecTimes(slowestCounter);
-                            fprintf([num2str(thisIndex) ' (' num2str(thisTime) 's)']);
+                            fprintf([this.req_monitors{thisIndex}.name ' (' num2str(thisTime) 's)']);
                             if slowestCounter < nSlowest
                                 fprintf(', ');
                             end
