@@ -47,7 +47,7 @@ switch (phi.type)
     case 'predicate'
         out = phi;
         
-    case {'not', 'always', 'eventually'}
+    case {'not', 'always', 'eventually', 'historically', 'once'}
         
         out = [STL_Break(phi.phi, n-1) phi] ;
         
