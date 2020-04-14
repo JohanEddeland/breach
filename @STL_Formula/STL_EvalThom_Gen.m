@@ -98,7 +98,9 @@ for ii=1:numTrajs % we loop on every traj in case we check more than one
             interval = [t(1) t(end)];
         end
         [val, time_values] = GetValues(Sys, phi, Pii, traj, partition, relabs, interval);
-        
+        if time_values(end)<15
+            5;
+        end
         try
  %           if(numel(t)==1) % we handle singular times
  %               val__{ii} = val(1);
@@ -431,12 +433,12 @@ switch(phi.type)
         
         switch objToUse
             case 'vbool'
-                [past_time_values, past_valarray] = RobustAlways(past_time_values1, past_valarray1, I___);  
+                [past_time_values, past_valarray] = RobustAlways(past_time_values1, -past_valarray1, I___);  
                 past_valarray = -past_valarray;
             case 'standard'
                 [past_time_values, past_valarray] = RobustEv(past_time_values1, past_valarray1, I___);  
             case 'vbool_v1'
-                [past_time_values, past_valarray] = RobustAlways_v1(past_time_values1, past_valarray1, I___);  
+                [past_time_values, past_valarray] = RobustAlways_v1(past_time_values1, -past_valarray1, I___);  
                 past_valarray = -past_valarray;
             case 'MARV'
                 % On this level, MARV is just standard robustness, since
@@ -471,10 +473,12 @@ switch(phi.type)
         switch objToUse
             case 'vbool'
                 [past_time_values, past_valarray] = RobustAlways(past_time_values1, past_valarray1, I___);  
+                past_valarray = -past_valarray;
             case 'standard'
                 [past_time_values, past_valarray] = RobustEv(past_time_values1, -past_valarray1, I___);  
             case 'vbool_v1'
                 [past_time_values, past_valarray] = RobustAlways_v1(past_time_values1, past_valarray1, I___);  
+                past_valarray = -past_valarray;
             case 'MARV'
                 % On this level, MARV is just standard robustness, since
                 % MARV only applies to top-level "always"-operator.
