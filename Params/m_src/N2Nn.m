@@ -1,4 +1,4 @@
-function Nn = N2Nn(n,nb, num_new)
+function Nn = N2Nn(n,nb, num_new, stable)
 %N2NN Builds a set of nb^n points in N^n (nb points per axes)
 %
 % Synopsis : Nn = N2Nn(n,nb, [num_new])
@@ -12,10 +12,14 @@ if isscalar(nb)
     nb = nb*ones(1,n);
 end
 
+if nargin<4
+   stable = false;
+end
+
 global BreachGlobOpt
 
 max_num_new = prod(nb);
-if nargin<=2
+if nargin<=2||isempty(num_new)
     num_new = max_num_new;
 else
     num_new = min(max_num_new, num_new);
@@ -59,9 +63,11 @@ else
     end
     % optimize order
     % max min ( size(biggest_cluster of zeros, biggest_cluster_of_ones), )
-    clust = find_size_min_cluster(Nn);
-    [~, clust_sort ] = sort(clust, 1, 'descend');
-    Nn = Nn(:, clust_sort);
+    if ~stable
+        clust = find_size_min_cluster(Nn);
+        [~, clust_sort ] = sort(clust, 1, 'descend');
+        Nn = Nn(:, clust_sort);
+    end
 end
 end
 
