@@ -94,8 +94,6 @@ classdef signal_gen <handle
                 end
                 
                 pb = FalsificationProblem(S, R);
-                
-                
                 pb.StopAtFalse = false;
                 pb.display = 'off';
                 pb.log_traces = false;

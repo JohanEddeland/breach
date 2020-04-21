@@ -17,7 +17,7 @@ opt = struct( ...
 % (like Simulated Annealing).
 % Setting num_corners = 0 will result to no "corner solve" in
 % solve_global_nelder_mead.m. 
-opt.num_corners = 0;
+% opt.num_corners = 0;
 % END JOHAN CHANGE
 
 if this.use_parallel
