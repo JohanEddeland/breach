@@ -1107,6 +1107,10 @@ classdef BreachProblem < BreachStatus
                             this.LogX(x(:, iter), fval(:,iter), cval(:,iter));
 
                             % update status
+                            if ~rem(this.nb_obj_eval,this.freq_update)
+                                this.display_status();
+                            end
+
                         end
                                                                         
                     end

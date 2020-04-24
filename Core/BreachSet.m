@@ -450,7 +450,7 @@ classdef BreachSet < BreachStatus
             end
                             
             this.ApplyParamGens();
-        end
+        end                
         
         function ApplyParamGens(this, params)
             if ~isempty(this.ParamGens)
@@ -487,7 +487,39 @@ classdef BreachSet < BreachStatus
                 values = values(:, ip);
             end
         end
-        
+     
+        function [values, i1, i2] = GetUParam(this,params,argu)
+            % [values, i1, i2] = GetUParam(this, params,argu) returns unique values of parameters
+            % i1 are indices of unique values, i2 is a cell of (unique) indices
+            % for where the unique values were found. argu is an argument for
+            % unique function call (for 'stable' essentially)
+            %
+            
+            if nargin<3
+                argu = 0;
+            end
+            
+            all_values = this.GetParam(params);
+            if argu
+                [values, i1, ib] = unique(all_values','rows', argu);
+            else
+                [values, i1, ib] = unique(all_values','rows');
+            end
+            
+            values = values';
+            if nargout >= 1
+                i1 = i1';
+            end
+            
+            if nargout >=2
+                ib = ib';
+                i2 = cell(1,numel(i1));
+                for ind = 1:numel(i1)
+                    i2{ind} = find(ib==ind);
+                end
+            end
+        end
+                
         function ResetParamSet(this)
             % ResetParamSet remove samples and keeps one in the domain
             this.P = SPurge(this.P);
@@ -502,7 +534,7 @@ classdef BreachSet < BreachStatus
                 this.CheckinDomain();
             end
         end
-        
+                
         %% Get and Set param ranges
         function SetParamRanges(this, params, ranges)
             % BreachSet.SetParamRanges set intervals for parameters (set domains as
@@ -872,11 +904,12 @@ classdef BreachSet < BreachStatus
             
             X = cell(nb_traj,1);
             for i_traj = 1:numel(itrajs)
-                Xi = this.P.traj{itrajs(i_traj)}.X;
+                traj = this.P.traj{itrajs(i_traj)};
+                Xi = traj.X;
                 if (~exist('t','var'))
                     X{i_traj} = Xi(signals_idx,:);
                 else
-                    X{i_traj} = interp1(this.P.traj{itrajs(i_traj)}.time, Xi(signals_idx,:)',t)';
+                    X{i_traj} = interp1(traj.time, Xi(signals_idx,:)',t)';
                     if numel(signals_idx)==1
                         X{i_traj} = X{i_traj}';
                     end

@@ -312,6 +312,7 @@ classdef BreachSamplesPlot < handle
                         txt{end+1} = [var_name ': ' num2str(var_value)];
                     end
                 end
+                txt = regexprep(txt,'_',' ');
             end
             
             %% Context menu
@@ -714,6 +715,7 @@ classdef BreachSamplesPlot < handle
             cursor_h.UpdateFcn = @myupdatefcn;
             cursor_h.SnapToDataVertex = 'on';
             
+            
             function [txt] = myupdatefcn(obj,event_obj)
                 pos = event_obj.Position;
                 ipos = find(event_obj.Target.XData==pos(1)&event_obj.Target.YData==pos(2),1);
@@ -772,7 +774,9 @@ classdef BreachSamplesPlot < handle
                         txt{end+1} = [var_name ': ' num2str(var_value)];
                     end
                 end
+                txt = regexprep(txt,'_',' ');
             end
+            
             
             %% Context menu
             cm = uicontextmenu;
