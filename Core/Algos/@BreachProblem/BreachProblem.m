@@ -805,15 +805,19 @@ classdef BreachProblem < BreachStatus
                         rob = this.objective(x);
                         
                         if iterationCounter == 1
-                            disp(['Initial robustness value: ' num2str(rob)]);
+                            if numel(rob) == 1
+                                disp(['Initial robustness value: ' num2str(rob)]);
+                            else
+                                disp(['Initial robustness value (using MAX semantics: ' num2str(min(rob))]);
+                            end
                         end
                         
                         
                         
                         % Store if it's best
-                        if rob < fbest
+                        if min(rob) < fbest
                             xbest = x;
-                            fbest = rob;
+                            fbest = min(rob);
                             
                             if iterationCounter > 1
                                 disp([num2str(iterationCounter) ': NEW BEST: ' num2str(fbest)]);
@@ -821,11 +825,11 @@ classdef BreachProblem < BreachStatus
                         end
                         
                         if mod(iterationCounter, 10)==0 && ~this.stopping
-                            fprintf([num2str(iterationCounter) ': Rob: ' num2str(rob) '\t\tBEST:' num2str(fbest) '\n']);
+                            fprintf([num2str(iterationCounter) ': Rob: ' num2str(min(rob)) '\t\tBEST:' num2str(fbest) '\n']);
                         end
                         
                         % Exit if robustness negative
-                        if rob < 0
+                        if this.StopAtFalse && min(rob) < 0 
                             disp(['FALSIFIED at sample ' num2str(iterationCounter) '!']);
                             break
                         end
