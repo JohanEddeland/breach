@@ -337,9 +337,11 @@ classdef BreachProblem < BreachStatus
         end
 
         
-        function solver_opt = setup_corners(this)
+        function solver_opt = setup_corners(this, varargin)
             solver_opt = struct('num_corners', 100 ...   % arbitrary - should  be dim-dependant?  
             );
+            solver_opt= varargin2struct_breach(solver_opt, varargin{:});        
+            
             this.solver = 'corners';
             this.solver_options = solver_opt; 
         end
