@@ -196,13 +196,14 @@ classdef BreachSamplesPlot < handle
             
             % idx pos and neg
             num_vals_pos = sum(vals_pos>=0&vals_neg==0,1);
-            sum_num_vals_pos =sum(vals_cum_pos); 
+            sum_num_vals_pos =sum(vals_cum_pos,1); 
             num_vals_neg = sum(vals_neg<0,1);
-            sum_num_vals_neg =sum(vals_cum_neg); 
+            sum_num_vals_neg =sum(vals_cum_neg,1); 
             num_vals_vac = sum(vals_vac>0&vals_neg==0,1);
             idx_pos = num_vals_pos >0;
             idx_neg = num_vals_neg >0;
             idx_vac = num_vals_vac >0;
+            
             
             if any(idx_pos)
                 this.data.pos_pts.idx= all_pts(idx_pos);
