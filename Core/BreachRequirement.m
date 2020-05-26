@@ -1009,7 +1009,16 @@ classdef BreachRequirement < BreachTraceSystem
             if nargin<=2
                 fast = false;
             end
-            this.P = SConcat(this.P, other.P, fast);
+            Pother = other.P;
+            idx_trace_idx = this.P.DimX+1;
+            if isfield(this.P, 'traj')&&isfield(Pother, 'traj') % param needs to be consistent with trace_idx 
+                num_traj = max(this.P.traj_ref);
+                for it = 1:numel(other.P.traj)
+                    Pother.traj{it}.param(idx_trace_idx)=Pother.traj{it}.param(idx_trace_idx)+num_traj;
+                end
+            end
+            this.P = SConcat(this.P, Pother, fast);
+            
             % wild guess:
             this.P = SetParam(this.P, this.P.DimX+1,this.P.traj_ref);
             
