@@ -1329,9 +1329,12 @@ props = STL_Break(prop);
 
 for i = 1:numel(props)
     PHI_ = props(i);
-    eval([get_id(PHI_) '=PHI_']);
-    handles.properties.(get_id(props(i))) = props(i);
-    Br.AddSpec(props(i));
+    this_id = get_id(PHI_);
+    this_id = strrep(this_id, '__', '_');
+    PHI_ = set_id(PHI_, this_id);
+    eval([this_id '=PHI_;']);
+    handles.properties.(this_id) = PHI_;
+    Br.AddSpec(PHI_);
 end
 
 handles = update_properties_panel(handles);

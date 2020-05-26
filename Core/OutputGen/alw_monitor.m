@@ -31,7 +31,6 @@ classdef alw_monitor < stl_monitor
         end
         
         function [v, t, Xout] = eval(this, t, X,p)
-            global objToUse;
             [t, Xout] = this.computeSignals(t, X,p);
             idx  = this.get_time_idx_interval(t,p);
             Xout(end-1,:) = Xout(end,:)<0;         % violation flags
@@ -50,14 +49,15 @@ classdef alw_monitor < stl_monitor
             time_values = t(idx);
             valarray = Xout(end,idx);
             I___ = [time_values(1) time_values(end)];
-            switch objToUse
-                case 'vbool'
+            semantics = get_semantics(this.formula);
+            switch semantics
+                case 'max'
+                    v = min(valarray);
+                case 'add'
                     %[time_values, valarray] = RobustAvEvRight(time_values, -valarray, I___);
                     %valarray = -valarray;
                     [~, val_output] = alw_monitor_RobustAlways(time_values, valarray, I___);
                     v = val_output(1);
-                case 'standard'
-                    v = min(valarray);
                 case 'vbool_v1'
                     %[time_values, valarray] = RobustAvEvRight(time_values, -valarray, I___);
                     %valarray = -valarray;

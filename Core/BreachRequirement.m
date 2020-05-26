@@ -216,8 +216,6 @@ classdef BreachRequirement < BreachTraceSystem
             
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
-            global objToUse;
-            objToUse = objFunctions{1};
             new= this.getBrSet(varargin{:});
             if new
                 num_traj = numel(this.P.traj);
@@ -241,12 +239,10 @@ classdef BreachRequirement < BreachTraceSystem
                 for objFunctionCounter = 1:numel(objFunctions)
                     thisObjFunction = objFunctions{objFunctionCounter};
                     if numel(objFunctions) > 1
-                        % Only if we want to loop over objFunctions here will
-                        % we change the global variable.
-                        % If there is only 1, objToUse has been initiated
-                        % elsewhere.
+                        % Display that we are calculating for several
+                        % semantics
                         fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction '\n']);
-                        objToUse = thisObjFunction;
+                        fprintf('TODO: Implement this by setting phi.semantics OUTSIDE of BreachRequirement.Eval instead!');
                     end
                     startTimeOfAllTrajs = tic;
                     for it = 1:num_traj
@@ -261,6 +257,14 @@ classdef BreachRequirement < BreachTraceSystem
                             for ipre = 1:numel(this.req_monitors)
                                 startTimeOfReq = tic;
                                 req = this.req_monitors{ipre};
+                                if numel(objFunctions) > 1
+                                    % Set the semantics of all subformulas
+                                    % TODO: Do this outside of
+                                    % BreachRequirement.Eval instead
+                                    req.formula = set_semantics(req.formula, thisObjFunction);
+                                    req.subphi = set_semantics(req.subphi, thisObjFunction);
+                                end
+                                
                                 [traces_vals(it, ...
                                     ipre,objFunctionCounter), traces_vals_vac(it, ipre,objFunctionCounter)]  = eval_req(this,req,it);
                                 %fprintf(['  Finished req ' num2str(ipre) '/' numel(this.req_monitors) ' in ' num2str(toc(startTimeOfReq)) 's\n']);
@@ -333,7 +337,6 @@ classdef BreachRequirement < BreachTraceSystem
             
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
-            global objToUse;
             new= this.getBrSet(varargin{:});
             if new
                 num_traj = numel(this.P.traj);
@@ -356,12 +359,10 @@ classdef BreachRequirement < BreachTraceSystem
                 for objFunctionCounter = 1:numel(objFunctions)
                     thisObjFunction = objFunctions{objFunctionCounter};
                     if numel(objFunctions) > 1
-                        % Only if we want to loop over objFunctions here will
-                        % we change the global variable.
-                        % If there is only 1, objToUse has been initiated
-                        % elsewhere.
+                        % Display that we are calculating for several
+                        % semantics
                         fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction '\n']);
-                        objToUse = thisObjFunction;
+                        fprintf('TODO: Implement this by setting phi.semantics OUTSIDE of BreachRequirement.Eval instead!');
                     end
                     startTimeOfAll = tic;
                     % NEW
@@ -374,6 +375,13 @@ classdef BreachRequirement < BreachTraceSystem
                         end
                         
                         req = this.req_monitors{ipre};
+                        if numel(objFunctions) > 1
+                            % Set the semantics of all subformulas
+                            % TODO: Do this outside of
+                            % BreachRequirement.Eval instead
+                            req.formula = set_semantics(req.formula, thisObjFunction);
+                            req.subphi = set_semantics(req.subphi, thisObjFunction);
+                        end
                         parfor it = 1:num_traj
                             if any(traces_vals_precond(it,:)<0)
                                 traces_vals(it, ipre, objFunctionCounter)  = NaN;

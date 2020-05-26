@@ -144,28 +144,7 @@ end
 
 function [valarray, time_values] = GetValues(Sys, phi, P, traj, partition, relabs, interval)
 global BreachGlobOpt;
-global objToUse;
-global useVboolImplicationRobustness;
 eval(BreachGlobOpt.GlobVarsDeclare);
-
-if strcmp(objToUse, 'vbool')
-    % Do nothing
-elseif strcmp(objToUse, 'vbool_v1')
-    % Do nothing
-elseif strcmp(objToUse, 'MARV')
-    % Do nothing
-elseif strcmp(objToUse, 'constant')
-    % Do nothing
-    % NOTE: The "constant semantics" are actually applied in
-    % STL_Eval/STL_Eval_Gen/STL_Eval_Gen_Rob/STL_Eval_IO/STL_Eval_IO_Rob
-    % In this file, 'standard' and 'constant' are equivalent. 
-else
-    objToUse = 'standard';
-end
-
-if isempty(useVboolImplicationRobustness)
-    useVboolImplicationRobustness = 0;
-end
 
 switch(phi.type)
     
@@ -215,13 +194,13 @@ switch(phi.type)
     case 'or'
         [valarray1, time_values1] = GetValues(Sys, phi.phi1, P, traj, partition, relabs, interval);
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, partition, relabs, interval);
-        switch objToUse
-            case 'vbool'
+        switch phi.semantics
+            case 'max'
+                [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
+            case 'add'
                 % ||+
                 [time_values, valarray] = robustAndPlus(time_values1, -valarray1, time_values2, -valarray2);
                 valarray = -valarray;
-            case 'standard'
-                [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
             case 'vbool_v1'
                 [time_values, valarray] = robustAndPlus_v1(time_values1, -valarray1, time_values2, -valarray2);
                 valarray = -valarray;
@@ -232,20 +211,20 @@ switch(phi.type)
             case 'constant'
                 [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
             otherwise
-                error('Unknown objective function (objToUse)');
+                error('Unknown objective function (phi.semantics)');
         end
         
     case 'and'
         [valarray1, time_values1] = GetValues(Sys, phi.phi1, P, traj, partition, relabs, interval);
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, partition, relabs, interval);
         % JOHAN CHANGE
-        switch objToUse
-            case 'vbool'
-                % Koen's &+
-                [time_values, valarray] = robustAndPlus(time_values1, valarray1, time_values2, valarray2);
-            case 'standard'
+        switch phi.semantics
+            case 'max'
                 % Standard and
                 [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
+            case 'add'
+                % Koen's &+
+                [time_values, valarray] = robustAndPlus(time_values1, valarray1, time_values2, valarray2);
             case 'vbool_v1'
                 % Old additive semantics
                 [time_values, valarray] = robustAndPlus_v1(time_values1, valarray1, time_values2, valarray2);
@@ -257,7 +236,7 @@ switch(phi.type)
                 % Standard and
                 [time_values, valarray] = RobustAnd(time_values1, valarray1, time_values2, valarray2);
             otherwise
-                error('Unknown objective function (objToUse)');
+                error('Unknown objective function (phi.semantics)');
         end
         
     case 'andn'
@@ -274,20 +253,13 @@ switch(phi.type)
         [valarray2, time_values2] = GetValues(Sys, phi.phi2, P, traj, partition, relabs, interval);
         valarray1 = -valarray1;
         
-        switch objToUse
-            case 'vbool'
-                if useVboolImplicationRobustness
-                    % Use specific VBool implication robustness
-                    % Multiply robustness of antecedent with 1000
-                    [time_values, valarray] = robustAndPlus(time_values1, -valarray1*1000, time_values2, -valarray2);
-                    valarray = -valarray;
-                else
-                    % Standard implication, but with vbool andPlus
-                    [time_values, valarray] = robustAndPlus(time_values1, -valarray1, time_values2, -valarray2);
-                    valarray = -valarray;
-                end
-            case 'standard'
+        switch phi.semantics
+            case 'max'
                 [time_values, valarray] = RobustOr(time_values1, valarray1, time_values2, valarray2);
+            case 'add'
+                % Standard implication, but with vbool andPlus
+                [time_values, valarray] = robustAndPlus(time_values1, -valarray1, time_values2, -valarray2);
+                valarray = -valarray;
             case 'vbool_v1'
                 [time_values, valarray] = robustAndPlus_v1(time_values1, -valarray1, time_values2, -valarray2);
                 valarray = -valarray;
@@ -327,18 +299,18 @@ switch(phi.type)
         end
         % END JOHAN FIX
         
-        switch objToUse
-            case 'vbool'
-                %[time_values, valarray] = RobustAvEvRight(time_values, -valarray, I___);
-                %valarray = -valarray;
-                [time_values, valarray] = RobustAlways(time_values, valarray, I___);
-            case 'standard'
+        switch phi.semantics
+            case 'max'
                 if(I___(end)~=inf)
                     time_values = [time_values time_values(end)+I___(end)];
                     valarray = [valarray valarray(end)];
                 end
                 [time_values, valarray] = RobustEv(time_values, -valarray, I___);
                 valarray = -valarray;
+            case 'add'
+                %[time_values, valarray] = RobustAvEvRight(time_values, -valarray, I___);
+                %valarray = -valarray;
+                [time_values, valarray] = RobustAlways(time_values, valarray, I___);
             case 'vbool_v1'
                 %[time_values, valarray] = RobustAvEvRight(time_values, -valarray, I___);
                 %valarray = -valarray;
@@ -383,16 +355,16 @@ switch(phi.type)
         next_interval = I___+interval;
         [valarray1, time_values1] = GetValues(Sys, phi.phi, P, traj, partition, relabs, next_interval);
         
-        switch objToUse
-            case 'vbool'
-                [time_values, valarray] = RobustAlways(time_values1, -valarray1, I___);
-                valarray = -valarray;
-            case 'standard'
+        switch phi.semantics
+            case 'max'
                 if(I___(end)~=inf)
                     time_values1 = [time_values1 time_values1(end)+I___(end)];
                     valarray1 = [valarray1 valarray1(end)];
                 end
                 [time_values, valarray] = RobustEv(time_values1, valarray1, I___);
+            case 'add'
+                [time_values, valarray] = RobustAlways(time_values1, -valarray1, I___);
+                valarray = -valarray;
             case 'vbool_v1'
                 [time_values, valarray] = RobustAlways_v1(time_values1, -valarray1, I___);
                 valarray = -valarray;
@@ -413,7 +385,6 @@ switch(phi.type)
             otherwise
                 error('Unknown objective function!');
         end
-        [time_values, valarray] = RobustEv(time_values1, valarray1, I___);
         
     case 'once'
         I___ = eval(phi.interval);
@@ -431,12 +402,12 @@ switch(phi.type)
         past_time_values1 = fliplr(Tend__-[time_values1 Tend__]);
         past_valarray1 =    fliplr([valarray1(1) valarray1]);
         
-        switch objToUse
-            case 'vbool'
+        switch phi.semantics
+            case 'max'
+                [past_time_values, past_valarray] = RobustEv(past_time_values1, past_valarray1, I___);  
+            case 'add'
                 [past_time_values, past_valarray] = RobustAlways(past_time_values1, -past_valarray1, I___);  
                 past_valarray = -past_valarray;
-            case 'standard'
-                [past_time_values, past_valarray] = RobustEv(past_time_values1, past_valarray1, I___);  
             case 'vbool_v1'
                 [past_time_values, past_valarray] = RobustAlways_v1(past_time_values1, -past_valarray1, I___);  
                 past_valarray = -past_valarray;
@@ -470,12 +441,12 @@ switch(phi.type)
         past_time_values1 = fliplr(Tend__-[time_values1 Tend__]);
         past_valarray1 =    fliplr([valarray1(1) valarray1]);  
         
-        switch objToUse
-            case 'vbool'
+        switch phi.semantics
+            case 'max'
+                [past_time_values, past_valarray] = RobustEv(past_time_values1, -past_valarray1, I___);  
+            case 'add'
                 [past_time_values, past_valarray] = RobustAlways(past_time_values1, past_valarray1, I___);  
                 past_valarray = -past_valarray;
-            case 'standard'
-                [past_time_values, past_valarray] = RobustEv(past_time_values1, -past_valarray1, I___);  
             case 'vbool_v1'
                 [past_time_values, past_valarray] = RobustAlways_v1(past_time_values1, past_valarray1, I___);  
                 past_valarray = -past_valarray;

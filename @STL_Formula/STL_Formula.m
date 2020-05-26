@@ -110,6 +110,7 @@ phi.in_signal_names = {};
 phi.out_signal_names = {};
 phi.params = struct;
 phi.params_interval = struct;
+phi.semantics = 'max';
 varargin = varargin(2:end);
 
 switch numel(varargin)

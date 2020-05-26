@@ -1062,8 +1062,6 @@ classdef BreachProblem < BreachStatus
         
         function [fval, cval] = objective_wrapper(this,x)
             % reset this.Spec
-            
-            global objToUse;
             % objective_wrapper calls the objective function and wraps some bookkeeping
             if size(x,1) ~= numel(this.params)
                 x = x';

@@ -1185,24 +1185,34 @@ if (nprop)  % plot values for a property
     % lgh = legend(short_disp(prop,100));
     prop_type = get_type(prop);
     prop_id = get_id(prop);
+    children = get_children(prop);
+    
+    child1_id = get_id(children{1});
+    child1_id = strrep(child1_id, '__', '_');
+    
+    if numel(children) > 1
+        child2_id = get_id(children{2});
+        child2_id = strrep(child2_id, '__', '_');
+    end
+    
     if strcmp(prop_type,'always')
-        legendText1 = ['always(' prop_id '1__)'];
-        legendText2 = ['min_[t+a, t+b](' prop_id '1__)'];
+        legendText1 = ['always(' child1_id ')'];
+        legendText2 = ['min_[t+a, t+b](' child1_id ')'];
     elseif strcmp(prop_type,'or')
-        legendText1 = [prop_id '1__ or ' prop_id '2__'];
-        legendText2 = ['max(' prop_id '1__,' prop_id '2__)'];
+        legendText1 = [child1_id ' or ' child2_id];
+        legendText2 = ['max(' child1_id ', ' child2_id ')'];
     elseif strcmp(prop_type,'and')
-        legendText1 = [prop_id '1__ and ' prop_id '2__'];
-        legendText2 = ['min(' prop_id '1__,' prop_id '2__)'];
+        legendText1 = [child1_id ' and ' child2_id];
+        legendText2 = ['min(' child1_id ', ' child2_id ')'];
     elseif strcmp(prop_type,'not')
-        legendText1 = ['not(' prop_id '1__)'];
-        legendText2 = ['-' prop_id '1__'];
+        legendText1 = ['not(' child1_id ')'];
+        legendText2 = ['-' child1_id ''];
     elseif strcmp(prop_type,'predicate')
         legendText1 = get_st(prop);
         legendText2 = get_st(prop);
     elseif strcmp(prop_type,'=>')
-        legendText1 = [prop_id '1__ => ' prop_id '2__'];
-        legendText2 = ['max( - ' prop_id '1__, ' prop_id '2__)'];
+        legendText1 = [child1_id ' => ' child2_id];
+        legendText2 = ['max( - ' child1_id ', ' child2_id ')'];
     else
         legendText1 = 'Legend text missing!';
         legendText2 = 'Robust text missing!';

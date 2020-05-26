@@ -95,9 +95,8 @@ switch nargin
 end
 
 % Apply constant semantics, if needed
-global objToUse;
 constSemanticsVal = 100; 
-if strcmp(objToUse, 'constant')
+if strcmp(phi.semantics, 'constant')
     val(val >= 0) = constSemanticsVal;
     val(val < 0) = -constSemanticsVal;
 end
