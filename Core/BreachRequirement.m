@@ -194,9 +194,9 @@ classdef BreachRequirement < BreachTraceSystem
                 % (strings)
                 % Check that varargin{2} actually contains objFunctions,
                 % that is, it contains the string 'standard'
-                IndexC = strfind(varargin{2}, 'standard');
+                IndexC = strfind(varargin{2}, 'max');
                 Index = find(not(cellfun('isempty',IndexC)));
-                IndexC2 = strfind(varargin{2}, 'vbool');
+                IndexC2 = strfind(varargin{2}, 'add');
                 Index2 = find(not(cellfun('isempty',IndexC2)));
                 if ~isempty(Index) || ~isempty(Index2)
                     % varargin{2} contains a list of objective functions to
@@ -207,10 +207,10 @@ classdef BreachRequirement < BreachTraceSystem
                     varargin(2) = [];
                 else
                     % varargin{2} does not contain objective functions.
-                    objFunctions = {'standard'};
+                    objFunctions = {'max'};
                 end
             else
-                objFunctions = {'standard'};
+                objFunctions = {'max'};
             end
             
             
@@ -242,7 +242,7 @@ classdef BreachRequirement < BreachTraceSystem
                         % Display that we are calculating for several
                         % semantics
                         fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction '\n']);
-                        fprintf('TODO: Implement this by setting phi.semantics OUTSIDE of BreachRequirement.Eval instead!');
+                        fprintf('TODO: Implement this by setting phi.semantics OUTSIDE of BreachRequirement.Eval instead!\n');
                     end
                     startTimeOfAllTrajs = tic;
                     for it = 1:num_traj
@@ -262,7 +262,12 @@ classdef BreachRequirement < BreachTraceSystem
                                     % TODO: Do this outside of
                                     % BreachRequirement.Eval instead
                                     req.formula = set_semantics(req.formula, thisObjFunction);
-                                    req.subphi = set_semantics(req.subphi, thisObjFunction);
+                                    if any(contains(fieldnames(req), 'subphi'))
+                                        % If req has the property 'subphi',
+                                        % we update the semantics of subphi
+                                        % as well. 
+                                        req.subphi = set_semantics(req.subphi, thisObjFunction);
+                                    end
                                 end
                                 
                                 [traces_vals(it, ...
@@ -317,7 +322,7 @@ classdef BreachRequirement < BreachTraceSystem
                 % (strings)
                 % Check that varargin{2} actually contains objFunctions,
                 % that is, it contains the string 'standard'
-                IndexC = strfind(varargin{2}, 'standard');
+                IndexC = strfind(varargin{2}, 'max');
                 Index = find(not(cellfun('isempty',IndexC)));
                 if Index
                     % varargin{2} contains a list of objective functions to
@@ -328,10 +333,10 @@ classdef BreachRequirement < BreachTraceSystem
                     varargin(2) = [];
                 else
                     % varargin{2} does not contain objective functions.
-                    objFunctions = {'standard'};
+                    objFunctions = {'max'};
                 end
             else
-                objFunctions = {'standard'};
+                objFunctions = {'max'};
             end
             
             
@@ -362,7 +367,7 @@ classdef BreachRequirement < BreachTraceSystem
                         % Display that we are calculating for several
                         % semantics
                         fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction '\n']);
-                        fprintf('TODO: Implement this by setting phi.semantics OUTSIDE of BreachRequirement.Eval instead!');
+                        fprintf('TODO: Implement this by setting phi.semantics OUTSIDE of BreachRequirement.Eval instead!\n');
                     end
                     startTimeOfAll = tic;
                     % NEW
@@ -380,7 +385,12 @@ classdef BreachRequirement < BreachTraceSystem
                             % TODO: Do this outside of
                             % BreachRequirement.Eval instead
                             req.formula = set_semantics(req.formula, thisObjFunction);
-                            req.subphi = set_semantics(req.subphi, thisObjFunction);
+                            if any(contains(fieldnames(req), 'subphi'))
+                                % If req has the property 'subphi',
+                                % we update the semantics of subphi
+                                % as well.
+                                req.subphi = set_semantics(req.subphi, thisObjFunction);
+                            end
                         end
                         parfor it = 1:num_traj
                             if any(traces_vals_precond(it,:)<0)
