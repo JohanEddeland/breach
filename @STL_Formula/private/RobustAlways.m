@@ -104,7 +104,12 @@ if rho < 0
     
     % Assert that the partialRob is negative - otherwise our additive
     % semantics are not sound with regards to the standard semantics
-    assert(partialRob < 0);
+    % Note: We only need to assert this if the spec is actually positive
+    % for time greater than zero (otherwise it is instantaneously positive
+    % and we do not care)
+    if partialRob > 0
+        assert(sum(timeDiffLessThanZero) == 0);
+    end
 else
     % The spec does not fail
     % Take the inverse of the integral of the inverse
