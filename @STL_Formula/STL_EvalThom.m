@@ -273,17 +273,17 @@ switch(phi.type)
         % END JOHAN FIX
         
         switch phi.semantics
-            case 'vbool'
-                %[time_values, valarray] = RobustAvEvRight(time_values, -valarray, I___);
-                %valarray = -valarray;
-                [time_values, valarray] = RobustAlways(time_values, valarray, I___);
-            case 'standard'
+            case 'max'
                 if(I___(end)~=inf)
                     time_values = [time_values time_values(end)+I___(end)];
                     valarray = [valarray valarray(end)];
                 end
                 [time_values, valarray] = RobustEv(time_values, -valarray, I___);
                 valarray = -valarray;
+            case 'add'
+                %[time_values, valarray] = RobustAvEvRight(time_values, -valarray, I___);
+                %valarray = -valarray;
+                [time_values, valarray] = RobustAlways(time_values, valarray, I___);
             case 'vbool_v1'
                 %[time_values, valarray] = RobustAvEvRight(time_values, -valarray, I___);
                 %valarray = -valarray;
