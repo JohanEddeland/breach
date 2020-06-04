@@ -633,7 +633,15 @@ classdef BreachProblem < BreachStatus
                     % end of data to be adapted
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     for j=1:npoint
-                        f(j,:) = [feval(fcn,x(j,:),this)+fac*randn max(sqrt(eps),3*fac)];
+                        functionEvalPlusNoise = feval(fcn,x(j,:),this)+fac*randn;
+                        if numel(functionEvalPlusNoise) > 1
+                            % We are evaluating several specs at once
+                            % Take the minimum of the robustness values
+                            % (i.e. use max semantics for the conjunction
+                            % of specs)
+                            functionEvalPlusNoise = min(functionEvalPlusNoise);
+                        end
+                        f(j,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
                         % computation of the function values (if necessary, with additive
                         % noise)
                     end
@@ -657,7 +665,15 @@ classdef BreachProblem < BreachStatus
                         clear f
                         for j=1:size(request,1)
                             x(j,:) = request(j,1:n);
-                            f(j,:) = [feval(fcn,x(j,:), this)+fac*randn max(sqrt(eps),3*fac)];
+                            functionEvalPlusNoise = feval(fcn,x(j,:),this)+fac*randn;
+                            if numel(functionEvalPlusNoise) > 1
+                                % We are evaluating several specs at once
+                                % Take the minimum of the robustness values
+                                % (i.e. use max semantics for the conjunction
+                                % of specs)
+                                functionEvalPlusNoise = min(functionEvalPlusNoise);
+                            end
+                            f(j,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
                             % computation of the (perturbed) function values at the suggested points
                             
                             % Display
