@@ -261,12 +261,21 @@ classdef BreachRequirement < BreachTraceSystem
                                     % Set the semantics of all subformulas
                                     % TODO: Do this outside of
                                     % BreachRequirement.Eval instead
-                                    req.formula = set_semantics(req.formula, thisObjFunction);
+                                    if ~strcmp(get_semantics(req.formula), thisObjFunction)
+                                        % Only use set_semantics if the
+                                        % semantics is not correct. 
+                                        req.formula = set_semantics(req.formula, thisObjFunction);
+                                    end
+                                    
                                     if any(contains(fieldnames(req), 'subphi'))
                                         % If req has the property 'subphi',
                                         % we update the semantics of subphi
-                                        % as well. 
-                                        req.subphi = set_semantics(req.subphi, thisObjFunction);
+                                        % as well.
+                                        if ~strcmp(get_semantics(req.subphi), thisObjFunction)
+                                            % Only use set_semantics if the
+                                            % semantics is not correct.
+                                            req.subphi = set_semantics(req.subphi, thisObjFunction);
+                                        end
                                     end
                                 end
                                 
@@ -384,12 +393,20 @@ classdef BreachRequirement < BreachTraceSystem
                             % Set the semantics of all subformulas
                             % TODO: Do this outside of
                             % BreachRequirement.Eval instead
-                            req.formula = set_semantics(req.formula, thisObjFunction);
+                            if ~strcmp(get_semantics(req.formula), thisObjFunction)
+                                % Only use set_semantics if the
+                                % semantics is not correct.
+                                req.formula = set_semantics(req.formula, thisObjFunction);
+                            end
                             if any(contains(fieldnames(req), 'subphi'))
                                 % If req has the property 'subphi',
                                 % we update the semantics of subphi
                                 % as well.
-                                req.subphi = set_semantics(req.subphi, thisObjFunction);
+                                if ~strcmp(get_semantics(req.subphi), thisObjFunction)
+                                    % Only use set_semantics if the
+                                    % semantics is not correct.
+                                    req.subphi = set_semantics(req.subphi, thisObjFunction);
+                                end
                             end
                         end
                         parfor it = 1:num_traj
