@@ -1,12 +1,16 @@
-function [res, R] = ComputeMorrisSensi(R, B, num_path, objFunctions)
+function [res, R] = ComputeMorrisSensi(R, B, num_path, objFunctions, randomSeed)
 %% ComputeMorrisSensi compute sensitivities using Morris method for all requirement in R. Assumes B is a set with ranges.
 %
 %  Note: if B is a BreachSimulinkSystem with no traces, we compute the
 %  Morris samples and corresponding traces and stores them in B. If B
 %  already contains Morris samples and traces they are not re-computed.
+if nargin < 5
+    randomSeed = 1;
+end
+
 opt = struct('num_path', num_path, ...      % number of paths, i.e., set of
     ...                % samples providing 1 pair of samples per dim
-    'rand_seed', 1, ...    % random seed for reproducibility
+    'rand_seed', randomSeed, ...    % random seed for reproducibility
     'size_grid', 5 ...     % number of grid levels, intervals in each dim
     );
 
