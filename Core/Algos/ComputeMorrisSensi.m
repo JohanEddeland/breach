@@ -11,7 +11,7 @@ end
 opt = struct('num_path', num_path, ...      % number of paths, i.e., set of
     ...                % samples providing 1 pair of samples per dim
     'rand_seed', randomSeed, ...    % random seed for reproducibility
-    'size_grid', 5 ...     % number of grid levels, intervals in each dim
+    'size_grid', 100 ...     % number of grid levels, intervals in each dim
     );
 
 [vars, iv] = B.GetVariables(); % variables and indices
@@ -23,7 +23,7 @@ if ~isfield(B.P, 'opt_morris')||~isequal(opt, B.P.opt_morris)
     r = opt.num_path;
     p = opt.size_grid;
     s = opt.rand_seed;
-    Pr = pRefine(P, p,r,s);
+    Pr = pRefine(P,p,r,s);
     X0 = Pr.pts;
     B.ResetParamSet;
     B.SetParam(vars, X0)

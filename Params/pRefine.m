@@ -39,6 +39,7 @@ if ~exist('step', 'var')
     step = 1;
 end
 
+rng(step);
 P=SPurge(P0);
 
 k = numel(P0.dim);           % dimension
