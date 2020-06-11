@@ -465,7 +465,7 @@ classdef BreachProblem < BreachStatus
         end
         
         %% solve functions for various solvers
-        function [res, startSample] = solve(this, startSample)
+        function [res, startSample] = solve(this, startSample, startFunctionValues)
             
             % reset display
             rfprintf_reset();
@@ -632,20 +632,29 @@ classdef BreachProblem < BreachStatus
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % end of data to be adapted
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    for j=1:npoint
-                        functionEvalPlusNoise = feval(fcn,x(j,:),this)+fac*randn;
-                        if numel(functionEvalPlusNoise) > 1
-                            % We are evaluating several specs at once
-                            % Take the minimum of the robustness values
-                            % (i.e. use max semantics for the conjunction
-                            % of specs)
-                            functionEvalPlusNoise = min(functionEvalPlusNoise);
+                    if nargin < 3
+                        % No start function values provided
+                        for j=1:npoint
+                            functionEvalPlusNoise = feval(fcn,x(j,:),this)+fac*randn;
+                            if numel(functionEvalPlusNoise) > 1
+                                % We are evaluating several specs at once
+                                % Take the minimum of the robustness values
+                                % (i.e. use max semantics for the conjunction
+                                % of specs)
+                                functionEvalPlusNoise = min(functionEvalPlusNoise);
+                            end
+                            f(j,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
+                            % computation of the function values (if necessary, with additive
+                            % noise)
                         end
-                        f(j,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
-                        % computation of the function values (if necessary, with additive
-                        % noise)
+                        ncall0 = npoint;   % function call counter
+                    else
+                        % Start function values provided!
+                        f = [startFunctionValues' repmat(max(sqrt(eps),3*fac), numel(startFunctionValues), 1)];
+                        disp(['Starting SNOBFIT with ' num2str(size(f, 1)) ' pre-calculated objective function values']);
+                        ncall0 = 0;
+                        npoint = 0;
                     end
-                    ncall0 = npoint;   % function call counter
                     params = struct('bounds',{u,v},'nreq',nreq,'p',p); % input structure
                     % repeated calls to Snobfit
                     bestForPrint = Inf;
@@ -687,7 +696,7 @@ classdef BreachProblem < BreachStatus
                                     disp(['FALSIFIED at sample ' num2str(totalCounter) '!']); 
                                     printFlag = 0;
                                 end
-                            elseif mod(totalCounter, 10)==0 && printFlag && ~this.stopping
+                            elseif mod(totalCounter, this.freq_update)==0 && printFlag && ~this.stopping
                                 fprintf([num2str(totalCounter) ': Rob: ' num2str(f(j,1)) '\t\tBEST:' num2str(bestForPrint) '\n']);
                             end
                         end
