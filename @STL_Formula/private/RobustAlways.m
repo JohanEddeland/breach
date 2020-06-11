@@ -1,6 +1,5 @@
 function [time_values, valarray] = RobustAlways(time_values, valarray, I___)
 
-indicesToRemove = [];
 time_values = time_values - I___(1);
 I___ = I___ - I___(1);
 
@@ -16,11 +15,6 @@ for valIndex = 1:length(valarray)
     % End time is startTime + second element of I___
     endTime = startTime + I___(2);
     
-%     timeIntervalIndex = find(time_values >= startTime & time_values <= endTime);
-    
-%     partialTime = time_values(timeIntervalIndex);
-%     partialValarray = valarray(timeIntervalIndex);
-    
     % New getting partialTime and partialValarray
     for startCounter = startIdxNew:numel(time_values)
         if time_values(startCounter) >= startTime
@@ -30,8 +24,8 @@ for valIndex = 1:length(valarray)
     end
     
     for endCounter = endIdxNew:numel(time_values)
-        if time_values(endCounter) >= endTime
-            endIdxNew = endCounter;
+        if time_values(endCounter) > endTime
+            endIdxNew = max(endCounter-1, 1);
             break;
         end
     end
@@ -45,39 +39,11 @@ for valIndex = 1:length(valarray)
     timeIntervalIndexNew = startIdxNew:endIdxNew;
     partialTimeNew = time_values(timeIntervalIndexNew);
     partialValarrayNew = valarray(timeIntervalIndexNew);
-%     assert(all(timeIntervalIndex == timeIntervalIndexNew));
-    
-%     if isempty(partialTime)
-%         % There is no signal in the time we are looking at
-%         % We have to find the signal value from the point defined before
-%         % this one
-%         timeIntervalIndex = find(time_values <= endTime, 1, 'last');
-%         partialTime = time_values(timeIntervalIndex);
-%         partialValarray = valarray(timeIntervalIndex);
-%     end
     
     partialRob = PartialRobustAlways(partialTimeNew, partialValarrayNew);
-    
-    % Check if we can reduce the size of time_values and valarray by
-    % removing this element (if it is the same as the element before
-    if valIndex == 1 || valIndex == length(valarray)
-        % We cannot remove the first or the last element
-        valarray(valIndex) = partialRob;
-    elseif valarray(valIndex - 1) == partialRob
-        % The value is the same as the previous one
-        % We don't need to add a new value - instead, we can remove this
-        % time step from the time_values and valarray vectors later on
-        indicesToRemove(end+1) = valIndex; %#ok<*AGROW>
-    else
-        valarray(valIndex) = partialRob;
-    end
+    valarray(valIndex) = partialRob;
     
 end
-
-% Remove the indices that are just "duplicates" of the value at the
-% previous time stamp
-time_values(indicesToRemove) = [];
-valarray(indicesToRemove) = [];
 
 end
 
@@ -125,4 +91,5 @@ else
         partialRob = 1/partialRobNew;
     end
 end
+
 end
