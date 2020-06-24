@@ -408,11 +408,10 @@ classdef BreachProblem < BreachStatus
             solver_opt.Seed = 0;
             solver_opt.LBounds = this.lb;
             solver_opt.UBounds = this.ub;
-            
-            %if this.max_obj_eval < inf
-            %    solver_opt.MaxFunEvals = this.max_obj_eval;
-            %end
-            
+            solver_opt.start_sample = [];
+            solver_opt.start_function_values = [];
+            solver_opt= varargin2struct_breach(solver_opt, varargin{:});
+
             if isempty(this.x0)
                this.x0 = (this.ub-this.lb)/2; 
             end
@@ -433,6 +432,9 @@ classdef BreachProblem < BreachStatus
             this.solver = 'simulated_annealing';
             solver_opt.lb = this.lb;
             solver_opt.ub = this.ub;
+            solver_opt.start_sample = [];
+            solver_opt.start_function_values = [];
+            solver_opt= varargin2struct_breach(solver_opt, varargin{:});
             this.display = 'off';
         end
         
@@ -450,17 +452,26 @@ classdef BreachProblem < BreachStatus
             this.display = 'off';
         end
         
-        function solver_opt = setup_snobfit(this)
+        function solver_opt = setup_snobfit(this, varargin)
+            % TODO: Put history here instead
+            % (startSample, startFunctionValues)
             this.solver = 'snobfit';
             solver_opt.lb = this.lb;
             solver_opt.ub = this.ub;
+            solver_opt.start_sample = [];
+            solver_opt.start_function_values = [];
+            solver_opt= varargin2struct_breach(solver_opt, varargin{:});   
+            
             this.display = 'off';
+            this.solver_options = solver_opt;
         end
         
-        function solver_opt = setup_uniform_random(this)
+        function solver_opt = setup_uniform_random(this, varargin)
             this.solver = 'uniform_random';
             solver_opt.lb = this.lb;
             solver_opt.ub = this.ub;
+            solver_opt.start_sample = [];
+            solver_opt= varargin2struct_breach(solver_opt, varargin{:}); 
             this.display = 'off';
         end
         
@@ -510,7 +521,9 @@ classdef BreachProblem < BreachStatus
                     
                     fun = this.objective;
                     
-                    if nargin < 2
+                    startSample = this.solver_options.start_sample;
+                    
+                    if isempty(startSample)
                         % No startSample given
                         [res, ~, startSample] = testron_SA(inputRanges, fun, this);
                     else
@@ -607,12 +620,14 @@ classdef BreachProblem < BreachStatus
                     ncall = this.max_obj_eval;   % limit on the number of function calls
                     u = this.lb;
                     v = this.ub;
+                    startSample = this.solver_options.start_sample;
+                    startFunctionValues = this.solver_options.start_function_values;
                     fglob = -0.01;
                     n = length(u);  % dimension of the problem
                     % the following are meaningful default values
                     npoint = 1;   % number of random start points to be generated
                     nreq = n+6;     % no. of points to be generated in each call to SNOBFIT
-                    if nargin < 2
+                    if isempty(startSample)
                         % No startSample given
                         startSample = testronGetNewSample([this.lb this.ub]);
                     else
@@ -632,7 +647,7 @@ classdef BreachProblem < BreachStatus
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % end of data to be adapted
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                    if nargin < 3
+                    if isempty(startFunctionValues)
                         % No start function values provided
                         for j=1:npoint
                             functionEvalPlusNoise = feval(fcn,x(j,:),this)+fac*randn;
@@ -730,7 +745,8 @@ classdef BreachProblem < BreachStatus
                     %                     Px0 = CreateParamSet(this.BrSet.P, this.params,  [this.lb this.ub]);
                     %                     Px0 = TestronRefine(Px0, 1); % Generate only 1 sample
                     %                     this.x0 = GetParam(Px0,this.params);
-                    if nargin < 2
+                    startSample = this.solver_options.start_sample;
+                    if isempty(startSample)
                         % No startSample given
                         startSample = testronGetNewSample([this.lb this.ub]);
                     end
