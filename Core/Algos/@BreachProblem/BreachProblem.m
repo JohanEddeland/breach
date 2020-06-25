@@ -428,7 +428,7 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt;
         end
         
-        function solver_opt = setup_simulated_annealing(this)
+        function solver_opt = setup_simulated_annealing(this, varargin)
             this.solver = 'simulated_annealing';
             solver_opt.lb = this.lb;
             solver_opt.ub = this.ub;
