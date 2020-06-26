@@ -307,7 +307,7 @@ classdef BreachProblem < BreachStatus
             end
         end
         
-        function solver_opt = setup_init(this)
+        function solver_opt = setup_init(this,varargin)
             solver_opt = struct();
             this.solver= 'init';
             this.solver_options = solver_opt;
@@ -346,7 +346,7 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt; 
         end
  
-        function solver_opt = setup_optimtool(this)
+        function solver_opt = setup_optimtool(this,varargin)
             solver_opt = optimset('Display', 'iter');
             this.display = 'off';
             solver_opt.lb = this.lb;
@@ -355,7 +355,7 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt;
         end
         
-        function solver_opt = setup_fmincon(this)
+        function solver_opt = setup_fmincon(this,varargin)
             if this.verbose>=1
                 disp('Setting options for fmincon solver');
             end
@@ -374,7 +374,7 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt;
         end
         
-        function solver_opt = setup_fminsearch(this)
+        function solver_opt = setup_fminsearch(this,varargin)
             %disp('Setting options for fminsearch solver');
             solver_opt = optimset('fminsearch');
             solver_opt = optimset(solver_opt, 'Display', 'iter');
@@ -391,7 +391,7 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt;
         end
         
-        function solver_opt = setup_simulannealbnd(this)
+        function solver_opt = setup_simulannealbnd(this,varargin)
             %disp('Setting options for simulannealbnd solver');
             solver_opt = saoptimset('Display', 'off');
             if this.max_time < inf
@@ -402,7 +402,7 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt;
         end
         
-        function solver_opt = setup_cmaes(this)
+        function solver_opt = setup_cmaes(this,varargin)
             %disp('Setting options for cmaes solver - use help cmaes for details');
             solver_opt = cmaes();
             solver_opt.Seed = 0;
@@ -428,7 +428,7 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt;
         end
         
-        function solver_opt = setup_simulated_annealing(this)
+        function solver_opt = setup_simulated_annealing(this, varargin)
             this.solver = 'simulated_annealing';
             solver_opt.lb = this.lb;
             solver_opt.ub = this.ub;
@@ -438,14 +438,14 @@ classdef BreachProblem < BreachStatus
             this.display = 'off';
         end
         
-        function solver_opt = setup_tomlab_glbfast(this)
+        function solver_opt = setup_tomlab_glbfast(this, varargin)
             this.solver = 'tomlab_glbfast';
             solver_opt.lb = this.lb;
             solver_opt.ub = this.ub;
             this.display = 'off';
         end
         
-        function solver_opt = setup_tomlab_lgo(this)
+        function solver_opt = setup_tomlab_lgo(this,varargin)
             this.solver = 'tomlab_lgo';
             solver_opt.lb = this.lb;
             solver_opt.ub = this.ub;
