@@ -402,7 +402,7 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt;
         end
         
-        function solver_opt = setup_cmaes(this)
+        function solver_opt = setup_cmaes(this, varargin)
             %disp('Setting options for cmaes solver - use help cmaes for details');
             solver_opt = cmaes();
             solver_opt.Seed = 0;
