@@ -435,6 +435,7 @@ classdef BreachProblem < BreachStatus
             solver_opt.start_function_values = [];
             solver_opt= varargin2struct_breach(solver_opt, varargin{:});
             this.display = 'off';
+            this.solver_options = solver_opt;
         end
         
         function solver_opt = setup_tomlab_glbfast(this, varargin)
@@ -472,6 +473,7 @@ classdef BreachProblem < BreachStatus
             solver_opt.start_sample = [];
             solver_opt= varargin2struct_breach(solver_opt, varargin{:}); 
             this.display = 'off';
+            this.solver_options = solver_opt;
         end
         
         %% solve functions for various solvers
