@@ -63,6 +63,7 @@ params = struct('bounds',{u,v},'nreq',nreq,'p',p); % input structure
 % repeated calls to Snobfit
 bestForPrint = Inf;
 printFlag = 1;
+
 while ncall0 < ncall % repeat till ncall function values are reached
     % (if the stopping criterion is not fulfilled first)
     if ncall0 == npoint  % initial call
@@ -76,34 +77,54 @@ while ncall0 < ncall % repeat till ncall function values are reached
     if prt>0, request, end
     clear x
     clear f
-    for j=1:size(request,1)
-        x(j,:) = request(j,1:n);
-        functionEvalPlusNoise = feval(fcn,x(j,:),this)+fac*randn;
-        if numel(functionEvalPlusNoise) > 1
-            % We are evaluating several specs at once
-            % Take the minimum of the robustness values
-            % (i.e. use max semantics for the conjunction
-            % of specs)
-            functionEvalPlusNoise = min(functionEvalPlusNoise);
+    
+    if isfield(this.BrSys.Sys, 'use_parallel') && this.BrSys.Sys.use_parallel
+        % Parallel computation
+        parRequest = request(:, 1:n);
+        parfor j=1:size(request,1)
+            x(j,:) = parRequest(j);
+            functionEvalPlusNoise = snobfit_wrapper(x(j,:),this) + fac*randn;
+            if numel(functionEvalPlusNoise) > 1
+                % We are evaluating several specs at once
+                % Take the minimum of the robustness values
+                % (i.e. use max semantics for the conjunction
+                % of specs)
+                functionEvalPlusNoise = min(functionEvalPlusNoise);
+            end
+            f(j,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
         end
-        f(j,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
-        % computation of the (perturbed) function values at the suggested points
-        
-        % Display
-        totalCounter = ncall0 + j - 1;
-        if f(j,1) < bestForPrint
-            bestForPrint = f(j,1);
-            if ncall0 > npoint
-                disp([num2str(totalCounter) ': NEW BEST: ' num2str(bestForPrint)]);
+    else
+        % Serial computation
+        for j=1:size(request,1)
+            x(j,:) = request(j,1:n);
+            functionEvalPlusNoise = feval(fcn,x(j,:),this)+fac*randn;
+            if numel(functionEvalPlusNoise) > 1
+                % We are evaluating several specs at once
+                % Take the minimum of the robustness values
+                % (i.e. use max semantics for the conjunction
+                % of specs)
+                functionEvalPlusNoise = min(functionEvalPlusNoise);
             end
-            if bestForPrint < 0
-                disp(['FALSIFIED at sample ' num2str(totalCounter) '!']);
-                printFlag = 0;
+            f(j,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
+            % computation of the (perturbed) function values at the suggested points
+            
+            % Display
+            totalCounter = ncall0 + j - 1;
+            if f(j,1) < bestForPrint
+                bestForPrint = f(j,1);
+                if ncall0 > npoint
+                    disp([num2str(totalCounter) ': NEW BEST: ' num2str(bestForPrint)]);
+                end
+                if bestForPrint < 0
+                    disp(['FALSIFIED at sample ' num2str(totalCounter) '!']);
+                    printFlag = 0;
+                end
+            elseif mod(totalCounter, this.freq_update)==0 && printFlag && ~this.stopping
+                fprintf([num2str(totalCounter) ': Rob: ' num2str(f(j,1)) '\t\tBEST:' num2str(bestForPrint) '\n']);
             end
-        elseif mod(totalCounter, this.freq_update)==0 && printFlag && ~this.stopping
-            fprintf([num2str(totalCounter) ': Rob: ' num2str(f(j,1)) '\t\tBEST:' num2str(bestForPrint) '\n']);
         end
     end
+    
     ncall0 = ncall0 + size(f,1); % update function call counter
     [fbestn,jbest] = min(f(:,1)); % best function value
     if fbestn < fbest
