@@ -31,6 +31,12 @@ if ~isfield(B.P, 'opt_morris')||~isequal(opt, B.P.opt_morris)
     B.P.D = Pr.D;       
 end
 
+% Check if B is using parallel computation - in that case, do it for R as
+% well
+if isprop(B, 'use_parallel')
+    R.Sys.use_parallel = B.use_parallel;
+end
+
 R.Eval(B, objFunctions);
 
 for objFunctionCounter = 1:numel(objFunctions)
