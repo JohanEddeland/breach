@@ -82,7 +82,7 @@ while ncall0 < ncall % repeat till ncall function values are reached
         % Parallel computation
         parRequest = request(:, 1:n);
         parfor j=1:size(request,1)
-            x(j,:) = parRequest(j);
+            x(j,:) = parRequest(j, :);
             functionEvalPlusNoise = snobfit_wrapper(x(j,:),this) + fac*randn;
             if numel(functionEvalPlusNoise) > 1
                 % We are evaluating several specs at once
