@@ -80,10 +80,14 @@ while ncall0 < ncall % repeat till ncall function values are reached
     
     if isfield(this.BrSys.Sys, 'use_parallel') && this.BrSys.Sys.use_parallel
         % Parallel computation
-        parRequest = request(:, 1:n);
-        parfor j=1:size(request,1)
-            x(j,:) = parRequest(j, :);
-            functionEvalPlusNoise = snobfit_wrapper(x(j,:),this) + fac*randn;
+        this.use_parallel = 1;
+        x = request(:, 1:n);
+        fcn_handle = @snobfit_wrapper;
+        % We utilize the parallel computation support of
+        % BreachProblem.objective_wrapper
+        allFunctionValues = snobfit_wrapper(x, this);
+        for j = 1:size(allFunctionValues, 2)
+            functionEvalPlusNoise = allFunctionValues(:, j) + fac*randn;
             if numel(functionEvalPlusNoise) > 1
                 % We are evaluating several specs at once
                 % Take the minimum of the robustness values
@@ -92,7 +96,44 @@ while ncall0 < ncall % repeat till ncall function values are reached
                 functionEvalPlusNoise = min(functionEvalPlusNoise);
             end
             f(j,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
+            
+            totalCounter = ncall0 + j - 1;
+            if f(j,1) < bestForPrint
+                bestForPrint = f(j,1);
+                if ncall0 > npoint
+                    disp([num2str(totalCounter) ': NEW BEST: ' num2str(bestForPrint)]);
+                end
+                if bestForPrint < 0
+                    disp(['FALSIFIED at sample ' num2str(totalCounter) '!']);
+                    printFlag = 0;
+                end
+            elseif mod(totalCounter, this.freq_update)==0 && printFlag && ~this.stopping
+                fprintf([num2str(totalCounter) ': Rob: ' num2str(f(j,1)) '\t\tBEST:' num2str(bestForPrint) '\n']);
+            end
         end
+%         for j = 1:size(request, 1)
+%             x(j,:) = parRequest(j, :);
+%             parResults(j) = parfeval(fcn_handle, 1, x(j, :), this);
+%         end
+%         
+%         for j2 = 1:size(request, 1)
+%             [~, functionEvalPlusNoise] = fetchNext(parResults);
+%             functionEvalPlusNoise = functionEvalPlusNoise + fac*randn;
+%             
+%             % Update obj_log and nb_obj_eval
+%             this.obj_log = [this.obj_log functionEvalPlusNoise];
+%             this.nb_obj_eval = this.nb_obj_eval + 1;
+%             
+%             if numel(functionEvalPlusNoise) > 1
+%                 % We are evaluating several specs at once
+%                 % Take the minimum of the robustness values
+%                 % (i.e. use max semantics for the conjunction
+%                 % of specs)
+%                 functionEvalPlusNoise = min(functionEvalPlusNoise);
+%             end
+%             f(j2,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
+%         end
+
     else
         % Serial computation
         for j=1:size(request,1)
