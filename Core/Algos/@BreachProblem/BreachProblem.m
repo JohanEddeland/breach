@@ -100,6 +100,13 @@ classdef BreachProblem < BreachStatus
         % robustness by 1000 before passing it to the solver, in an effort
         % to keep the robustness values "equal"
         avgRobForNormalization
+        
+        % We define a "batch size" for parallel computations to not run out
+        % of memory when doing parallel runs. If batch size is 50, then
+        % solve() will calculate 50 objective function values in parallel,
+        % then sort out the results, then calculate another 50 function
+        % values in parallel etc. 
+        parallelBatchSize = inf
     end
     
     % misc options
@@ -1028,29 +1035,35 @@ classdef BreachProblem < BreachStatus
                         end
                                                                         
                     end
-                else % Parallel case 
+                else % Parallel case
                     
-                    % Launch tasks
-                    for iter = 1:nb_iter
-                        par_f(:,iter) = parfeval(fun,2, iter);
-                    end
-                    
-                    for iter=1:nb_iter
-                        [idx, value, cvalue] = fetchNext(par_f);
-                        fval(:,idx) = value;
-                        cval(:,idx) = cvalue;
+                    for batch_counter = 1:this.parallelBatchSize:nb_iter
                         
-                        % Normalize the function value based on average
-                        % robustness stated
-                        fval(:, iter) = fval(:, iter)./this.avgRobForNormalization;
+                        start_index = batch_counter;
+                        end_index = min(batch_counter + batch_size - 1, nb_iter);
+                        % Launch tasks
+                        for iter = start_index:end_index
+                            par_f(:,iter) = parfeval(fun,2, iter);
+                        end
                         
-                        this.time_spent = toc(this.time_start);
-                        
-                        this.LogX(x(:, idx), fval(:,idx), cval(:,idx));
-                        
-                        if this.stopping()
-                            cancel(par_f);
-                            break
+                        for idx = start_index:end_index
+                            [~, value, cvalue] = fetchNext(par_f);
+                            fval(:,idx) = value;
+                            cval(:,idx) = cvalue;
+                            
+                            % Normalize the function value based on average
+                            % robustness stated
+                            fval(:, iter) = fval(:, iter)./this.avgRobForNormalization;
+                            
+                            this.time_spent = toc(this.time_start);
+                            
+                            this.LogX(x(:, idx), fval(:,idx), cval(:,idx));
+                            
+                            if this.stopping()
+                                cancel(par_f);
+                                break
+                            end
+                            
                         end
                     end
                 end
