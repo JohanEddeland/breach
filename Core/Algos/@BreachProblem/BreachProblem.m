@@ -1065,6 +1065,9 @@ classdef BreachProblem < BreachStatus
                             end
                             
                         end
+                        
+                        % update status
+                        this.display_status();
                     end
                 end
             else
