@@ -719,8 +719,7 @@ classdef BreachSamplesPlot < handle
                 ipos = find(event_obj.Target.XData==pos(1)&event_obj.Target.YData==pos(2),1);
                 is_neg = 0;
                 is_pos = 0;
-                is_vac = 0;
-                
+                is_vac = 0;                
                 
                 if isequal(this.neg_plot, event_obj.Target)
                     is_neg = 1;

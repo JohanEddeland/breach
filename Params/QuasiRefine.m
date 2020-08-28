@@ -88,6 +88,10 @@ else % all optional parameters
     end
 end
 
+% JOHAN CHANGE
+disp('QuasiRefine.m: No longer changing algorithm to TestronRefine (use PseudoRandomSample instead of QuasiRandomSample for that)');
+% END JOHAN CHANGE
+
 if(strcmpi(algo,'sobol') && numel(P.dim)>40)
     warning('QuasiRefine:InappropriateAlgo',...
         'The sobol algorithm is usable up to dimension 40, switched to halton algorithm.');

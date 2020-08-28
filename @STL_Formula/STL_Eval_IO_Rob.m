@@ -90,4 +90,13 @@ switch nargin
         [val, tau, robustness_map] = STL_EvalThom_Gen_Rob(Sys, phi, P, trajs, partition, relabs, robustness_map, taus);
 end
 
+% Apply constant semantics, if needed
+global objToUse;
+constSemanticsVal = 100; 
+if strcmp(objToUse, 'constant')
+    val(val >= 0) = constSemanticsVal;
+    val(val < 0) = -constSemanticsVal;
+end
+
+
 end

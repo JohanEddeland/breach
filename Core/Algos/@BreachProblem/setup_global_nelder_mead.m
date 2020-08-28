@@ -11,8 +11,33 @@ opt = struct( ...
     'local_options', optimset('Display', 'off') ...
     );
 
-if nargin >= 2
-    opt = varargin2struct(opt, varargin{:});
+% JOHAN CHANGE
+% Prevent "corner sampling", we want to do pure random initial sampling
+% instead, this is for achieving similar results to with other algorithms
+% (like Simulated Annealing).
+% Setting num_corners = 0 will result to no "corner solve" in
+% solve_global_nelder_mead.m. 
+opt.num_corners = 0;
+% END JOHAN CHANGE
+
+if this.use_parallel
+    opt.use_parallel = true;
+end
+
+% checks with what we have already
+if isstruct(this.solver_options)
+    fn = fieldnames(this.solver_options);
+    for ifn = 1:numel(fn)
+        field = fn{ifn};
+        if isfield(opt, field)
+            opt.(field) = this.solver_options.(field);
+        end
+    end
+end
+
+if nargin>2    
+    opt = varargin2struct_breach(opt, varargin{:});
+
 end
 
 this.solver_options = opt;

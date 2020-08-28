@@ -1,17 +1,14 @@
-function res = ComputeMorrisSensi(R, B, varargin)
-%% ComputeMorrisSensi compute sensitivities using Morris method for all requirement in R. Assumes B is a set with ranges. 
-%  
+function [res, R] = ComputeMorrisSensi(R, B, num_path, objFunctions)
+%% ComputeMorrisSensi compute sensitivities using Morris method for all requirement in R. Assumes B is a set with ranges.
+%
 %  Note: if B is a BreachSimulinkSystem with no traces, we compute the
 %  Morris samples and corresponding traces and stores them in B. If B
 %  already contains Morris samples and traces they are not re-computed.
-
-opt = struct('num_path', 100, ...      % number of paths, i.e., set of
-                    ...                % samples providing 1 pair of samples per dim
-                'rand_seed', 1, ...    % random seed for reproducibility    
-                'size_grid', 5 ...     % number of grid levels, intervals in each dim
+opt = struct('num_path', num_path, ...      % number of paths, i.e., set of
+    ...                % samples providing 1 pair of samples per dim
+    'rand_seed', 1, ...    % random seed for reproducibility
+    'size_grid', 5 ...     % number of grid levels, intervals in each dim
     );
-
-opt = varargin2struct(opt, varargin{:});
 
 [vars, iv] = B.GetVariables(); % variables and indices
     
@@ -30,14 +27,17 @@ if ~isfield(B.P, 'opt_morris')||~isequal(opt, B.P.opt_morris)
     B.P.D = Pr.D;       
 end
 
-R.Eval(B);
+R.Eval(B, objFunctions);
 
-for ir =  1:numel(R.req_monitors)
-    res{ir}.params = vars;
-    res{ir}.rob = R.traces_vals(:,ir)';
-    [res{ir}.mu, res{ir}.mustar, res{ir}.sigma, res{ir}.sigmastar, res{ir}.EE] = EEffects(res{ir}.rob, B.P.D, opt.size_grid);
-    fprintf(['\nSensitivities for ' R.req_monitors{ir}.name]); 
-    display_morris_result(res{ir});
+for objFunctionCounter = 1:numel(objFunctions)
+    for ir =  1:numel(R.req_monitors)
+        res{objFunctionCounter, ir}.params = vars;        
+        res{objFunctionCounter, ir}.rob = R.traces_vals(B.P.traj_ref,ir, objFunctionCounter)';
+        [res{objFunctionCounter, ir}.mu, res{objFunctionCounter, ir}.mustar, res{objFunctionCounter, ir}.sigma, res{objFunctionCounter, ir}.sigmastar, res{objFunctionCounter, ir}.EE] = EEffects(res{objFunctionCounter, ir}.rob, B.P.D, opt.size_grid);
+        %res{objFunctionCounter, ir}.R = R;
+        %fprintf(['\nSensitivities for ' R.req_monitors{ir}.name]);
+        %display_morris_result(res{objFunctionCounter, ir});
+    end
 end
 
 end

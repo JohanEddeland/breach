@@ -307,7 +307,8 @@ classdef BreachProblem < BreachStatus
                 'quasi_rand_seed', 1,...
                 'num_quasi_rand_samples', 100 ...   % arbitrary - should be dim-dependant?  
             );
-            solver_opt= varargin2struct(solver_opt, varargin{:});
+            solver_opt= varargin2struct_breach(solver_opt, varargin{:});
+
         
             this.solver = 'quasi_random';
             this.solver_options = solver_opt; 
@@ -415,8 +416,43 @@ classdef BreachProblem < BreachStatus
             this.solver_options = solver_opt;
         end
         
+        function solver_opt = setup_simulated_annealing(this)
+            this.solver = 'simulated_annealing';
+            solver_opt.lb = this.lb;
+            solver_opt.ub = this.ub;
+            this.display = 'off';
+        end
+        
+        function solver_opt = setup_tomlab_glbfast(this)
+            this.solver = 'tomlab_glbfast';
+            solver_opt.lb = this.lb;
+            solver_opt.ub = this.ub;
+            this.display = 'off';
+        end
+        
+        function solver_opt = setup_tomlab_lgo(this)
+            this.solver = 'tomlab_lgo';
+            solver_opt.lb = this.lb;
+            solver_opt.ub = this.ub;
+            this.display = 'off';
+        end
+        
+        function solver_opt = setup_snobfit(this)
+            this.solver = 'snobfit';
+            solver_opt.lb = this.lb;
+            solver_opt.ub = this.ub;
+            this.display = 'off';
+        end
+        
+        function solver_opt = setup_uniform_random(this)
+            this.solver = 'uniform_random';
+            solver_opt.lb = this.lb;
+            solver_opt.ub = this.ub;
+            this.display = 'off';
+        end
+        
         %% solve functions for various solvers
-        function res = solve(this)
+        function [res, startSample] = solve(this, startSample)
             
             % reset display
             rfprintf_reset();
@@ -453,9 +489,215 @@ classdef BreachProblem < BreachStatus
                 case 'global_nelder_mead'
                     res = this.solve_global_nelder_mead();
                     
-                case 'cmaes'
+                case 'simulated_annealing'
+                    % Simulated Annealing from S-TaLiRo
                     
-                    [x, fval, counteval, stopflag, out, bestever] = cmaes(this.objective, this.x0', [], this.solver_options);
+                    
+                    inputRanges = [this.lb this.ub];
+                    
+                    fun = this.objective;
+                    
+                    if nargin < 2
+                        % No startSample given
+                        [res, ~, startSample] = testron_SA(inputRanges, fun, this);
+                    else
+                        [res, ~, startSample] = testron_SA(inputRanges, fun, this, startSample);
+                    end
+                    
+                case 'tomlab_glbfast'
+                    % glbFast from TOMLAB
+                    % Requires TOMLAB to be installed on the computer, plus
+                    % a valid license file in the TOMLAB directory
+                    
+                    % To find example how to setup solver, see
+                    % tomlab/quickguide/glbQG.m
+                    if nargin < 2
+                        % No startSample given
+                        startSample = testronGetNewSample([this.lb this.ub]);
+                    end
+                    Name  = 'phi';
+                    x_L   = this.lb;  % Lower bounds for x.
+                    x_U   = this.ub;  % Upper bounds for x.
+                    x_opt = [];
+                    x_0   = startSample;
+                    f_opt = [];
+                    f_Low = [];             % Lower bound on function.
+                    x_min = []; % For plotting
+                    x_max = []; % For plotting
+
+                    
+                    fun = @(x, ~) this.objective(x);
+                    
+                    Prob  = glcAssign('tomlab_wrapper', x_L, x_U, Name, [], [], [], ...
+                        [], [], [], x_0, ...
+                        [], [], [], [], ...
+                        f_Low, x_min, x_max, f_opt, x_opt);
+                    
+                    %Prob.PriLevOpt = 0; % No printing
+                    Prob.optParam.MaxFunc = this.max_obj_eval;
+                    Prob.optParam.fGoal = -eps;
+                    
+                    Prob.brProblem = this;
+                    
+                    Result = tomRun('glbFast', Prob, 0);
+                    res = struct('bestRob',[],'bestSample',[],'nTests',[],'bestCost',[],'paramVal',[],'falsified',[],'time',[]);
+                    res.bestSample = Result.x_k(:,1);
+                    res.bestRob = Result.f_k;
+                    
+                case 'tomlab_lgo'
+                    % LGO from TOMLAB
+                    % Requires TOMLAB to be installed on the computer, plus
+                    % a valid license file in the TOMLAB directory
+                    
+                    % To find example how to setup solver, see
+                    % tomlab/quickguide/glbQG.m
+                    if nargin < 2
+                        % No startSample given
+                        startSample = testronGetNewSample([this.lb this.ub]);
+                    end
+                    Name  = 'phi';
+                    x_L   = this.lb;  % Lower bounds for x.
+                    x_U   = this.ub;  % Upper bounds for x.
+                    x_opt = [];
+                    x_0   = startSample;
+                    f_opt = [];
+                    f_Low = [];             % Lower bound on function.
+                    x_min = []; % For plotting
+                    x_max = []; % For plotting
+                    
+                    fun = @(x, ~) this.objective(x);
+                    
+                    Prob  = glcAssign('tomlab_wrapper', x_L, x_U, Name, [], [], [], ...
+                        [], [], [], x_0, ...
+                        [], [], [], [], ...
+                        f_Low, x_min, x_max, f_opt, x_opt);
+                    
+                    %Prob.PriLevOpt = 0; % No printing
+                    Prob.optParam.MaxFunc = this.max_obj_eval;
+                    Prob.optParam.fGoal = -eps;
+                    
+                    Prob.brProblem = this;
+                    
+                    Result = tomRun('lgo', Prob, 0);
+                    res = struct('bestRob',[],'bestSample',[],'nTests',[],'bestCost',[],'paramVal',[],'falsified',[],'time',[]);
+                    res.bestSample = Result.x_k(:,1);
+                    res.bestRob = Result.f_k;
+                    
+                case 'snobfit'
+                    % SNOBFIT
+                    % Install latest SNOBFIT, but MINQ for Matlab 5
+                    % The following is mostly copied from
+                    % snobfit/snobtest.m (some things changed)
+                    file = 'snobfit_data'; 
+                    fcn = 'snobfit_wrapper';
+                    fac = 0;        % factor for multiplicative perturbation of the data
+                    ncall = this.max_obj_eval;   % limit on the number of function calls
+                    u = this.lb;
+                    v = this.ub;
+                    fglob = -0.01;
+                    n = length(u);  % dimension of the problem
+                    % the following are meaningful default values
+                    npoint = 1;   % number of random start points to be generated
+                    nreq = n+6;     % no. of points to be generated in each call to SNOBFIT
+                    if nargin < 2
+                        % No startSample given
+                        startSample = testronGetNewSample([this.lb this.ub]);
+                    else
+                        % Start sample is already given in the variable
+                        % startSample as an input to this function
+                    end
+                    x = startSample';
+                    % starting points in [u,v]
+                    dx = (v-u)'*1.e-5; % resolution vector
+                    p = 0.5;        % probability of generating a point of class 4
+                    prt = 0;        % print level
+                    % prt = 0 prints ncall, xbest and fbest if xbest has
+                    %         changed
+                    % prt = 1 in addition prints the points suggested by
+                    %         SNOBFIT, their model function values and
+                    %         classes after each call to SNOBFIT
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    % end of data to be adapted
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    for j=1:npoint
+                        f(j,:) = [feval(fcn,x(j,:),this)+fac*randn max(sqrt(eps),3*fac)];
+                        % computation of the function values (if necessary, with additive
+                        % noise)
+                    end
+                    ncall0 = npoint;   % function call counter
+                    params = struct('bounds',{u,v},'nreq',nreq,'p',p); % input structure
+                    % repeated calls to Snobfit
+                    bestForPrint = Inf;
+                    printFlag = 1;
+                    while ncall0 < ncall % repeat till ncall function values are reached
+                        % (if the stopping criterion is not fulfilled first)
+                        if ncall0 == npoint  % initial call
+                            disp(['Initial robustness value: ' num2str(f(1))]);
+                            
+                            [request,xbest,fbest] = snobfit(file,x,f,params,dx);
+                            %ncall0,xbest,fbest;
+                        else                 % continuation call
+                            [request,xbest,fbest] = snobfit(file,x,f,params);
+                        end
+                        if prt>0, request, end
+                        clear x
+                        clear f
+                        for j=1:size(request,1)
+                            x(j,:) = request(j,1:n);
+                            f(j,:) = [feval(fcn,x(j,:), this)+fac*randn max(sqrt(eps),3*fac)];
+                            % computation of the (perturbed) function values at the suggested points
+                            
+                            % Display
+                            totalCounter = ncall0 + j - 1;
+                            if f(j,1) < bestForPrint
+                                bestForPrint = f(j,1);
+                                if ncall0 > npoint
+                                    disp([num2str(totalCounter) ': NEW BEST: ' num2str(bestForPrint)]);
+                                end
+                                if bestForPrint < 0
+                                    disp(['FALSIFIED at sample ' num2str(totalCounter) '!']); 
+                                    printFlag = 0;
+                                end
+                            elseif mod(totalCounter, 10)==0 && printFlag && ~this.stopping
+                                fprintf([num2str(totalCounter) ': Rob: ' num2str(f(j,1)) '\t\tBEST:' num2str(bestForPrint) '\n']);
+                            end
+                        end
+                        ncall0 = ncall0 + size(f,1); % update function call counter
+                        [fbestn,jbest] = min(f(:,1)); % best function value
+                        if fbestn < fbest
+                            
+                            fbest = fbestn;
+                            xbest = x(jbest,:);
+                            %ncall0,xbest,fbest % display current number of function values,
+                            % best point and function value if fbest has
+                            % changed
+                        end
+                        % check stopping criterion
+                        % if fglob == 0, stop if fbest < 1.e-5
+                        % otherwise, stop if (fbest-fglob)/abs(fglob) < 1.e-2
+                        if fbest < 0
+                            break
+                        end
+                        
+                        
+                    end
+                    %ncall0,xbest,fbest  % show number of function values, best point and
+                    % function value
+                    res = struct('bestRob',[],'bestSample',[],'nTests',[],'bestCost',[],'paramVal',[],'falsified',[],'time',[]);
+                    res.bestSample = xbest;
+                    res.bestRob = fbest;
+                    
+                case 'cmaes'
+                    % JOHAN CHANGE
+                    %                     Px0 = CreateParamSet(this.BrSet.P, this.params,  [this.lb this.ub]);
+                    %                     Px0 = TestronRefine(Px0, 1); % Generate only 1 sample
+                    %                     this.x0 = GetParam(Px0,this.params);
+                    if nargin < 2
+                        % No startSample given
+                        startSample = testronGetNewSample([this.lb this.ub]);
+                    end
+                    % END JOHAN CHANGE
+                    [x, fval, counteval, stopflag, out, bestever] = cmaes(this.objective, startSample, [], this.solver_options);
                     res = struct('x',x, 'fval',fval, 'counteval', counteval,  'stopflag', stopflag, 'out', out, 'bestever', bestever);
                     this.add_res(res);
 
@@ -535,18 +777,68 @@ classdef BreachProblem < BreachStatus
                 case 'binsearch'
                     res = solve_binsearch(this);
                     this.add_res(res);
+                    
+                case 'uniform_random'
+                    % Initialize variables used
+                    xbest = [];
+                    fbest = Inf;
+                    
+                    printFlag = 1;
+                    
+                    for iterationCounter = 1:this.max_obj_eval
+                        % Sample from uniform random distribution between
+                        % this.lb and this.ub
+                        x = (this.ub - this.lb).*rand(size(this.lb)) + this.lb;
+                        
+                        % Calculate robustness
+                        rob = this.objective(x);
+                        
+                        if iterationCounter == 1
+                            disp(['Initial robustness value: ' num2str(rob)]);
+                        end
+                        
+                        
+                        
+                        % Store if it's best
+                        if rob < fbest
+                            xbest = x;
+                            fbest = rob;
+                            
+                            if iterationCounter > 1
+                                disp([num2str(iterationCounter) ': NEW BEST: ' num2str(fbest)]);
+                            end
+                        end
+                        
+                        if mod(iterationCounter, 10)==0 && ~this.stopping
+                            fprintf([num2str(iterationCounter) ': Rob: ' num2str(rob) '\t\tBEST:' num2str(fbest) '\n']);
+                        end
+                        
+                        % Exit if robustness negative
+                        if rob < 0
+                            disp(['FALSIFIED at sample ' num2str(iterationCounter) '!']);
+                            break
+                        end
+                    end
+                    res = struct('bestRob',[],'bestSample',[],'nTests',[],'bestCost',[],'paramVal',[],'falsified',[],'time',[]);
+                    res.bestSample = xbest;
+                    res.bestRob = fbest;
 
                 otherwise
                     res = feval(this.solver, problem);
                     this.add_res(res);
                     
             end
+            % TESTRON: Mute these outputs
             this.DispResultMsg(); 
-            this.Display_Best_Results(this.obj_best, this.x_best);
+            %this.Display_Best_Results(this.obj_best, this.x_best);
             
             %% Saving run in cache folder
             this.SaveInCache();
-        
+            
+            % For some solvers we do not return the startSample
+            if ~exist('startSample', 'var')
+                startSample = '';
+            end
         end
         
         function SaveInCache(this)
@@ -561,7 +853,7 @@ classdef BreachProblem < BreachStatus
         % function res = FevalInit(this,X0)
         % defined in external file
         
-        function X0 = init_basic_X0(this)
+        function X0 = init_basic_X0(this, n_samples)
             % returns initial vectors
             BrQ = this.BrSet.copy();
             BrQ.ResetParamSet();
@@ -573,7 +865,24 @@ classdef BreachProblem < BreachStatus
             step = this.solver_options.start_at_trial;
             
             BrC.P = CreateParamSet(BrC.Sys,this.params,[this.lb this.ub]);
-            BrC.CornerSample(nb_corners);
+            % JOHAN CHANGE
+            if numel(this.params) < 5
+                % Standard case, use CornerSample
+                fprintf('%d varying parameters, using standard CornerSample\n',numel(this.params));
+                BrC.CornerSample();
+            else
+                % Too many parameter combinations to enumerate
+                % Use QuasiRandomSample instead
+                if ~exist('n_samples', 'var')
+                    n_samples = 180; % Arbitrary choice
+                end
+                fprintf('%d varying parameters, using QuasiRandomSample(%d) (TestronRefine) to not run out of memory\n',numel(this.params),n_samples);
+                BrC.QuasiRandomSample(n_samples);
+                
+                % Change nb_samples, which is a "Breach" variable
+                nb_samples = n_samples;
+            end
+            % END JOHAN CHANGE
             XC = BrC.GetParam(this.params);
             nb_corners= size(XC, 2);
             qstep = step-nb_corners;
@@ -710,13 +1019,7 @@ classdef BreachProblem < BreachStatus
             % For falsification, default objective_fn is mostly robust satisfaction of the least
             this.robust_fn(x);
             robs = this.Spec.traces_vals;
-            
-            % 
-            IsVac_idx = isinf(robs);
-            if any(IsVac_idx)
-                robs(IsVac_idx) = this.Spec.traces_vals_vac(IsVac_idx); % note: if this is NaN, will get back to Inf below...                 
-            end            
-            
+
             if (~isempty(this.Spec.traces_vals_precond))
                 num_tr = size(this.Spec.traces_vals_precond,1);
                 precond_robs = zeros(num_tr,1);
@@ -740,14 +1043,15 @@ classdef BreachProblem < BreachStatus
                         
         end
         
-        
         function [fval, cval] = objective_wrapper(this,x)
+            % reset this.Spec
             
-            % objective_wrapper calls the objective function and wraps some bookkeeping                        
-             if size(x,1) ~= numel(this.params)
+            global objToUse;
+            % objective_wrapper calls the objective function and wraps some bookkeeping
+            if size(x,1) ~= numel(this.params)
                 x = x';
-             end
-        
+            end
+            
             nb_eval =  size(x,2);
             fval = inf*ones(size(this.Spec.req_monitors,2), nb_eval);
             %cval = inf*ones(size(this.Spec.precond_monitors,2), nb_eval);
@@ -778,9 +1082,11 @@ classdef BreachProblem < BreachStatus
                         else
                             % calling actual objective function
                             [fval(:,iter), cval(:,iter)] = fun(iter);
+                            
+                            % logging and updating best
                             this.time_spent = toc(this.time_start);
                             this.LogX(x(:, iter), fval(:,iter), cval(:,iter));
-                       
+
                             % update status
                         end
                                                                         
@@ -860,11 +1166,9 @@ classdef BreachProblem < BreachStatus
                  this.num_consecutive_constraints_failed = this.num_consecutive_constraints_failed+1;
                  this.num_constraints_failed = this.num_constraints_failed+1;                
             end
-            
-            if rem(this.nb_obj_eval+this.num_constraints_failed,this.freq_update)==0
-                this.display_status(fval, cval);
+            if rem(this.nb_obj_eval+this.num_constraints_failed,this.freq_update)
+                % TODO: what should be here?
             end
-            
         end
          
         function [BrOut, Berr, BbadU] = GetBrSet_Logged(this)
@@ -943,6 +1247,7 @@ classdef BreachProblem < BreachStatus
             end
         end
         
+
         function Display_Best_Results(this, best_fval, param_values)
             if ~strcmp(this.display, 'off')
                 if ~isempty(param_values)

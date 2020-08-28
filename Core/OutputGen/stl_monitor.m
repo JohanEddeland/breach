@@ -69,7 +69,7 @@ classdef stl_monitor < req_monitor
         function [flag1,flag2] = get_mode(this)
             flag1 = this.inout;
             flag2 = this.relabs;
-        end
+        end    
         
         function [time, Xout] = computeSignals(this, time, X, p)
             this.init_tXp(time,X,p);

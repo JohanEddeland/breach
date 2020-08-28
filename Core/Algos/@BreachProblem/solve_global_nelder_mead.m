@@ -118,8 +118,6 @@ this.setup_nelder_mead(x0, 'MaxFunEvals', opt.local_max_obj_eval, 'Display', 'of
 res = this.solve_nelder_mead();
 
 
-
 end
-
 
 

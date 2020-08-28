@@ -180,14 +180,41 @@ classdef BreachRequirement < BreachTraceSystem
                 [traces_vals, traces_vals_precond, traces_vals_vac] = this.evalAllTraces(varargin{:});
             end
             % A BreachRequirement must return a single value
-            global_val = min(min(traces_vals));
+            global_val = min(min(min(traces_vals)));
             global_precond_val = min(min(traces_vals_precond));
             this.val = min([global_val,-global_precond_val]);
         end
-                
+        
         function [traces_vals, traces_vals_precond, traces_vals_vac] =evalAllTraces(this,varargin)
+            % TESTRON: Add extra (optional) argument with objective
+            % functions when running global sensitivity experiments
+            if nargin > 2 && iscell(varargin{2}) && ischar(varargin{2}{1})
+                % varargin{0} is the BreachSimulinkSystem
+                % varargin{1} is a cell array of objective functions
+                % (strings)
+                % Check that varargin{2} actually contains objFunctions,
+                % that is, it contains the string 'standard'
+                IndexC = strfind(varargin{2}, 'standard');
+                Index = find(not(cellfun('isempty',IndexC)));
+                if Index
+                    % varargin{2} contains a list of objective functions to
+                    % use for global sensitivity analysis
+                    objFunctions = varargin{2};
+                    % Remove the argument from varargin, since varargin is used
+                    % later
+                    varargin(2) = [];
+                else
+                    % varargin{2} does not contain objective functions.
+                    objFunctions = {'standard'};
+                end
+            else
+                objFunctions = {'standard'};
+            end
+            
+            
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
+            global objToUse;
             new= this.getBrSet(varargin{:});
             if new
                 num_traj = numel(this.P.traj);
@@ -206,15 +233,57 @@ classdef BreachRequirement < BreachTraceSystem
                 end
                 
                 % eval requirement
-                for it = 1:num_traj
-                    if any(traces_vals_precond(it,:)<0)
-                        traces_vals(it, :)  = NaN;
-                    else
-                        for ipre = 1:numel(this.req_monitors)
-                            req = this.req_monitors{ipre};
-                            [traces_vals(it, ipre), traces_vals_vac(it, ipre)]  = eval_req(this,req,it);
+                for objFunctionCounter = 1:numel(objFunctions)
+                    thisObjFunction = objFunctions{objFunctionCounter};
+                    if numel(objFunctions) > 1
+                        % Only if we want to loop over objFunctions here will
+                        % we change the global variable.
+                        % If there is only 1, objToUse has been initiated
+                        % elsewhere.
+                        fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction '\n']);
+                        objToUse = thisObjFunction;
+                    end
+                    startTimeOfAll = tic;
+                    for it = 1:num_traj
+                        currentTime = datestr(now, 'HH:MM:ss');
+                        if num_traj > 300
+                            fprintf(['*** START traj ' num2str(it) '/' num2str(num_traj) ' at ' currentTime '\n']);
+                        end
+                        execTimesForThisReq = -Inf(1, numel(this.req_monitors));
+                        if any(traces_vals_precond(it,:)<0)
+                            traces_vals( it, :, objFunctionCounter)  = NaN;
+                        else
+                            for ipre = 1:numel(this.req_monitors)
+                                startTimeOfReq = tic;
+                                req = this.req_monitors{ipre};
+                                [traces_vals(it, ...
+                                    ipre,objFunctionCounter), traces_vals_vac(it, ipre,objFunctionCounter)]  = eval_req(this,req,it);
+                                %fprintf(['  Finished req ' num2str(ipre) '/' numel(this.req_monitors) ' in ' num2str(toc(startTimeOfReq)) 's\n']);
+                                execTimesForThisReq(ipre) = toc(startTimeOfReq);
+                            end
+                        end
+                        % Finished the traj
+                        % Display the nSlowest slowest specifications
+                        nSlowest = 5;
+                        if numel(execTimesForThisReq) > nSlowest
+                            fprintf(['  Finished traj, ' num2str(nSlowest) ' slowest specs (out of ' num2str(numel(this.req_monitors)) '): ']);
+                            [sortedExecTimes, sortedSpecIndex] = sort(execTimesForThisReq, 'descend');
+                            for slowestCounter = 1:nSlowest
+                                thisIndex = sortedSpecIndex(slowestCounter);
+                                thisTime = sortedExecTimes(slowestCounter);
+                                fprintf([num2str(thisIndex) ' (' num2str(thisTime) 's)']);
+                                if slowestCounter < nSlowest
+                                    fprintf(', ');
+                                end
+                            end
+                            fprintf('\n');
                         end
                     end
+                    
+                    if numel(objFunctions) > 1
+                        fprintf(['TOTAL time: ' num2str(toc(startTimeOfAll)) 's\n']);
+                    end
+                    
                 end
                 this.traces_vals_precond = traces_vals_precond;
                 this.traces_vals_vac = traces_vals_vac;
@@ -227,8 +296,35 @@ classdef BreachRequirement < BreachTraceSystem
         end
         
         function [traces_vals, traces_vals_precond, traces_vals_vac] =parevalAllTraces(this,varargin)
+            % TESTRON: Add extra (optional) argument with objective
+            % functions when running global sensitivity experiments
+            if nargin > 2
+                % varargin{0} is the BreachSimulinkSystem
+                % varargin{1} is a cell array of objective functions
+                % (strings)
+                % Check that varargin{2} actually contains objFunctions,
+                % that is, it contains the string 'standard'
+                IndexC = strfind(varargin{2}, 'standard');
+                Index = find(not(cellfun('isempty',IndexC)));
+                if Index
+                    % varargin{2} contains a list of objective functions to
+                    % use for global sensitivity analysis
+                    objFunctions = varargin{2};
+                    % Remove the argument from varargin, since varargin is used
+                    % later
+                    varargin(2) = [];
+                else
+                    % varargin{2} does not contain objective functions.
+                    objFunctions = {'standard'};
+                end
+            else
+                objFunctions = {'standard'};
+            end
+            
+            
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
+            global objToUse;
             new= this.getBrSet(varargin{:});
             if new
                 num_traj = numel(this.P.traj);
@@ -247,17 +343,43 @@ classdef BreachRequirement < BreachTraceSystem
                     end
                 end
                 
-                
                 % eval requirement
-                num_monitors = numel(this.req_monitors);
-                for ipre = 1:num_monitors
-                    req = this.req_monitors{ipre};                            
-                    parfor it = 1:num_traj
-                        if any(traces_vals_precond(it,:)<0)
-                            traces_vals(it, ipre)  = NaN;
-                        else
-                            [traces_vals(it, ipre), traces_vals_vac(it, ipre)]  = eval_req(this,req,it);
+                for objFunctionCounter = 1:numel(objFunctions)
+                    thisObjFunction = objFunctions{objFunctionCounter};
+                    if numel(objFunctions) > 1
+                        % Only if we want to loop over objFunctions here will
+                        % we change the global variable.
+                        % If there is only 1, objToUse has been initiated
+                        % elsewhere.
+                        fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction '\n']);
+                        objToUse = thisObjFunction;
+                    end
+                    startTimeOfAll = tic;
+                    % NEW
+                    num_monitors = numel(this.req_monitors);
+                    for ipre = 1:num_monitors
+                        startTimeOfThisReq = tic;
+                        currentTime = datestr(now, 'HH:MM:ss');
+                        if num_traj > 300
+                            fprintf(['*** START monitor ' num2str(ipre) '/' num2str(num_monitors) ' at ' currentTime '\n']);
                         end
+                        
+                        req = this.req_monitors{ipre};
+                        parfor it = 1:num_traj
+                            if any(traces_vals_precond(it,:)<0)
+                                traces_vals(it, ipre, objFunctionCounter)  = NaN;
+                            else
+                                [traces_vals(it, ...
+                                    ipre,objFunctionCounter), traces_vals_vac(it, ipre,objFunctionCounter)]  = eval_req(this,req,it);
+                            end
+                        end
+                        
+                        endTimeOfThisReq = toc(startTimeOfThisReq);
+                        fprintf(['Finished req ' num2str(ipre) '/' num2str(num_monitors) ' in ' num2str(endTimeOfThisReq) 's\n']);
+                    end
+                    
+                    if numel(objFunctions) > 1
+                        fprintf(['TOTAL time of all reqs : ' num2str(toc(startTimeOfAll)) 's\n']);
                     end
                 end
                 this.traces_vals_precond = traces_vals_precond;
@@ -268,6 +390,7 @@ classdef BreachRequirement < BreachTraceSystem
                 traces_vals_vac = this.traces_vals_vac;
                 traces_vals = this.traces_vals;
             end
+            
         end
         
         function F = PlotDiagnostics(this, idx_req_monitors, itraj)
@@ -319,7 +442,7 @@ classdef BreachRequirement < BreachTraceSystem
             
             summary = GetStatement(this);
             summary.signature = this.GetSignature(varargin{:});
-            summary.num_violations_per_trace =sum(this.traces_vals<0 , 2 )';
+            summary.num_violations_per_trace =sum(this.traces_vals(:,:,1)<0 , 2 )';
             [~,idxm ] = sort(summary.num_violations_per_trace, 2, 'descend');
             summary.idx_traces_with_most_violations = idxm;
             
@@ -343,8 +466,8 @@ classdef BreachRequirement < BreachTraceSystem
             end
             if summary.num_traces_evaluated>0
                 summary.val = this.val;
-                summary.requirements.rob = this.traces_vals;
-                summary.requirements.rob_vac = this.traces_vals_vac;
+                summary.requirements.rob = this.traces_vals(:,:,1); % might want to use global objective variable here
+                summary.requirements.rob_vac = this.traces_vals_vac(:,:,1);
                 summary.requirements.sat = this.traces_vals >=0;
                 summary.num_requirements = size(this.traces_vals,2);
                 if summary.num_requirements == 1
@@ -352,9 +475,9 @@ classdef BreachRequirement < BreachTraceSystem
                 else
                     summary.statement = sprintf([summary.statement ' on %d requirements'], summary.num_requirements);
                 end
-                summary.num_traces_violations = sum( any(this.traces_vals<0, 2) );
+                summary.num_traces_violations = sum( any(this.traces_vals(:,:,1)<0, 2) );
                 summary.statement = sprintf([summary.statement ', %d traces have violations'], summary.num_traces_violations);
-                summary.num_total_violations =  sum( sum(this.traces_vals<0) );
+                summary.num_total_violations =  sum( sum(this.traces_vals(:,:,1)<0) );
                 if  summary.num_total_violations == 1
                     summary.statement = sprintf([summary.statement ', %d requirement violation' ], summary.num_traces_violations);
                 elseif summary.num_total_violations >1
@@ -1180,7 +1303,7 @@ classdef BreachRequirement < BreachTraceSystem
                     = this.evalRequirement(req, time, Xin, p_in);
                 this.P.traj{it}.X( idx_sig_req,:) = Xout;
             else
-                [val, ~, ~, val_vac]  = this.evalRequirement(req, time, Xin, p_in);
+                 [val, ~, ~, val_vac] = this.evalRequirement(req, time, Xin, p_in);
             end
         end
         

@@ -432,7 +432,7 @@ Breach Change log
 ## Developpers
 - get_checksum method computes the checksum of Simulink mdl, and returned boolean true if it changed wrt creation
 - mdl BreachSimulinkSystem property is a struct with model name, original path and date of creation
-- varargin2struct function can be used to setup basic optional argument with syntax optionName, optionValue
+- varargin2struct_breach function can be used to setup basic optional argument with syntax optionName, optionValue
 
 # Release 1.2.3
 

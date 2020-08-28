@@ -228,7 +228,7 @@ switch Sys.type
         if isfield(Sys, 'Parallel')&&Sys.Parallel&&numel(ipts)>1
             
             for idx = ipts
-                f(idx) = parfeval(@(ii)task_sim(Sys,P0,tspan,ii), 1, idx);
+                f(P0.traj_ref(idx)) = parfeval(@(ii)task_sim(Sys,P0,tspan,ii), 1, idx);
             end
             trajs = cell(1, numel(ipts));
             
@@ -240,7 +240,7 @@ switch Sys.type
                 trajs{completedIdx} = value;
                 if Verbose >=1
                     if(numel(ipts)>1)                        
-                        rfprintf(['Computed ' num2str(idx) '/' num2str(numel(ipts)) ' simulations of ' model])
+                        rfprintf(['Computed ' num2str(P0.traj_ref(idx)) '/' num2str(numel(ipts)) ' simulations of ' model])
                     end
                 end
             end

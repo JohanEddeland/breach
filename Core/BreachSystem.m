@@ -241,6 +241,7 @@ classdef BreachSystem < BreachSet
             
         end
         
+
         
         
         %% Specs
@@ -272,6 +273,9 @@ classdef BreachSystem < BreachSet
                 i_sig = FindParam(this.Sys, sig);
                 sig_not_found = find(i_sig>this.Sys.DimP, 1);
                 if ~isempty(sig_not_found)
+                    disp('sig_not_found: ');
+                    disp(sig_not_found);
+                    disp(sig(sig_not_found));
                     error('Some signals in specification are not part of the system.')
                 end
                 % Add property params
@@ -366,7 +370,7 @@ classdef BreachSystem < BreachSet
             end
         end
         
-        function [rob, tau] = GetRobustSat(this, phi, params, values, t_phi)
+        function [rob, tau] = GetRobustSat(this, phi, params, values, t_phi, objToUse)
             % Monitor spec on trajectories - run simulations if not done before
             
             if nargin < 5
@@ -397,6 +401,17 @@ classdef BreachSystem < BreachSet
             Sim(this);
             this.CheckinDomainTraj();
             
+            % JOHAN ADDED
+
+            % This was used previously to save trajectory info to the
+            % folder 'trajectories'
+%             filesInTrajFolder = length(dir('trajectories')) - 2;
+%             tmpP = this.P;
+%             paramValues = values;
+%             load('nextReqToBeFalsified'); % Loads currentReq
+%             save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
+            % END JOHAN ADDED
+            
             % FIXME: this is going to break with multiple trajectories with
             % some of them containing NaN -
               
@@ -405,10 +420,11 @@ classdef BreachSystem < BreachSet
                 rob = t_phi;
                 rob(:) = NaN;
             else
-                if ischar(phi)
-                    phi = STL_Formula('phi__tmp__', phi);
-                end
-                [rob, tau] = STL_Eval(this.Sys, phi, this.P, this.P.traj,t_phi);
+
+%                 if ischar(phi)
+%                     phi = STL_Formula('phi__tmp__', phi);
+%                 end
+                [rob, tau] = STL_Eval_TESTRON(this.Sys, phi, this.P, this.P.traj, objToUse, t_phi);
             end
             
         end
@@ -444,6 +460,16 @@ classdef BreachSystem < BreachSet
             Sim(this);
             this.CheckinDomainTraj();
             
+            % JOHAN ADDED
+            % This was used previously to save trajectory info to the
+            % folder 'trajectories'
+%             filesInTrajFolder = length(dir('trajectories')) - 2;
+%             tmpP = this.P;
+%             paramValues = values;
+%             load('nextReqToBeFalsified'); % Loads currentReq
+%             save(['trajectories/' num2str(filesInTrajFolder + 1) '.mat'],'tmpP','params','paramValues', 'currentReq');
+            % END JOHAN ADDED
+            
             % FIXME: this is going to break with multiple trajectories with
             % some of them containing NaN -
             if any(isnan(this.P.traj{1}.X))
@@ -451,11 +477,13 @@ classdef BreachSystem < BreachSet
                 rob = t_phi;
                 rob(:) = NaN;
             else
+                % TODO: This needs to be fixed for other objective
+                % functions!
                 [rob, tau] = STL_Eval_IO(this.Sys, phi, this.P, this.P.traj, inout, relabs, t_phi);
             end
             
         end
-        
+      
         function [robfn, BrSys] = GetRobustSatFn(this, phi, params, t_phi)
             % Return a function of the form robfn: p -> rob such that p is a
             % vector of values for parameters and robfn(p) is the
@@ -545,12 +573,12 @@ classdef BreachSystem < BreachSet
             % BreachSet.PlotSatParams(req, params)
             
             % default options
-            opt.DispTitle = true;
-            opt = varargin2struct(opt, varargin{:});
-            
-            if ischar(params)
-                params = {params};
-            end
+            opt.DispTitle = true;  
+            opt = varargin2struct_breach(opt, varargin{:});
+         
+           if ischar(params)
+               params = {params};
+           end
             
             [valu, pvalu, val, pval] = this.GetSatValues(phi, params);
             if isa(phi, 'BreachRequirement')

@@ -269,7 +269,7 @@ classdef BreachSet < BreachStatus
                 for itraj = 1:numel(this.P.traj)
                     for  i=1:this.P.DimX
                         if ~isempty(this.Domains(i).domain)
-                            this.P.traj{itraj}.X(i,:) = this.Domains(i).checkin(this.P.traj{itraj}.X(i,:));
+                        this.P.traj{itraj}.X(i,:) = this.Domains(i).checkin(this.P.traj{itraj}.X(i,:));
                         end
                     end
                 end
@@ -1168,6 +1168,18 @@ classdef BreachSet < BreachStatus
             this.CheckinDomainParam();
             this.ApplyParamGens();
         end
+        
+        function PseudoRandomSample(this, nb_sample)
+            % Pseudo-random sampling
+            
+            this.ResetParamSet();
+            
+            newP = TestronRefine(this.P, nb_sample);
+            
+            this.P = newP;          
+            this.CheckinDomainParam();
+            this.ApplyParamGens();
+        end
                 
         %% Concatenation, ExtractSubset - needs some additional compatibility checks...
         function Concat(this, other, fast)
@@ -1176,11 +1188,25 @@ classdef BreachSet < BreachStatus
             end
             this.P = SConcat(this.P, other.P, fast);
         end
-        
+       
         function other  = ExtractSubset(this, idx)
             other = this.copy();
             other.P = Sselect(this.P, idx);
         end
+        
+        function SavedTrajectorySample(this, paramValues)
+            % TESTRON
+            % Fixes the "sampling" for a stored trajectory
+            
+            this.ResetParamSet();
+            
+            newP = SavedTrajectoryRefine(this.P, paramValues);
+            
+            this.P = newP;
+            this.CheckinDomainParam();
+        end
+       
+        
         
         %% Plot parameters
         function PlotParams(this, varargin)
@@ -1531,7 +1557,7 @@ classdef BreachSet < BreachStatus
                 folder_name = '';
             end
             options = struct('FolderName', folder_name, 'SaveBreachSystem', true, 'ExportToExcel', false, 'ExcelFileName', 'Results.xlsx');
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
                 try
@@ -1600,8 +1626,8 @@ classdef BreachSet < BreachStatus
             end
             
             % Additional options
-            options = struct('FolderName', '','IncludesOnlySignals', [], 'ExcludeSignals', []);
-            options = varargin2struct(options, varargin{:});
+            options = struct('FolderName', []);
+            options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
                 options.FolderName = ['Results_' datestr(now, 'dd_mm_yyyy_HHMM')];
@@ -1659,56 +1685,6 @@ classdef BreachSet < BreachStatus
             
         end
 
-        function traces = ExportTraces(this, signals, params, varargin)
-            
-            if ~exist('signals','var')
-                signals = {}; % means all
-            end
-            if ~exist('params','var')||isempty(params)
-                params = {}; % means all
-            end
-            
-            % Options
-            options = struct('WriteToFolder','');
-            options = varargin2struct(options, varargin{:});
-            
-            if ~isempty(options.WriteToFolder)
-                if ~exist(options.WriteToFolder,'dir' )
-                    [success, err_msg] = mkdir(options.WriteToFolder);
-                    if ~success
-                        error('Folder creation failed with error:\n %s', err_msg);
-                    end
-                end
-                dir_traces = options.WriteToFolder;
-            else
-                dir_traces = '';
-            end
-            
-            [signature,~, params] = this.GetSignature(signals, params);
-            num_traces = numel(this.P.traj);
-            signals = signature.signals_reps; % signal representants, assuming there are aliases
-            param_values = this.GetParam(params);
-            for it = 1:num_traces
-                traj = this.P.traj{it};
-                X = this.GetSignalValues(signals, it);
-                
-                if ~isempty(dir_traces)
-                    traces{it} = matfile([dir_traces filesep num2str(it) '.mat'], 'Writable',true);
-                end
-                
-                if isfield(traj, 'status')
-                    traces{it}.status = traj.status;
-                end
-                traces{it}.signature = signature;
-                traces{it}.param = [zeros(1,numel(signals)) param_values(:,it)'];
-                traces{it}.time = traj.time;
-                traces{it}.X = X;
-                
-                if ~isempty(dir_traces)
-                    traces{it}.Properties.Writable= false;
-                end
-            end
-        end
         
         function [signature, signals, params] = GetSignature(this, signal_list, param_list)
             %  GetSignature returns information about signals and parameters 
@@ -2061,6 +2037,7 @@ classdef BreachSet < BreachStatus
                 for ip = params
                     st = [st sprintf('%s=%g       %s\n',this.P.ParamList{ip},this.P.pts(ip,1), this.Domains(ip).short_disp(1))];
                 end
+
                 
             else
                 if ~isempty(header)
@@ -2271,6 +2248,7 @@ classdef BreachSet < BreachStatus
                 upper_right_corner = [upper_right_corner; this.Domains(ip).domain(2)];
             end
             
+
             if any(new_point < lower_left_corner)||any(new_point>upper_right_corner)
                 %fprintf('\nNew point out of range.\n');
                 inRange = false;
