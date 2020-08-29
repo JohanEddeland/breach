@@ -1,25 +1,26 @@
-function Nn = N2Nn(n,nb, num_new, stable)
+function Nn = N2Nn(n,nb, num_new, varargin)
 %N2NN Builds a set of nb^n points in N^n (nb points per axes)
 %
-% Synopsis : Nn = N2Nn(n,nb, [num_new])
+% Synopsis : Nn = N2Nn(n,nb, [num_new, varargin])
 %
 %  The resulting set of points is sorted according to a heuristic which favors clusters of identical values.
 %  In particular, the two first column are uniform. In the corner
 %  computation case, this corresponds to the two extremal corners.
 %
 
+opt.randomize_order = true;
+opt.start_with_min_max = true;
+opt.sort_by_clusters = false;
+opt = varargin2struct_breach(opt,varargin{:});
+
 if isscalar(nb)
     nb = nb*ones(1,n);
-end
-
-if nargin<4
-   stable = false;
 end
 
 global BreachGlobOpt
 
 max_num_new = prod(nb);
-if nargin<=2||isempty(num_new)
+if nargin<=2
     num_new = max_num_new;
 else
     num_new = min(max_num_new, num_new);
@@ -41,33 +42,37 @@ else
     if num_new == max_num_new
         Nn = N2NnIter(n,p,nb);
     else % this is where we need some smarts, let's do simple first
-        rng(1, 'twister');  % seed random generator to get deterministic results
-        if max_num_new < 1e7 %  if max_num_new is still reasonable, just truncate full grid
-            FullNn =  N2NnIter(n,p,nb);
-            idx= randperm(max_num_new);
-            Nn = FullNn(:, idx(1:num_new+1));
-            % always include/starts with min and max corners
-            Nn =  unique([ones(n,1) nb' Nn(:,2:end)]', 'rows','stable')';
-            Nn = Nn(:,1:num_new);
+        if max_num_new < 1e6 %  if max_num_new is still reasonable, just truncate full grid
+            Nn =  N2NnIter(n,p,nb);            
         else % otherwise random stuff until we get enough unique vectors
-            Nn = unique(RandNn(n,nb,num_new)', 'rows', 'stable')';
-            % always include/starts with min and max corners
+            Nn = unique(RandNn(n,nb,1e6)', 'rows', 'stable')';            
             while size(Nn, 2) < num_new
                 Nn_more = RandNn(n,nb,num_new);
                 Nn =  unique([Nn Nn_more]', 'rows','stable')';
             end
-            Nn =  unique([ones(n,1) nb' Nn(:,2:end)]', 'rows', 'stable')';
-            Nn = Nn(:,1:num_new);
-            
         end
     end
     % optimize order
     % max min ( size(biggest_cluster of zeros, biggest_cluster_of_ones), )
-    if ~stable
+
+    if opt.randomize_order
+        % random permutation to avoid grids
+        rng(1,'twister');
+        idx= randperm(size(Nn,2));
+        Nn = Nn(:, idx(1:num_new));
+    end
+    if opt.start_with_min_max
+        % always include/starts with min and max corners
+        Nn =  unique([ones(n,1) nb' Nn(:,2:end)]', 'rows', 'stable')';
+    end
+    
+    if opt.sort_by_clusters
+        % grouping
         clust = find_size_min_cluster(Nn);
         [~, clust_sort ] = sort(clust, 1, 'descend');
         Nn = Nn(:, clust_sort);
     end
+    Nn = Nn(:,1:num_new);
 end
 end
 
