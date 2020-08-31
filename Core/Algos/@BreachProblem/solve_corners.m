@@ -1,9 +1,8 @@
 function res = solve_corners(this)
-% solve_corners works with quasi-random sampling   
+% Generate corners, group them by signals if possible/relevant
 % 
 
 BrC = BreachSet(this.params);
-
 num_corners =  this.solver_options.num_corners;
 
 if this.solver_options.group_by_inputs
@@ -52,6 +51,12 @@ if this.solver_options.group_by_inputs
                 X0(idx,:) =  arrayfun(@(c)(corn_vals(c)), which_corn);
             end
     end
+    if size(X0,2)<num_corners % complete with normal corners 
+        BrC.CornerSample(num_corners);
+        X0 = unique([X0 BrC.GetParams(this.params)]', 'rows','stable')';
+        X0 = X0(:, 1:num_corners);
+    end
+    
 else
     BrC.CornerSample(num_corners);
     X0 = BrC.GetParams(this.params);
