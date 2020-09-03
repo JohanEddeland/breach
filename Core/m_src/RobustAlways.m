@@ -6,6 +6,8 @@ I___ = I___ - I___(1);
 startIdxNew = 1;
 endIdxNew = 1;
 
+indicesToRemove = [];
+
 for valIndex = 1:length(valarray)
     thisTime = time_values(valIndex);
     
@@ -24,10 +26,14 @@ for valIndex = 1:length(valarray)
     end
     
     for endCounter = endIdxNew:numel(time_values)
-        if time_values(endCounter) > endTime
+        if time_values(endCounter) - endTime > 1e-10
             endIdxNew = max(endCounter-1, 1);
             break;
         end
+    end
+    
+    if endCounter == numel(time_values)
+        endIdxNew = endCounter;
     end
     
     % There is no point beyond the start point
@@ -43,7 +49,18 @@ for valIndex = 1:length(valarray)
     partialRob = PartialRobustAlways(partialTimeNew, partialValarrayNew);
     valarray(valIndex) = partialRob;
     
+    if valIndex > 2
+        if time_values(valIndex) == time_values(valIndex - 1) ...
+                && valarray(valIndex) == valarray(valIndex - 1)
+            indicesToRemove = [indicesToRemove valIndex]; %#ok<*AGROW>
+        end
+    end
+    
 end
+
+% Remove subsequent indices that are identical in both time and value
+valarray(indicesToRemove) = [];
+time_values(indicesToRemove) = [];
 
 end
 
