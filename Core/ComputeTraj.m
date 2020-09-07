@@ -227,23 +227,33 @@ switch Sys.type
         
         if isfield(Sys, 'Parallel')&&Sys.Parallel&&numel(ipts)>1
             
-            for idx = ipts
-                f(P0.traj_ref(idx)) = parfeval(@(ii)task_sim(Sys,P0,tspan,ii), 1, idx);
-            end
-            trajs = cell(1, numel(ipts));
+            trajs = cell(1, numel(ipts));            
+            batch_size = 100; 
+            start_idx = 1;
+            end_idx = min(batch_size,numel(ipts));
             
-            for idx = ipts
-                % fetchNext blocks until more results are available, and
-                % returns the index into f that is now complete, as well
-                % as the value computed by f.
-                [completedIdx, value] = fetchNext(f);
-                trajs{completedIdx} = value;
-                if Verbose >=1
-                    if(numel(ipts)>1)                        
-                        rfprintf(['Computed ' num2str(P0.traj_ref(idx)) '/' num2str(numel(ipts)) ' simulations of ' model])
+            while start_idx <numel(ipts) 
+                
+                for idx = start_idx:end_idx
+                    f(P0.traj_ref(ipts(idx))) = parfeval(@(ii)task_sim(Sys,P0,tspan,ii), 1, ipts(idx));
+                end
+                
+                for idx = start_idx:end_idx
+                    % fetchNext blocks until more results are available, and
+                    % returns the index into f that is now complete, as well
+                    % as the value computed by f.
+                    [completedIdx, value] = fetchNext(f);
+                    trajs{completedIdx} = value;
+                    if Verbose >=1
+                        if(numel(ipts)>1)
+                            rfprintf(['Computed ' num2str(P0.traj_ref(ipts(idx))) '/' num2str(numel(ipts)) ' simulations of ' model])
+                        end
                     end
                 end
-            end
+                start_idx = end_idx+1;
+                end_idx = min(end_idx+batch_size,numel(ipts));
+            end            
+            
             
             Pf.traj = trajs;
             for ii=ipts
