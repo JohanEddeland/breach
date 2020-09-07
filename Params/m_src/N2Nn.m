@@ -63,7 +63,7 @@ else
     end
     if opt.start_with_min_max
         % always include/starts with min and max corners
-        Nn =  unique([ones(n,1) nb' Nn(:,2:end)]', 'rows', 'stable')';
+        Nn =  unique([ones(n,1) nb' Nn]', 'rows', 'stable')';
     end
     
     if opt.sort_by_clusters
@@ -102,9 +102,7 @@ if(n==1)
     Nn = p;
 else
     Nnm = N2NnIter(n-1,p,nb(1:end-1));
-    nbm = size(Nnm,2);
-    repmat(Nnm,1,nb(end));
-    kron(1:nb(end),ones(1,nb(1)));
+    nbm = size(Nnm,2);    
     Nn = [ repmat(Nnm,1,nb(end)) ; kron(1:nb(end),ones(1,nbm)) ];
 end
 end

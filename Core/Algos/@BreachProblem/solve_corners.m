@@ -3,6 +3,10 @@ function res = solve_corners(this)
 % 
 
 BrC = BreachSet(this.params);
+for ip = 1:numel(this.params)
+  BrC.SetDomain(this.params{ip}, this.BrSys.GetDomain(this.params{ip}));
+end
+
 num_corners =  this.solver_options.num_corners;
 
 if this.solver_options.group_by_inputs
@@ -53,7 +57,7 @@ if this.solver_options.group_by_inputs
     end
     if size(X0,2)<num_corners % complete with normal corners 
         BrC.CornerSample(num_corners);
-        X0 = unique([X0 BrC.GetParams(this.params)]', 'rows','stable')';
+        X0 = unique([X0 BrC.GetParam(this.params)]', 'rows','stable')';
         X0 = X0(:, 1:num_corners);
     end
     
