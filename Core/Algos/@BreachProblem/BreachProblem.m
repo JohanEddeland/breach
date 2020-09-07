@@ -72,14 +72,15 @@ classdef BreachProblem < BreachStatus
     % properties related to the function to minimize
     properties
         BrSet
-        BrSys         % BreachSystem - reset for each objective evaluation
+        BrSys         % BreachSystem - reset for each objective evaluation       
         BrSet_Best    
         BrSet_Logged   
         R0            % BreachRequirement object initial 
-        R_log         % BreachRequirement object logging requirement evaluations during solving 
-        
+        R_log         % BreachRequirement object logging requirement evaluations during solving         
         params
         domains
+        
+        
         lb
         ub
         Aineq
@@ -107,6 +108,13 @@ classdef BreachProblem < BreachStatus
         % then sort out the results, then calculate another 50 function
         % values in parallel etc. 
         parallelBatchSize = inf
+        
+        BrStoch       % Stochastic set of parameters, assigned to BrSys before every evaluation 
+        stochastic_params      % list of stochastic parameters       
+        stochastic_domains     % and corresponding domain
+        X_stochastic_log       % logging stochastic values
+        
+        
     end
     
     % misc options
@@ -295,7 +303,19 @@ classdef BreachProblem < BreachStatus
             this.time_spent= 0; 
             this.time_start = tic; 
         end
-           
+        
+        
+        %% Stochastic stuff
+        function set_stochastic_params(this, sparams, sdomains)
+            this.stochastic_params = sparams;
+            this.stochastic_domains = sdomains;
+            [this.params, idx_non_stoch_params]= setdiff(this.params, sparams); 
+            this.domains = this.domains(idx_non_stoch_params);
+            this.BrStoch = BreachSet(sparams);
+            this.BrStoch.SetDomain(sparams,sdomains);
+        end
+        
+        
         %% Options for various solvers
         function [solver_opt, is_gui] = setup_solver(this, solver_name, is_gui)
             if ~exist('solver_name','var')
@@ -953,10 +973,21 @@ classdef BreachProblem < BreachStatus
         
         %% Objective wrapper        
         
-        function [obj, cval] = objective_fn(this,x)
+        function [obj, cval, x_stoch] = objective_fn(this,x)
+            
             % reset this.Spec
             this.Spec.ResetEval();
-       
+
+            % checks stochastic domain
+            if ~isempty(this.stochastic_params)
+                this.BrStoch.ResetParamSet();
+                this.BrStoch.SampleDomain(size(x, 2));
+                x_stoch = this.BrStoch.GetParam(this.stochastic_params);
+                this.BrSys.SetParam(this.stochastic_params, x_stoch);
+            else
+                x_stoch = nan(0, size(x,2)); 
+            end
+            
             % For falsification, default objective_fn is mostly robust satisfaction of the least
             this.robust_fn(x);
             robs = this.Spec.traces_vals;
@@ -984,7 +1015,7 @@ classdef BreachProblem < BreachStatus
                         
         end
         
-        function [fval, cval] = objective_wrapper(this,x)
+        function [fval, cval, x_stoch] = objective_wrapper(this,x)
             % reset this.Spec
             % objective_wrapper calls the objective function and wraps some bookkeeping
             if size(x,1) ~= numel(this.params)
@@ -992,9 +1023,9 @@ classdef BreachProblem < BreachStatus
             end
             
             nb_eval =  size(x,2);
-            fval = inf*ones(size(this.Spec.req_monitors,2), nb_eval);
-            %cval = inf*ones(size(this.Spec.precond_monitors,2), nb_eval);
+            fval = inf*ones(size(this.Spec.req_monitors,2), nb_eval);            
             cval = inf*ones(1, nb_eval);
+            x_stoch = nan(numel(this.stochastic_params), nb_eval);
             
             fun = @(isample) this.objective_fn(x(:, isample));
             nb_iter = min(nb_eval, this.max_obj_eval);
@@ -1020,7 +1051,7 @@ classdef BreachProblem < BreachStatus
                             fval(:,iter) = this.obj_log(:,idx);
                         else
                             % calling actual objective function
-                            [fval(:,iter), cval(:,iter)] = fun(iter);
+                            [fval(:,iter), cval(:,iter), x_stoch(:,iter)] = fun(iter);
                             
                             % Normalize the function value based on average
                             % robustness stated
@@ -1028,7 +1059,7 @@ classdef BreachProblem < BreachStatus
                             
                             % logging and updating best
                             this.time_spent = toc(this.time_start);
-                            this.LogX(x(:, iter), fval(:,iter), cval(:,iter));
+                            this.LogX(x(:, iter), fval(:,iter), cval(:,iter), x_stoch(:,iter));
 
                             % update status
                             if ~rem(this.nb_obj_eval,this.freq_update)
@@ -1050,9 +1081,10 @@ classdef BreachProblem < BreachStatus
                         end
                         
                         for idx = start_index:end_index
-                            [~, value, cvalue] = fetchNext(par_f);
+                            [~, value, cvalue,xstoch] = fetchNext(par_f);
                             fval(:,idx) = value;
                             cval(:,idx) = cvalue;
+                            x_stoch(:,idx) = xstoch;
                             
                             % Normalize the function value based on average
                             % robustness stated
@@ -1060,7 +1092,7 @@ classdef BreachProblem < BreachStatus
                             
                             this.time_spent = toc(this.time_start);
                             
-                            this.LogX(x(:, idx), fval(:,idx), cval(:,idx));
+                            this.LogX(x(:, idx), fval(:,idx), cval(:,idx), x_stoch(:,iter));
                             
                             if this.stopping()
                                 cancel(par_f);
@@ -1093,7 +1125,7 @@ classdef BreachProblem < BreachStatus
           end
         end
         
-        function LogX(this, x, fval, cval)
+        function LogX(this, x, fval, cval, x_stoch)
             % LogX logs values tried by the optimizer
 
             if cval>=0
@@ -1101,7 +1133,7 @@ classdef BreachProblem < BreachStatus
                 
                 this.X_log = [this.X_log x];
                 this.obj_log = [this.obj_log fval];
-                
+                this.X_stochastic_log = [this.X_stochastic_log x_stoch];
                 if (this.log_traces)%&&~(this.use_parallel)&&~(this.BrSet.UseDiskCaching) % FIXME - logging flags and methods need be revised
                     if isempty(this.BrSet_Logged)
                         this.BrSet_Logged = this.BrSys.copy();

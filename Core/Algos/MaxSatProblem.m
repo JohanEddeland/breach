@@ -81,7 +81,7 @@ classdef MaxSatProblem < BreachProblem
         end
         
         % Logging
-        function LogX(this, x, fval, cval)
+        function LogX(this, x, fval, cval, x_stoch)
             
             %  Logging satisfying parameters and traces
             [~, i_true] = find(fval>0);
@@ -97,7 +97,7 @@ classdef MaxSatProblem < BreachProblem
             end
             
             % Logging default stuff
-            this.LogX@BreachProblem(x, fval,cval);
+            this.LogX@BreachProblem(x, fval,cval, x_stoch);
             
         end
         

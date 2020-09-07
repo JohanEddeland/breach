@@ -159,11 +159,11 @@ classdef FalsificationProblem < BreachProblem
         
         
         % Logging
-        function LogX(this, x, fval, cval)
+        function LogX(this, x, fval, cval, x_stoch)
         % LogX  log variable parameter value tested by optimizers
        
             % Logging default stuff
-            this.LogX@BreachProblem(x, fval, cval);
+            this.LogX@BreachProblem(x, fval, cval,x_stoch);
             % this.Rio_Mode_log = [ this.Rio_Mode_log this.Rio_Mode ];  % not sure what this is useful for
             
             %  Logging falsifying parameters found
