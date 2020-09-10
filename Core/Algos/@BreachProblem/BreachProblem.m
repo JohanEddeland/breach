@@ -309,10 +309,18 @@ classdef BreachProblem < BreachStatus
         function set_stochastic_params(this, sparams, sdomains)
             this.stochastic_params = sparams;
             this.stochastic_domains = sdomains;
-            [this.params, idx_non_stoch_params]= setdiff(this.params, sparams); 
-            this.domains = this.domains(idx_non_stoch_params);
+            
+            %[this.params, idx_non_stoch_params]= setdiff(this.params, sparams, 'stable'); 
+            %this.domains = this.domains(idx_non_stoch_params);
+            
             this.BrStoch = BreachSet(sparams);
             this.BrStoch.SetDomain(sparams,sdomains);
+            
+            % Reset objective function to consider only non stochastic 
+            % parameters and their domains
+            this.BrSet.SetEmptyDomain(sparams); 
+            this.ResetObjective();            
+            
         end
         
         
@@ -971,7 +979,7 @@ classdef BreachProblem < BreachStatus
             this.BrSys.SetupDiskCaching(varargin{:});
         end
         
-        %% Objective wrapper        
+        %% Objective function and wrapper        
         
         function [obj, cval, x_stoch] = objective_fn(this,x)
             
@@ -1070,39 +1078,50 @@ classdef BreachProblem < BreachStatus
                                                                         
                     end
                 else % Parallel case
-                    
-                    for batch_counter = 1:this.parallelBatchSize:nb_iter
-                        
+                                        
+                    for batch_counter = 1:this.parallelBatchSize:nb_iter                                                    
                         start_index = batch_counter;
                         end_index = min(batch_counter + this.parallelBatchSize - 1, nb_iter);
-                        % Launch tasks
-                        for iter = start_index:end_index
-                            par_f(:,iter) = parfeval(fun,2, iter);
+                                                
+                        % Launch tasks                        
+                        for iter = start_index:end_index                            
+                            par_f(:,iter) = parfeval(fun,3, iter);                            
                         end
                         
-                        for idx = start_index:end_index
-                            [~, value, cvalue,xstoch] = fetchNext(par_f);
-                            fval(:,idx) = value;
-                            cval(:,idx) = cvalue;
-                            x_stoch(:,idx) = xstoch;
+                        num_this_batch = end_index-start_index+1;                                                
+                        for idx = 1:num_this_batch
+                            
+                            [completedIdx(idx), fval, cval ,x_stoch] = fetchNext(par_f);
+                            
+                            % Timing to get new fetch
+                            this.time_spent = toc(this.time_start);
                             
                             % Normalize the function value based on average
                             % robustness stated
-                            fval(:, idx) = fval(:, idx)./this.avgRobForNormalization;
+                            fval = fval./this.avgRobForNormalization;                                                        
+                         
+                            % we log in the order of arrival, but will 
+                            % reorder after the batch using completedIdx
+                            this.LogX(x(:,completedIdx(idx)),fval,cval,x_stoch); 
                             
-                            this.time_spent = toc(this.time_start);
-                            
-                            this.LogX(x(:, idx), fval(:,idx), cval(:,idx), x_stoch(:,iter));
-                            
+                            % this way we can update status
+                            if ~rem(this.nb_obj_eval,this.freq_update)
+                                this.display_status(fval, cval);
+                            end
+                                                                                                                                                                                             
                             if this.stopping()
                                 cancel(par_f);
                                 break
                             end
                             
                         end
+                            
+                        % Let's reorder the log 
+                        [~, ia] = sort(completedIdx);
+                        this.obj_log(:,end-numel(completedIdx)+1:end) = this.obj_log(:,ia);
+                        this.X_log(:,end-numel(completedIdx)+1:end) = this.X_log(:,ia);
+                        this.X_stochastic_log(:,end-numel(completedIdx)+1:end) = this.X_stochastic_log(:,ia);  
                         
-                        % update status
-                        this.display_status();
                     end
                 end
             else
@@ -1169,7 +1188,11 @@ classdef BreachProblem < BreachStatus
             if isempty(BrOut)
                 BrOut = this.BrSys.copy();
                 BrOut.ResetSimulations();               
-                BrOut.SetParam(this.params, this.X_log, 'combine');
+                if isempty(this.stochastic_params) 
+                    BrOut.SetParam(this.params, this.X_log, 'combine');
+                else
+                    BrOut.SetParam([this.params this.stochastic_params], [this.X_log ; this.X_stochastic_log], 'combine');
+                end
                 BrOut.Sim();
             end
             [BrOut, Berr, BbadU] = this.ExportBrSet(BrOut); 

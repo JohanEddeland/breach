@@ -655,6 +655,18 @@ classdef BreachSet < BreachStatus
             params =   this.P.ParamList(ipr);
         end
                 
+        function SetEmptyDomain(this, params)
+            
+            if ~iscell(params)
+                params = {params};
+            end
+            for idx_param = 1:numel(params)
+                idx_param_in_this = FindParam(this.P, params{idx_param});
+                this.Domains(idx_param_in_this).domain = [];
+            end
+            
+        end
+        
         %% Signals       
         function  this =  SetSignalMap(this, varargin)
             % SetSignalMap defines aliases for signals - used by GetSignalValues 
