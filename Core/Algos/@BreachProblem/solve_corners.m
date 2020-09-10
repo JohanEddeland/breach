@@ -7,7 +7,7 @@ for ip = 1:numel(this.params)
   BrC.SetDomain(this.params{ip}, this.BrSys.GetDomain(this.params{ip}));
 end
 
-num_corners =  this.solver_options.num_corners;
+num_corners =  min(this.max_obj_eval,this.solver_options.num_corners);
 
 if this.solver_options.group_by_inputs
     
