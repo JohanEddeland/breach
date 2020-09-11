@@ -1091,24 +1091,28 @@ classdef BreachProblem < BreachStatus
                         num_this_batch = end_index-start_index+1;                                                
                         for idx = 1:num_this_batch
                             
-                            [completedIdx(idx), fval, cval ,x_stoch] = fetchNext(par_f);
+                            [completedIdx(idx), fval_batch, cval_batch ,x_stoch_batch] = fetchNext(par_f);
                             
                             % Timing to get new fetch
                             this.time_spent = toc(this.time_start);
                             
                             % Normalize the function value based on average
                             % robustness stated
-                            fval = fval./this.avgRobForNormalization;                                                        
+                            fval_batch = fval_batch./this.avgRobForNormalization;                                                        
                          
                             % we log in the order of arrival, but will 
                             % reorder after the batch using completedIdx
-                            this.LogX(x(:,completedIdx(idx)),fval,cval,x_stoch); 
+                            this.LogX(x(:,completedIdx(idx)),fval_batch,cval_batch,x_stoch_batch); 
                             
                             % this way we can update status
                             if ~rem(this.nb_obj_eval,this.freq_update)
-                                this.display_status(fval, cval);
+                                this.display_status(fval_batch, cval_batch);
                             end
-                                                                                                                                                                                             
+                            
+                            fval(:,completedIdx(idx)) = fval_batch;
+                            cval(:,completedIdx(idx)) = cval_batch;
+                            x_stoch(:,completedIdx(idx)) = x_stoch_batch;
+                            
                             if this.stopping()
                                 cancel(par_f);
                                 break
@@ -1121,7 +1125,7 @@ classdef BreachProblem < BreachStatus
                         this.obj_log(:,end-numel(completedIdx)+1:end) = this.obj_log(:,ia);
                         this.X_log(:,end-numel(completedIdx)+1:end) = this.X_log(:,ia);
                         this.X_stochastic_log(:,end-numel(completedIdx)+1:end) = this.X_stochastic_log(:,ia);  
-                        
+                                                                                                
                     end
                 end
             else
