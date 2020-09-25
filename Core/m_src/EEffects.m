@@ -33,6 +33,11 @@ delta = p/(2*(p-1));
 %delta = 1; % delta used for the grid, but do we really need it here? 
 
 % computes diff
+if any(isinf(Y))
+    % We have Inf entries in Y - replace them by max(Y) + 1
+    Y_without_inf = Y(~isinf(Y));
+    Y(isinf(Y)) = max(Y_without_inf) + 1;
+end
 dY = diff(Y);
 idx = 1:size(Y,2);
 
