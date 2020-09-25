@@ -7,8 +7,14 @@ file = 'snobfit_data';
 fcn = 'snobfit_wrapper';
 fac = 0;        % factor for multiplicative perturbation of the data
 ncall = this.max_obj_eval;   % limit on the number of function calls
-u = this.lb;
-v = this.ub;
+
+% Extract lower and upper bounds from this.domains
+allDomains = {this.domains.domain};
+lowerBounds = cellfun(@(x)x(1), allDomains);
+upperBounds = cellfun(@(x)x(2), allDomains);
+u = lowerBounds';
+v = upperBounds';
+
 startSample = this.solver_options.start_sample;
 startFunctionValues = this.solver_options.start_function_values;
 fglob = -0.01;
@@ -95,6 +101,15 @@ while ncall0 < ncall % repeat till ncall function values are reached
                 % of specs)
                 functionEvalPlusNoise = min(functionEvalPlusNoise);
             end
+            
+            if isinf(functionEvalPlusNoise)
+                % Infinite function value - snobfit can't handle
+                % Replace infinite value by 10000 times the meximum
+                % average robustness from normalization
+                functionEvalPlusNoise = ...
+                    10000*max(this.avgRobForNormalization);
+            end
+            
             f(j,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
             
             totalCounter = ncall0 + j - 1;
@@ -146,6 +161,15 @@ while ncall0 < ncall % repeat till ncall function values are reached
                 % of specs)
                 functionEvalPlusNoise = min(functionEvalPlusNoise);
             end
+            
+            if isinf(functionEvalPlusNoise)
+                % Infinite function value - snobfit can't handle
+                % Replace infinite value by 10000 times the meximum
+                % average robustness from normalization
+                functionEvalPlusNoise = ...
+                    10000*max(this.avgRobForNormalization);
+            end
+            
             f(j,:) = [functionEvalPlusNoise max(sqrt(eps),3*fac)];
             % computation of the (perturbed) function values at the suggested points
             
