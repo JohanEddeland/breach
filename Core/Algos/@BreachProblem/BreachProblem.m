@@ -1189,7 +1189,7 @@ classdef BreachProblem < BreachStatus
         function [BrOut, Berr, BbadU] = GetBrSet_Logged(this)
             % GetBrSet_Logged gets BreachSet object containing parameters and traces computed during optimization
             BrOut = this.BrSet_Logged;
-            if isempty(BrOut)
+            if isempty(BrOut)||(~BrOut.hasTraj())
                 BrOut = this.BrSys.copy();
                 BrOut.ResetSimulations();               
                 if isempty(this.stochastic_params) 
@@ -1326,6 +1326,7 @@ classdef BreachProblem < BreachStatus
             % returned
             Berr = [];
             BbadU = [];
+            BrOut = []; 
             if isempty(B)
                 BrOut = [];
                 return;
@@ -1347,7 +1348,7 @@ classdef BreachProblem < BreachStatus
                 else
                     BrOut = this.R0.copy();
                     BrOut.Eval(B);
-                end
+                end            
             end
         end
  
