@@ -58,7 +58,7 @@ if this.solver_options.group_by_inputs
     if size(X0,2)<num_corners % complete with normal corners 
         BrC.CornerSample(num_corners);
         X0 = unique([X0 BrC.GetParam(this.params)]', 'rows','stable')';
-        X0 = X0(:, 1:num_corners);
+        X0 = X0(:, 1:min(num_corners, size(X0,2)));
     end
     
 else
