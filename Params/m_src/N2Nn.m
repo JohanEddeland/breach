@@ -62,33 +62,10 @@ else
     end
     % optimize order
     % max min ( size(biggest_cluster of zeros, biggest_cluster_of_ones), )
-<<<<<<< HEAD
-
-    if opt.randomize_order
-        % random permutation to avoid grids
-        rng(1,'twister');
-        idx= randperm(size(Nn,2));
-        Nn = Nn(:, idx(1:num_new));
-    end
-    if opt.start_with_min_max
-        % always include/starts with min and max corners
-        Nn =  unique([ones(n,1) nb' Nn]', 'rows', 'stable')';
-    end
-    
-    if opt.sort_by_clusters
-        % grouping
-        clust = find_size_min_cluster(Nn);
-        [~, clust_sort ] = sort(clust, 1, 'descend');
-        Nn = Nn(:, clust_sort);
-    end
-    Nn = Nn(:,1:num_new);
-=======
     clust = find_size_min_cluster(Nn);
     [~, clust_sort ] = sort(clust, 1, 'descend');
     Nn = Nn(:, clust_sort);
     Nn = Nn(:,1:num_new);
-
->>>>>>> master
 end
 end
 
