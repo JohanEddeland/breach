@@ -4,6 +4,7 @@ function [res, R] = ComputeMorrisSensi(R, B, num_path, objFunctions, randomSeed)
 %  Note: if B is a BreachSimulinkSystem with no traces, we compute the
 %  Morris samples and corresponding traces and stores them in B. If B
 %  already contains Morris samples and traces they are not re-computed.
+
 if nargin < 5
     randomSeed = 1;
 end
@@ -27,7 +28,7 @@ if ~isfield(B.P, 'opt_morris')||~isequal(opt, B.P.opt_morris)
     X0 = Pr.pts;
     B.ResetParamSet;
     B.SetParam(vars, X0)
-    B.P.opt_morris =opt;
+    B.P.opt_morris=opt;
     B.P.D = Pr.D;       
 end
 

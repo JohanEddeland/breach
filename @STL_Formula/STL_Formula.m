@@ -348,6 +348,16 @@ switch(numel(varargin))
             phi = STL_Parse(phi, 'once', phi1);
             return
         end
+
+   
+        %% test hist
+        [success, st1, st2] = parenthesisly_balanced_split(st, '\<hist\>');
+        if success && isempty(st1)
+            phi1 = STL_Formula([phi.id '1__'],st2);
+            STLDB_Remove([phi.id '1__']);
+            phi = STL_Parse(phi, 'hist', phi1);
+            return
+        end
         
         %% test once_[ti,tf]
         [success, st1, st2, interval] = parenthesisly_balanced_split(st, '\<once_\[(.+?)\]\>');
@@ -413,7 +423,6 @@ switch(numel(varargin))
             phi = STL_Parse(phi,'av_ev',interval,phi1);
             return
         end
-
         
         %% test always
         [success,st1, st2] = parenthesisly_balanced_split(st, '\<alw\>');

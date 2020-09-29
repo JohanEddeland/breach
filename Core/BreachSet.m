@@ -276,7 +276,7 @@ classdef BreachSet < BreachStatus
             end
         end
         
-        %%  Params
+        %% Params
         function SetParam(this, params, values, is_spec_param)
             % BreachSet.SetParam(params, values [,  is_spec_param]) sets values to
             % parameters listed in params. If the set contains only one sample,
@@ -1225,7 +1225,40 @@ classdef BreachSet < BreachStatus
             this.CheckinDomainParam();
             this.ApplyParamGens();
         end
-                
+             
+        function Bm = MorrisSample(this, vars, ranges, num_path, size_grid, seed)
+            
+            if isempty(vars)
+                vars = this.GetVariables();                
+            end
+            
+            if isempty(ranges)
+                ranges = this.GetParamRanges(vars);                                           
+            end
+            
+            if isequal(size(ranges), [2 1])
+                ranges = [1 2]; 
+            end
+            
+            if isequal(size(ranges), [1 2])
+                ranges = repmat(ranges, numel(vars),1);
+            end
+            
+                        
+            Bm = BreachSet(vars);
+            Bm.SetParamRanges(vars, ranges);            
+            Bm.P.epsi = ((ranges(:,2)+ranges(:,1))/2)'; % legacy stuff
+            Pr = pRefine(Bm.P, size_grid,num_path,seed);
+            X0 = Pr.pts;
+            this.ResetParamSet;
+            this.SetParam(vars, X0)
+            this.P.opt_morris =struct('num_path',num_path,'size_grid',size_grid,'rand_seed',1);
+            this.P.D = Pr.D;
+            if nargout>=1
+                Bm.P = Pr;
+            end
+        end
+        
         %% Concatenation, ExtractSubset - needs some additional compatibility checks...
         function Concat(this, other, fast)
             if nargin<=2
@@ -1730,6 +1763,56 @@ classdef BreachSet < BreachStatus
             
         end
 
+        function traces = ExportTraces(this, signals, params, varargin)
+            
+            if ~exist('signals','var')
+                signals = {}; % means all
+            end
+            if ~exist('params','var')||isempty(params)
+                params = {}; % means all
+            end
+            
+            % Options
+            options = struct('WriteToFolder','');
+            options = varargin2struct_breach(options, varargin{:});
+            
+            if ~isempty(options.WriteToFolder)
+                if ~exist(options.WriteToFolder,'dir' )
+                    [success, err_msg] = mkdir(options.WriteToFolder);
+                    if ~success
+                        error('Folder creation failed with error:\n %s', err_msg);
+                    end
+                end
+                dir_traces = options.WriteToFolder;
+            else
+                dir_traces = '';
+            end
+            
+            [signature,~, params] = this.GetSignature(signals, params);
+            num_traces = numel(this.P.traj);
+            signals = signature.signals_reps; % signal representants, assuming there are aliases
+            param_values = this.GetParam(params);
+            for it = 1:num_traces
+                traj = this.P.traj{it};
+                X = this.GetSignalValues(signals, it);
+                
+                if ~isempty(dir_traces)
+                    traces{it} = matfile([dir_traces filesep num2str(it) '.mat'], 'Writable',true);
+                end
+                
+                if isfield(traj, 'status')
+                    traces{it}.status = traj.status;
+                end
+                traces{it}.signature = signature;
+                traces{it}.param = [zeros(1,numel(signals)) param_values(:,it)'];
+                traces{it}.time = traj.time;
+                traces{it}.X = X;
+                
+                if ~isempty(dir_traces)
+                    traces{it}.Properties.Writable= false;
+                end
+            end
+        end
         
         function [signature, signals, params] = GetSignature(this, signal_list, param_list)
             %  GetSignature returns information about signals and parameters 

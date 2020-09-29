@@ -485,6 +485,50 @@ switch(phi.type)
         time_values = fliplr(Tend__-[past_time_values Tend__]);
         valarray = -fliplr([past_valarray(1) past_valarray]);        
         
+    case 'once'
+        I___ = eval(phi.interval);
+        I___ = max([I___; 0 0]);
+        I___(1) = min(I___(1), I___(2));
+        
+        next_interval = interval-[I___(1)+I___(2), I___(1)];
+        next_interval(1) = max(0, next_interval(1));                
+        [valarray1, time_values1] = GetValues(Sys, phi.phi, P, traj, partition, relabs, next_interval, robustness_map);           
+        
+        % Flipping time, taking into account constant interpolation with
+        % previous 
+        Tend__ =  time_values1(end)+1; 
+        past_time_values1 = fliplr(Tend__-[time_values1 Tend__]);
+        past_valarray1 =    fliplr([valarray1(1) valarray1]);        
+           
+        [past_time_values, past_valarray] = RobustEv(past_time_values1, past_valarray1, I___);
+
+        % Flipping back
+        time_values = fliplr(Tend__-[past_time_values Tend__]);
+        valarray = fliplr([past_valarray(1) past_valarray]);        
+        
+        
+        
+    case 'historically'
+        I___ = eval(phi.interval);
+        I___ = max([I___; 0 0]);
+        I___(1) = min(I___(1), I___(2));
+        
+        next_interval = interval-[I___(1)+I___(2), I___(1)];
+        next_interval(1) = max(0, next_interval(1));                
+        [valarray1, time_values1] = GetValues(Sys, phi.phi, P, traj, partition, relabs, next_interval, robustness_map);   
+
+        % Flipping time, taking into account constant interpolation with
+        % previous 
+        Tend__ =  time_values1(end)+1; 
+        past_time_values1 = fliplr(Tend__-[time_values1 Tend__]);
+        past_valarray1 =    fliplr([valarray1(1) valarray1]);                
+        
+        [past_time_values, past_valarray] = RobustEv(past_time_values1, -past_valarray1, I___);
+        
+        % Flipping back
+        time_values = fliplr(Tend__-[past_time_values Tend__]);
+        valarray = -fliplr([past_valarray(1) past_valarray]);        
+        
     case 'until'
         I___ = eval(phi.interval);
         I___ = max([I___; 0 0]);

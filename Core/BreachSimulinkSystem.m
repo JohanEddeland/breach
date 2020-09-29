@@ -1416,7 +1416,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
             end
             
             % Additional options
-            options = struct('FolderName', []);
+            options = struct('FolderName', [], 'PreserveTracesOrdering', false);
             options = varargin2struct_breach(options, varargin{:});
             
             if isempty(options.FolderName)
