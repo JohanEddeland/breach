@@ -60,6 +60,11 @@ if isempty(startFunctionValues)
     ncall0 = npoint;   % function call counter
 else
     % Start function values provided!
+	
+	% Replace Inf values in startFunctionValues by really high numbers
+    % snobfit cannot handle Inf
+    startFunctionValues(isinf(startFunctionValues)) = 10000*max(this.avgRobForNormalization);
+	
     f = [startFunctionValues' repmat(max(sqrt(eps),3*fac), numel(startFunctionValues), 1)];
     disp(['Starting SNOBFIT with ' num2str(size(f, 1)) ' pre-calculated objective function values']);
     ncall0 = 0;
