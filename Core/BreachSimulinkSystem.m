@@ -765,7 +765,7 @@ classdef BreachSimulinkSystem < BreachOpenSystem
                     Sim@BreachOpenSystem(this, tspan);
                 case 3
                     Sim@BreachOpenSystem(this, tspan, U);
-            end
+                end
             %if this.use_parallel == 0 % don't autosave in parallel mode
             %    save_system(this.Sys.mdl);
             %end

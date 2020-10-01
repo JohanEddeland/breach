@@ -321,7 +321,9 @@ classdef BreachSet < BreachStatus
             num_values = size(values, 2);
             saved_traj = false;
             
-            if ischar(is_spec_param)&&strcmp(is_spec_param, 'combine')
+            if ischar(is_spec_param)&&strcmp(is_spec_param, 'combine')&&...
+                ~num_pts==1 % no need to combine (and mess order) in this case
+                
                 if this.hasTraj()
                     traj= this.P.traj;
                     saved_traj = true;
