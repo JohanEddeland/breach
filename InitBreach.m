@@ -20,6 +20,11 @@ if ~force_init && isfield(BreachGlobOpt, 'breach_dir')
     end
 end
 
+addpath([br_dir filesep 'Core' filesep 'm_src']);
+
+opt.verbose = 1;
+opt.init_from_breachflows= false;
+opt = varargin2struct_breach(opt, varargin{:});
 
 addpath([br_dir filesep 'Core' filesep 'm_src']);
 opt.verbose = 1;
@@ -32,7 +37,7 @@ br_all_dir = which('InstallBreach', '-all');
 nb_dir = numel(br_all_dir);   
 if  nb_dir>1
     for idir =  2: nb_dir
-        br_old_dir =   fileparts(br_all_dir{idir});        
+        br_old_dir =  fileparts(br_all_dir{idir});        
         all_paths = strsplit(path,pathsep);
         nb_paths = numel(all_paths);
         rm_path_list = {};

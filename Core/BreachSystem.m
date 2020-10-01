@@ -195,6 +195,9 @@ classdef BreachSystem < BreachSet
                 if tspan(end)<0
                     error('BreachSystem:SetTime:neg_time', 'Cannot set negative time.')
                 end
+                this.Sys.tspan = tspan;
+            else
+                this.Sys.tspan = tspan;
             end
             this.Sys.tspan = tspan;
         end
@@ -285,7 +288,7 @@ classdef BreachSystem < BreachSet
                     [~, stat] = FindParam(this.P, params_names);
                     p_not_found = params_names( stat==0 )';
                     this.SetParamSpec(p_not_found, cellfun(@(c) (params_prop.(c)), p_not_found),1);
-                end                
+                end
             end
             
             this.Specs(phi_id) = phi;
@@ -581,7 +584,7 @@ classdef BreachSystem < BreachSet
             
             [valu, pvalu, val, pval] = this.GetSatValues(phi, params);
             if isa(phi, 'BreachRequirement')
-                phi = phi.formulas{1}.formula_id; 
+                phi = phi.formulas{1}.formula_id;
             end
             
             if isempty(valu)

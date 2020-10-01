@@ -11,7 +11,7 @@ classdef BreachImportData < BreachSignalGen
         function this = BreachImportData(fname, signals, params, varargin)
             
             options.InitDataScript='';            
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
             
             if ~exist('fname', 'var')||isempty(fname)
                 

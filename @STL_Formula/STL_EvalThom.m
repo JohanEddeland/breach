@@ -392,7 +392,7 @@ switch(phi.type)
             otherwise
                 error('Unknown objective function!');
         end
-        
+
         % Flipping back
         time_values = fliplr(Tend__-[past_time_values Tend__]);
         valarray = fliplr([past_valarray(1) past_valarray]);                  

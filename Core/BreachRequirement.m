@@ -477,7 +477,32 @@ classdef BreachRequirement < BreachTraceSystem
             
             
         end
-             
+            
+        function  diag_map = Explain(this, req, trace_num) 
+           % Explains returns implicant for requirement req, and trace
+           % number trace_num
+            
+           if nargin <= 1
+               req = this.req_monitors{1};
+           elseif isscalar(req)
+               req = this.req_monitors{req};
+           end
+           assert(isa(req, 'stl_monitor'));
+                      
+           if nargin <= 2
+              trace_num = 1;  
+           end
+           traj = this.P.traj{trace_num}; 
+           
+           t = traj.time;
+           idx_par_req = FindParam(this.P, req.params);
+           p_in = traj.param(1, idx_par_req);
+           Xin = this.GetSignalValues(req.signals_in,trace_num);           
+           req.explain(t,Xin,p_in);
+           diag_map = req.diag_map;
+                                             
+        end
+                
         function h = PlotSignals(this,varargin)
             h = BreachSignalsPlot(this,varargin{:});
         end
@@ -603,7 +628,6 @@ classdef BreachRequirement < BreachTraceSystem
                 end
             end
         end
-        
         function [X, idxR] = GetSignalValues(this,varargin)
             % GetSignalValues if not found, look into BrSet
             nb_traj = 0;
@@ -914,7 +938,7 @@ classdef BreachRequirement < BreachTraceSystem
             end
             options = struct('FolderName', folder_name, 'ExportToExcel', false, 'ExcelFileName', 'Results.xlsx', ...
                 'IncludeSignals', [],  'IncludeParams', [], 'AddWorkflowNum',[]);
-            options = varargin2struct(options, varargin{:});
+            options = varargin2struct_breach(options, varargin{:});
             
             try
                 folder_name = [options.FolderName filesep this.BrSet.mdl.name '_Results_' datestr(now, 'dd_mm_yyyy_HHMM')];

@@ -14,9 +14,10 @@ if this.solver_options.group_by_inputs
     % Creates BreachSet with one param per group
     sigs = this.BrSys.InputGenerator.GetAllSignalsList();
     grouparams = this.params;
+    groupinputs_reps = {};
     ig=1;  
     for is = 1:numel(sigs)
-        groupin = intersect(this.BrSys.expand_param_name([sigs{is} '_u']), this.params);
+        groupin = intersect(this.BrSys.expand_param_name([sigs{is} '_']), this.params);
         if ~isempty(groupin)            
             groupinputs{ig} = groupin;
             groupinputs_reps{ig} = [sigs{is} '_group'];
@@ -27,7 +28,7 @@ if this.solver_options.group_by_inputs
     if isempty(grouparams)
         BrC_group = BreachSet(groupinputs_reps);
     else
-        BrC_group = BreachSet(['grouparam' groupinputs_reps]); % TEST ME!
+        BrC_group = BreachSet([grouparams groupinputs_reps]); % adds remaining params to group params
     end
     
     % Sample group BreachSet
@@ -57,7 +58,7 @@ if this.solver_options.group_by_inputs
     end
     if size(X0,2)<num_corners % complete with normal corners 
         BrC.CornerSample(num_corners);
-        X0 = unique([X0 BrC.GetParam(this.params)]', 'rows','stable')';
+        X0 = unique([X0 BrC.GetParam(this.params)]', 'rows','stable')';        
         X0 = X0(:, 1:min(num_corners, size(X0,2)));
     end
     
