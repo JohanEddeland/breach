@@ -1067,6 +1067,8 @@ classdef BreachRequirement < BreachTraceSystem
                 for it = 1:numel(other.P.traj)
                     Pother.traj{it}.param(idx_trace_idx)=Pother.traj{it}.param(idx_trace_idx)+num_traj;
                 end
+                trace_idx_values = GetParam(Pother, 'data_trace_idx_');
+                Pother = SetParam(Pother, 'data_trace_idx_', trace_idx_values+num_traj);                                
             end
             this.P = SConcat(this.P, Pother, fast);
             
