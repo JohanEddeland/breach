@@ -43,7 +43,9 @@ R.Eval(B);
 for ir =  1:numel(R.req_monitors)
     res{ir}.params = vars;
     res{ir}.rob = R.traces_vals(B.P.traj_ref,ir)';
-    [res{ir}.mu, res{ir}.mustar, res{ir}.sigma, res{ir}.sigmastar, res{ir}.EE] = EEffects(res{ir}.rob, B.P.D, opt.size_grid);
+    [res{ir}.mu, res{ir}.mustar, res{ir}.sigma, ...
+        res{ir}.sigmastar, res{ir}.EE] = ...
+        EEffects(res{ir}.rob, B.P.D, opt.size_grid);
     %res{objFunctionCounter, ir}.R = R;
     %fprintf(['\nSensitivities for ' R.req_monitors{ir}.name]);
     %display_morris_result(res{objFunctionCounter, ir});
