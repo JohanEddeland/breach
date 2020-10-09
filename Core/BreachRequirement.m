@@ -186,33 +186,6 @@ classdef BreachRequirement < BreachTraceSystem
         end
         
         function [traces_vals, traces_vals_precond, traces_vals_vac] =evalAllTraces(this,varargin)
-            % TESTRON: Add extra (optional) argument with objective
-            % functions when running global sensitivity experiments
-            if nargin > 2 && iscell(varargin{2}) && ischar(varargin{2}{1})
-                % varargin{0} is the BreachSimulinkSystem
-                % varargin{1} is a cell array of objective functions
-                % (strings)
-                % Check that varargin{2} actually contains objFunctions,
-                % that is, it contains the string 'standard'
-                IndexC = strfind(varargin{2}, 'max');
-                Index = find(not(cellfun('isempty',IndexC)));
-                IndexC2 = strfind(varargin{2}, 'add');
-                Index2 = find(not(cellfun('isempty',IndexC2)));
-                if ~isempty(Index) || ~isempty(Index2)
-                    % varargin{2} contains a list of objective functions to
-                    % use for global sensitivity analysis
-                    objFunctions = varargin{2};
-                    % Remove the argument from varargin, since varargin is used
-                    % later
-                    varargin(2) = [];
-                else
-                    % varargin{2} does not contain objective functions.
-                    objFunctions = {'max'};
-                end
-            else
-                objFunctions = {'max'};
-            end
-            
             
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
@@ -234,83 +207,43 @@ classdef BreachRequirement < BreachTraceSystem
                 end
                 
                 % eval requirement
-                startTimeOfAllObjFunctions = tic;
                 execTimesForThisReq = zeros(1, numel(this.req_monitors));
-                for objFunctionCounter = 1:numel(objFunctions)
-                    thisObjFunction = objFunctions{objFunctionCounter};
-                    if numel(objFunctions) > 1
-                        % Display that we are calculating for several
-                        % semantics
-                        fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction '\n']);
-                        fprintf('TODO: Implement this by setting phi.semantics OUTSIDE of BreachRequirement.Eval instead!\n');
-                    end
-                    startTimeOfAllTrajs = tic;
-                    for it = 1:num_traj
-                        currentTime = datestr(now, 'HH:MM:ss');
-                        if num_traj > 30 && (mod(it, 10) == 0)
-                            fprintf(['*** START traj ' num2str(it) '/' num2str(num_traj) ' at ' currentTime '\n']);
-                        end
-                        
-                        if any(traces_vals_precond(it,:)<0)
-                            traces_vals( it, :, objFunctionCounter)  = NaN;
-                        else
-                            for ipre = 1:numel(this.req_monitors)
-                                startTimeOfReq = tic;
-                                req = this.req_monitors{ipre};
-                                if numel(objFunctions) > 1
-                                    % Set the semantics of all subformulas
-                                    % TODO: Do this outside of
-                                    % BreachRequirement.Eval instead
-                                    if ~strcmp(get_semantics(req.formula), thisObjFunction)
-                                        % Only use set_semantics if the
-                                        % semantics is not correct. 
-                                        req.formula = set_semantics(req.formula, thisObjFunction);
-                                    end
-                                    
-                                    if any(contains(fieldnames(req), 'subphi'))
-                                        % If req has the property 'subphi',
-                                        % we update the semantics of subphi
-                                        % as well.
-                                        if ~strcmp(get_semantics(req.subphi), thisObjFunction)
-                                            % Only use set_semantics if the
-                                            % semantics is not correct.
-                                            req.subphi = set_semantics(req.subphi, thisObjFunction);
-                                        end
-                                    end
-                                end
-                                
-                                [traces_vals(it, ...
-                                    ipre,objFunctionCounter), traces_vals_vac(it, ipre,objFunctionCounter)]  = eval_req(this,req,it);
-                                %fprintf(['  Finished req ' num2str(ipre) '/' numel(this.req_monitors) ' in ' num2str(toc(startTimeOfReq)) 's\n']);
-                                execTimesForThisReq(ipre) = execTimesForThisReq(ipre) + toc(startTimeOfReq);
-                            end
-                        end
-                        % Finished the traj
-                        
+                for it = 1:num_traj
+                    currentTime = datestr(now, 'HH:MM:ss');
+                    if num_traj > 30 && (mod(it, 10) == 0)
+                        fprintf(['*** START traj ' num2str(it) '/' num2str(num_traj) ' at ' currentTime '\n']);
                     end
                     
-                    % Display the nSlowest slowest specifications
-                    nSlowest = 5;
-                    if (numel(execTimesForThisReq) > nSlowest) && (num_traj > 30)
-                        fprintf(['  Finished all trajs, ' num2str(nSlowest) ' slowest specs (out of ' num2str(numel(this.req_monitors)) '): ']);
-                        [sortedExecTimes, sortedSpecIndex] = sort(execTimesForThisReq, 'descend');
-                        for slowestCounter = 1:nSlowest
-                            thisIndex = sortedSpecIndex(slowestCounter);
-                            thisTime = sortedExecTimes(slowestCounter);
-                            fprintf([this.req_monitors{thisIndex}.name ' (' num2str(thisTime) 's)']);
-                            if slowestCounter < nSlowest
-                                fprintf(', ');
-                            end
+                    if any(traces_vals_precond(it,:)<0)
+                        traces_vals( it, :)  = NaN;
+                    else
+                        for ipre = 1:numel(this.req_monitors)
+                            startTimeOfReq = tic;
+                            req = this.req_monitors{ipre};
+                            
+                            [traces_vals(it, ipre), ...
+                                traces_vals_vac(it, ipre)]  = eval_req(this,req,it);
+                            execTimesForThisReq(ipre) = execTimesForThisReq(ipre) + toc(startTimeOfReq);
                         end
-                        fprintf('\n');
                     end
-                    if numel(objFunctions) > 1
-                        fprintf(['TOTAL time of all trajs: ' num2str(toc(startTimeOfAllTrajs)) 's\n']);
-                    end
+                    % Finished the traj
                     
                 end
-                if numel(objFunctions) > 1
-                    fprintf(['TOTAL time of all objective functions: ' num2str(toc(startTimeOfAllObjFunctions)) 's\n']);
+                
+                % Display the nSlowest slowest specifications
+                nSlowest = 5;
+                if (numel(execTimesForThisReq) > nSlowest) && (num_traj > 30)
+                    fprintf(['  Finished all trajs, ' num2str(nSlowest) ' slowest specs (out of ' num2str(numel(this.req_monitors)) '): ']);
+                    [sortedExecTimes, sortedSpecIndex] = sort(execTimesForThisReq, 'descend');
+                    for slowestCounter = 1:nSlowest
+                        thisIndex = sortedSpecIndex(slowestCounter);
+                        thisTime = sortedExecTimes(slowestCounter);
+                        fprintf([this.req_monitors{thisIndex}.name ' (' num2str(thisTime) 's)']);
+                        if slowestCounter < nSlowest
+                            fprintf(', ');
+                        end
+                    end
+                    fprintf('\n');
                 end
                 this.traces_vals_precond = traces_vals_precond;
                 this.traces_vals_vac = traces_vals_vac;
@@ -323,31 +256,6 @@ classdef BreachRequirement < BreachTraceSystem
         end
         
         function [traces_vals, traces_vals_precond, traces_vals_vac] =parevalAllTraces(this,varargin)
-            % TESTRON: Add extra (optional) argument with objective
-            % functions when running global sensitivity experiments
-            if nargin > 2
-                % varargin{0} is the BreachSimulinkSystem
-                % varargin{1} is a cell array of objective functions
-                % (strings)
-                % Check that varargin{2} actually contains objFunctions,
-                % that is, it contains the string 'standard'
-                IndexC = strfind(varargin{2}, 'max');
-                Index = find(not(cellfun('isempty',IndexC)));
-                if Index
-                    % varargin{2} contains a list of objective functions to
-                    % use for global sensitivity analysis
-                    objFunctions = varargin{2};
-                    % Remove the argument from varargin, since varargin is used
-                    % later
-                    varargin(2) = [];
-                else
-                    % varargin{2} does not contain objective functions.
-                    objFunctions = {'max'};
-                end
-            else
-                objFunctions = {'max'};
-            end
-            
             
             % BreachRequirement.evalAllTraces collect traces and apply
             % evalTrace
@@ -370,62 +278,30 @@ classdef BreachRequirement < BreachTraceSystem
                 end
                 
                 % eval requirement
-                for objFunctionCounter = 1:numel(objFunctions)
-                    thisObjFunction = objFunctions{objFunctionCounter};
-                    if numel(objFunctions) > 1
-                        % Display that we are calculating for several
-                        % semantics
-                        fprintf(['BreachRequirement.m: Calculating rob for ' thisObjFunction '\n']);
-                        fprintf('TODO: Implement this by setting phi.semantics OUTSIDE of BreachRequirement.Eval instead!\n');
-                    end
-                    startTimeOfAll = tic;
-                    % NEW
-                    num_monitors = numel(this.req_monitors);
-                    for ipre = 1:num_monitors
-                        startTimeOfThisReq = tic;
-                        currentTime = datestr(now, 'HH:MM:ss');
-                        if num_traj > 300
-                            fprintf(['*** START monitor ' num2str(ipre) '/' num2str(num_monitors) ' at ' currentTime '\n']);
-                        end
-                        
-                        req = this.req_monitors{ipre};
-                        if numel(objFunctions) > 1
-                            % Set the semantics of all subformulas
-                            % TODO: Do this outside of
-                            % BreachRequirement.Eval instead
-                            if ~strcmp(get_semantics(req.formula), thisObjFunction)
-                                % Only use set_semantics if the
-                                % semantics is not correct.
-                                req.formula = set_semantics(req.formula, thisObjFunction);
-                            end
-                            if any(contains(fieldnames(req), 'subphi'))
-                                % If req has the property 'subphi',
-                                % we update the semantics of subphi
-                                % as well.
-                                if ~strcmp(get_semantics(req.subphi), thisObjFunction)
-                                    % Only use set_semantics if the
-                                    % semantics is not correct.
-                                    req.subphi = set_semantics(req.subphi, thisObjFunction);
-                                end
-                            end
-                        end
-                        parfor it = 1:num_traj
-                            if any(traces_vals_precond(it,:)<0)
-                                traces_vals(it, ipre, objFunctionCounter)  = NaN;
-                            else
-                                [traces_vals(it, ...
-                                    ipre,objFunctionCounter), traces_vals_vac(it, ipre,objFunctionCounter)]  = eval_req(this,req,it);
-                            end
-                        end
-                        
-                        endTimeOfThisReq = toc(startTimeOfThisReq);
-                        fprintf(['Finished req ' num2str(ipre) '/' num2str(num_monitors) ' in ' num2str(endTimeOfThisReq) 's\n']);
+                % NEW
+                num_monitors = numel(this.req_monitors);
+                for ipre = 1:num_monitors
+                    startTimeOfThisReq = tic;
+                    currentTime = datestr(now, 'HH:MM:ss');
+                    if num_traj > 300
+                        fprintf(['*** START monitor ' num2str(ipre) '/' num2str(num_monitors) ' at ' currentTime '\n']);
                     end
                     
-                    if numel(objFunctions) > 1
-                        fprintf(['TOTAL time of all reqs : ' num2str(toc(startTimeOfAll)) 's\n']);
+                    req = this.req_monitors{ipre};
+
+                    parfor it = 1:num_traj
+                        if any(traces_vals_precond(it,:)<0)
+                            traces_vals(it, ipre)  = NaN;
+                        else
+                            [traces_vals(it, ipre), ...
+                                traces_vals_vac(it, ipre)]  = eval_req(this,req,it);
+                        end
                     end
+                    
+                    endTimeOfThisReq = toc(startTimeOfThisReq);
+                    fprintf(['Finished req ' num2str(ipre) '/' num2str(num_monitors) ' in ' num2str(endTimeOfThisReq) 's\n']);
                 end
+                
                 this.traces_vals_precond = traces_vals_precond;
                 this.traces_vals_vac = traces_vals_vac;
                 this.traces_vals = traces_vals;
