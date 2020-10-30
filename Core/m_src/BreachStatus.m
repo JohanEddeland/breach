@@ -44,6 +44,9 @@ classdef BreachStatus < handle
         
         function new = copy(this)
             % copy operator, works with R2010b or newer.
+			disp('BreachStatus.m: TEMPORARY FIX: Clear BreachGlobOpt.STLDB');
+			global BreachGlobOpt;
+			BreachGlobOpt.STLDB = containers.Map();
             objByteArray = getByteStreamFromArray(this);
             new = getArrayFromByteStream(objByteArray);
         end
