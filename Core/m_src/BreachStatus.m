@@ -44,6 +44,15 @@ classdef BreachStatus < handle
         
         function new = copy(this)
             % copy operator, works with R2010b or newer.
+			
+            % with matlab 2013b there seems to some bug with this operator 
+            % whereas the size of objByteArray grows with memory used by global variables 
+            if verLessThan('matlab','8.4)
+                disp('BreachStatus.m: TEMPORARY FIX: Clear BreachGlobOpt.STLDB');
+                global BreachGlobOpt;
+                BreachGlobOpt.STLDB = containers.Map();
+            end
+
             objByteArray = getByteStreamFromArray(this);
             new = getArrayFromByteStream(objByteArray);
         end
