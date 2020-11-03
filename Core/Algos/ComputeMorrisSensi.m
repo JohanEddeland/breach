@@ -5,7 +5,7 @@ function [res, R] = ComputeMorrisSensi(R, B, num_path, randomSeed)
 %  Morris samples and corresponding traces and stores them in B. If B
 %  already contains Morris samples and traces they are not re-computed.
 
-if nargin < 5
+if nargin < 4
     randomSeed = 1;
 end
 

@@ -271,6 +271,7 @@ classdef BreachRequirement < BreachTraceSystem
                 if ~isempty(this.precond_monitors)
                     for ipre = 1:num_precond_monitors
                         req = this.precond_monitors{ipre};
+                   
                         parfor it = 1:num_traj
                             traces_vals_precond(it, ipre)  = eval_req(this,req,it);
                         end
